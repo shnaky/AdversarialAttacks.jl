@@ -1,5 +1,8 @@
 module AdversarialAttacks
 
-# Write your package code here.
+include("attacks/Attack.jl")
+using .Attack
+
+export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, attack
 
 end
