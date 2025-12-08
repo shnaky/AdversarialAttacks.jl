@@ -58,6 +58,6 @@ function run(sample, model, attack::AbstractAttack; kwargs...)
     throw(MethodError(run, (sample, model, attack)))
 end
 
-export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, attack
+export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, run
 
 end
