@@ -14,7 +14,7 @@ using AdversarialAttacks
 
     AdversarialAttacks.name(::DummyWB) = "dummy-wb"
     AdversarialAttacks.hyperparameters(d::DummyWB) = d.params
-    AdversarialAttacks.attack(sample, model, ::DummyWB; kwargs...) = (:adv, sample, model, kwargs)
+    AdversarialAttacks.run(sample, model, ::DummyWB; kwargs...) = (:adv, sample, model, kwargs)
 
     dummy = DummyWB(Dict("eps" => 0.1))
     @test name(dummy) == "dummy-wb"
