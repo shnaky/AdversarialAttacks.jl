@@ -19,7 +19,7 @@ using AdversarialAttacks
     dummy = DummyWB(Dict("eps" => 0.1))
     @test name(dummy) == "dummy-wb"
     @test hyperparameters(dummy) == Dict("eps" => 0.1)
-    adv, sample, model, kwargs = attack(:x, :m, dummy; steps=5)
+    adv, sample, model, kwargs = run(:x, :m, dummy; steps=5)
     @test adv == :adv
     @test sample == :x
     @test model == :m
