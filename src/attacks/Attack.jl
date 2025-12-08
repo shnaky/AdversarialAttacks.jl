@@ -6,7 +6,7 @@ Abstract supertype for all adversarial attacks.
 Expected interface (to be implemented per concrete attack):
 - `name(::AbstractAttack)::String`
 - `hyperparameters(::AbstractAttack)::Dict{String,Any}`
-- `attack(sample, model, atk::AbstractAttack; kwargs...)` returning an adversarial example
+- `craft(sample, model, atk::AbstractAttack; kwargs...)` returning an adversarial example
 """
 abstract type AbstractAttack end
 
@@ -41,23 +41,23 @@ name(atk::AbstractAttack) = string(typeof(atk))
 hyperparameters(::AbstractAttack) = Dict{String,Any}()
 
 """
-    run(sample, model, attack::AbstractAttack; kwargs...) -> adversarial_sample
+    craft(sample, model, attack::AbstractAttack; kwargs...) -> adversarial_sample
 
-Generate an adversarial example by applying the attack to a sample.
+Craft an adversarial example by applying the attack to a sample.
 
 # Arguments
 - `sample`: Input sample to perturb (e.g., image, text)
 - `model`: Target model to attack
-- `attackk::AbstractAttack`: Attack configuration and algorithm
+- `attack::AbstractAttack`: Attack configuration and algorithm
 - `kwargs...`: Additional attack-specific parameters
 
 # Returns
 - Adversarial example with the same shape as the input sample
 """
-function run(sample, model, attack::AbstractAttack; kwargs...)
-    throw(MethodError(run, (sample, model, attack)))
+function craft(sample, model, attack::AbstractAttack; kwargs...)
+    throw(MethodError(craft, (sample, model, attack)))
 end
 
-export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, run
+export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, craft
 
 end
