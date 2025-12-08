@@ -40,8 +40,21 @@ name(atk::AbstractAttack) = string(typeof(atk))
 """Return hyperparameters for an attack"""
 hyperparameters(::AbstractAttack) = Dict{String,Any}()
 
-"""Run the attack on a single sample"""
-function attack(sample, model, attack::AbstractAttack; kwargs...)  # TODO: Add return type?
+"""
+    run(sample, model, attack::AbstractAttack; kwargs...) -> adversarial_sample
+
+Generate an adversarial example by applying the attack to a sample.
+
+# Arguments
+- `sample`: Input sample to perturb (e.g., image, text)
+- `model`: Target model to attack
+- `attackk::AbstractAttack`: Attack configuration and algorithm
+- `kwargs...`: Additional attack-specific parameters
+
+# Returns
+- Adversarial example with the same shape as the input sample
+"""
+function run(sample, model, attack::AbstractAttack; kwargs...)
     throw(MethodError(run, (sample, model, attack)))
 end
 
