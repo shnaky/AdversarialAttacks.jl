@@ -1,5 +1,5 @@
 """
-BlackBoxAttack(parameters)
+    BlackBoxAttack(parameters)
 
 Subtype of AbstractAttack. Can be used to create an adversarial example in the black-box setting.
 
