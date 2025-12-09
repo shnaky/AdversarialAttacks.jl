@@ -17,12 +17,12 @@ end
 """
     perform_attack(attack::WhiteBoxAttack, model, sample)
 
-Performs a white-box adversarial attack on the given model using the provided sample.
+Performs a black-box adversarial attack on the given model using the provided sample.
 Returns the adversarial example generated from the sample.
 
 # Arguments
-- attack::WhiteBoxAttack: An instance of the WhiteBoxAttack.
-- model: The machine learning (deep learning) model to be attacked.
+- attack::BlackBoxAttack: An instance of the BlackBoxAttack.
+- model: The machine learning (deep learning, classical machine learning) model to be attacked.
 - sample: The input sample to be changed.
 """
 
