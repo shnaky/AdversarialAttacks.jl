@@ -14,6 +14,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Model Interface" => "model_interface.md",
     ],
 )
 
