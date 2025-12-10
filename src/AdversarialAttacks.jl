@@ -1,6 +1,6 @@
 module AdversarialAttacks
 
-include("FGSM.jl")
+include("fgsm.jl")
 using .FGSM
 
 export FGSM, craft
