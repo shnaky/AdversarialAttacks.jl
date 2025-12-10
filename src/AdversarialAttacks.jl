@@ -1,7 +1,7 @@
 module AdversarialAttacks
 
 include("Fgsm.jl")
-using .FGSM
+using .FastGradientSignMethod: FGSM, craft
 
 export FGSM, craft
 

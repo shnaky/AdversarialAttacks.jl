@@ -1,9 +1,10 @@
-module AdversarialAttacks
+module FastGradientSignMethod
 
 include("attacks/Attack.jl")
-using .Attack
+using .Attack: WhiteBoxAttack
 
-""""
+
+"""
     FGSM(parameters::Dict{String,Any}=Dict{String,Any}())
 
 A struct that can be used to create a white-box adversarial attack of type Fast Gradient Sign Method.
@@ -34,5 +35,7 @@ Returns the adversarial example generated from the `sample`.
 function craft(attack::FGSM, model, sample)
     return sample
 end
+
+export FGSM, craft
 
 end
