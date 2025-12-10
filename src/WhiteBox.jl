@@ -18,7 +18,7 @@ end
 """
     perform_attack(attack::FGSM, model, sample)
 
-Performs a FGSM white-box adversarial attack on the given `model` using the provided `sample`.
+Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the given `model` using the provided `sample`.
 Returns the adversarial example generated from the `sample`.
 
 # Arguments
