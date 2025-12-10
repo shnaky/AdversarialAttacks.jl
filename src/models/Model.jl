@@ -94,6 +94,6 @@ White-box attacks may use this; black-box models can ignore it.
 params(m::AbstractModel) =
   error("params not implemented for $(typeof(m))")
 
-export AbstractModel, DifferentiableModel, NonDifferentiableModel, name, predict, loss, params
+export AbstractModel, DifferentiableModel, NonDifferentiableModel, predict, loss, params
 
 end

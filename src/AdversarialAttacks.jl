@@ -8,6 +8,6 @@ using .Model
 
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, craft
 
-export AbstractModel, DifferentiableModel, NonDifferentiableModel, name, predict, loss, params
+export AbstractModel, DifferentiableModel, NonDifferentiableModel, predict, loss, params
 
 end
