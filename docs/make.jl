@@ -16,6 +16,7 @@ makedocs(;
         "Home" => "index.md",
         "Attack Interface" => "attack_interface.md",
         "Model Interface" => "model_interface.md",
+        "Interface" => "interface.md",
     ],
 )
 
