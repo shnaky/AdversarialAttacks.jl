@@ -1,7 +1,7 @@
 module AdversarialAttacks
 
-include("WhiteBox.jl")
-using .WhiteBox
+include("FGSM.jl")
+using .FGSM
 
 export FGSM
 
