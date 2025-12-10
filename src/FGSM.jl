@@ -1,3 +1,8 @@
+module AdversarialAttacks
+
+include("attacks/Attack.jl")
+using .Attack
+
 """"
     FGSM(parameters::Dict{String,Any}=Dict{String,Any}())
 
@@ -28,4 +33,6 @@ Returns the adversarial example generated from the `sample`.
 """
 function craft(attack::FGSM, model, sample)
     return sample
+end
+
 end
