@@ -7,6 +7,6 @@ CurrentModule = AdversarialAttacks
 This page documents the Fast Gradient Sign Method attack.
 
 ```@autodocs
-Modules = [FGSM]
+Modules = [AdversarialAttacks.FGSM]
 Order = [:type, :function]
 ```
