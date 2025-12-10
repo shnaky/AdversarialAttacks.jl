@@ -1,31 +1,31 @@
 """"
-    WhiteBoxAttack(parameters::Dict{String,Any}=Dict{String,Any}())
+    FGSM(parameters::Dict{String,Any}=Dict{String,Any}())
 
-A struct that can be used to create a white-box adversarial attack.
-Subtypes of `AbstractAttack`.
+A struct that can be used to create a white-box adversarial attack of type Fast Gradient Sign Method.
+Subtypes of `WhiteBoxAttack`.
 
 # Arguments
 - `parameters::Dict{String,Any}`: A dictionary of parameters for the attack. Defaults to an empty dictionary.
 """
-struct WhiteBoxAttack <: AbstractAttack
+struct FGSM <: WhiteBoxAttack
     parameters::Dict{String,Any}
 
-    function WhiteBoxAttack(parameters::Dict{String,Any}=Dict{String,Any}()) 
+    function FGSM(parameters::Dict{String,Any}=Dict{String,Any}()) 
         new(parameters)
     end
 end
 
 """
-    perform_attack(attack::WhiteBoxAttack, model, sample)
+    perform_attack(attack::FGSM, model, sample)
 
-Performs a white-box adversarial attack on the given `model` using the provided `sample`.
+Performs a FGSM white-box adversarial attack on the given `model` using the provided `sample`.
 Returns the adversarial example generated from the `sample`.
 
 # Arguments
-- `attack::WhiteBoxAttack`: An instance of the `WhiteBoxAttack`.
+- `attack::FGSM`: An instance of the `FGSM`.
 - `model`: The machine learning (deep learning) model to be attacked.
 - `sample`: The input sample to be changed.
 """
-function perform_attack(attack::WhiteBoxAttack, model, sample)
+function craft(attack::FGSM, model, sample)
     return sample
 end
