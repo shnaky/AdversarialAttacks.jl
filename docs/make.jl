@@ -14,6 +14,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "White-Box Attacks" => "white_box_attacks.md",
     ],
 )
 
