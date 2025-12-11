@@ -1,6 +1,7 @@
 module FastGradientSignMethod
 
 using ..Attack: WhiteBoxAttack
+import ..Attack: craft
 
 
 """
@@ -21,17 +22,17 @@ struct FGSM <: WhiteBoxAttack
 end
 
 """
-    perform_attack(attack::FGSM, model, sample)
+    craft(sample, model, attack::FGSM)
 
 Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the given `model` using the provided `sample`.
 Returns the adversarial example generated from the `sample`.
 
 # Arguments
-- `attack::FGSM`: An instance of the `FGSM`.
-- `model`: The machine learning (deep learning) model to be attacked.
 - `sample`: The input sample to be changed.
+- `model`: The machine learning (deep learning) model to be attacked.
+- `attack::FGSM`: An instance of the `FGSM`.
 """
-function craft(attack::FGSM, model, sample)
+function craft(sample, model, attack::FGSM)
     return sample
 end
 
