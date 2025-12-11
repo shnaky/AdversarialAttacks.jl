@@ -1,23 +1,22 @@
 module FastGradientSignMethod
 
-include("attacks/Attack.jl")
-using .Attack: WhiteBoxAttack
+using ..Attack: WhiteBoxAttack
 
 
 """
-    FGSM(parameters::Dict{String,Any}=Dict{String,Any}())
+    FGSM(parameters::Dict=Dict{String,Any}())
 
 A struct that can be used to create a white-box adversarial attack of type Fast Gradient Sign Method.
 Subtypes of `WhiteBoxAttack`.
 
 # Arguments
-- `parameters::Dict{String,Any}`: A dictionary of parameters for the attack. Defaults to an empty dictionary.
+- `parameters::Dict`: A dictionary of parameters for the attack. Defaults to an empty dictionary.
 """
 struct FGSM <: WhiteBoxAttack
     parameters::Dict{String,Any}
 
-    function FGSM(parameters::Dict{String,Any}=Dict{String,Any}()) 
-        new(parameters)
+    function FGSM(parameters::Dict=Dict{String,Any}())
+        new(Dict{String,Any}(parameters))
     end
 end
 

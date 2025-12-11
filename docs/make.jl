@@ -4,7 +4,7 @@ using Documenter
 DocMeta.setdocmeta!(AdversarialAttacks, :DocTestSetup, :(using AdversarialAttacks); recursive=true)
 
 makedocs(;
-    modules=[AdversarialAttacks],
+    modules=[AdversarialAttacks, AdversarialAttacks.Attack, AdversarialAttacks.FastGradientSignMethod],
     authors="FirstName LastName <orestis.papandreou@campus.tu-berlin.de>",
     sitename="AdversarialAttacks.jl",
     format=Documenter.HTML(;
