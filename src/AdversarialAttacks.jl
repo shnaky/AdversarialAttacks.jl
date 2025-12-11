@@ -1,8 +1,13 @@
 module AdversarialAttacks
 
-include("Fgsm.jl")
-using .FastGradientSignMethod: FGSM, craft
+# Include attack interface first
+include("attacks/Attack.jl")
+using .Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
 
-export FGSM, craft
+# Include specific attacks
+include("Fgsm.jl")
+using .FastGradientSignMethod: FGSM
+
+export FGSM, craft, AbstractAttack, WhiteBoxAttack, BlackBoxAttack
 
 end
