@@ -4,14 +4,13 @@ module BlackBoxAttacks
     import ..Attack: craft
 
     """
-        BasicRandomSearch(parameters)
+        BasicRandomSearch(parameters::Dict=Dict{String,Any}())
 
     Subtype of BlackBoxAttack. Can be used to create an adversarial example in the black-box setting using random search.
 
     # Arguments
     - 'parameters': can be used to pass attack parameters as a dict
     """
-
     struct BasicRandomSearch <: BlackBoxAttack
         parameters::Dict{String,Any}
 
@@ -22,14 +21,13 @@ module BlackBoxAttacks
 
 
     """
-        SquareAttack(parameters)
+        SquareAttack(parameters::Dict=Dict{String,Any}())
 
     Subtype of BlackBoxAttack. Can be used to create an adversarial example in the black-box setting using the square attack algorithm.
 
     # Arguments
     - parameters: can be used to pass attack parameters as a dict
     """
-
     struct SquareAttack <: BlackBoxAttack
         parameters::Dict{String,Any}
 
@@ -50,7 +48,6 @@ module BlackBoxAttacks
     - model: The machine learning (deep learning, classical machine learning) model to be attacked.
     - sample: The input sample to be changed.
     """
-
     function craft(attack::BasicRandomSearch, model, sample)
         return sample
     end
@@ -66,7 +63,6 @@ module BlackBoxAttacks
     - model: The machine learning (deep learning, classical machine learning) model to be attacked.
     - sample: The input sample to be changed.
     """
-
     function craft(attack::SquareAttack, model, sample)
         return sample
     end
