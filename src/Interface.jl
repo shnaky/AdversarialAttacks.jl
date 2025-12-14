@@ -2,8 +2,8 @@ module Interface
 
 export run, benchmark
 
-abstract type AbstractAttack end # placeholder
-abstract type AbstractModel end # placeholder
+using ..Attack: AbstractAttack, craft
+using ..Model: AbstractModel
 
 """
     run(attack, model, sample)
@@ -26,11 +26,12 @@ Craft a single adversarial example by applying the attack to input `sample`.
 - `attack::AbstractAttack`: Attack algorithm
 - `model::AbstractModel`: Target model to attack
 - `sample::AbstractArray`: Input sample
+
+# Returns
+- Adversarial sample
 """
-# TODO: Differantiate this bwetween AbstractAttack and AbstractModel
-function run(attack::AbstractAttack, model::AbstractModel, sample::AbstractArray)
-    # TODO: This should be overridden by specific attack implementations
-    return sample # placeholder
+function run(attack::AbstractAttack, model::AbstractModel, sample::AbstractArray; kwargs...)
+    return craft(sample, model, attack; kwargs...)
 end
 
 """
@@ -42,9 +43,12 @@ Batch processing: craft adversarial examples for multiple inputs.
 - `attack::AbstractAttack`: Attack algorithm
 - `model::AbstractModel`: Target model to attack
 - `samples::AbstractVector{<:AbstractArray}`: Vector of input samples
+
+# Returns
+- Adversarial samples
 """
-function run(attack::AbstractAttack, model::AbstractModel, samples::AbstractVector{<:AbstractArray})
-    return [run(attack, model, sample) for sample in samples]
+function run(attack::AbstractAttack, model::AbstractModel, samples::AbstractVector{<:AbstractArray}; kwargs...)
+    return [run(attack, model, sample; kwargs...) for sample in samples]
 end
 
 """
@@ -56,10 +60,15 @@ Evaluate attack performance on a dataset with labels using a given metric
 - `attack::AbstractAttack`: Attack algorithm
 - `model::AbstractModel`: Target model to attack
 - `dataset::AbstractVector{<:Tuple}`: Vector of (input, label) pairs
-- `metric`: Evaluation metric
+- `metric::Function`: Evaluation metric
+
+# Returns
+- `Number`: represents the metric score
 """
-function benchmark(attack::AbstractAttack, model::AbstractModel, dataset::AbstractVector{<:Tuple}, metric)::Number
-    return 0.0 # placeholder
+function benchmark(attack::AbstractAttack, model::AbstractModel, dataset::AbstractVector{<:Tuple}, metric::Function; kwargs...)::Number
+    adv_samples = [run(attack, model, x; kwargs...) for (x, _) in dataset]
+    labels = [y for (_, y) in dataset]
+    return metric(adv_samples, labels)
 end
 
-end # end module
+end # module
