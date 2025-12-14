@@ -11,7 +11,33 @@ You can install the package via the Julia package manager.
 In the Julia REPL, run:
 
 ```julia-repl
-julia> ]add SparseConnectivityTracer
+julia> ]add AdversarialAttacks
 ```
 
 ## Examples
+The following example is an example to create an adversarial sample out of a singe sample using the FGSM attack algorithm.
+
+```julia-repl
+julia> using AdversarialAttacks
+
+julia> struct MyModel <: DifferentiableModel end
+
+julia> fgsm = FGSM(ε=0.3)
+
+julia> model = MyModel()
+
+julia> sample = rand(28, 28)
+
+julia> adversarial_sample = AdversarialAttacks.run(fgsm, model, sample)
+```
+
+### Batch Example
+
+```julia-repl
+julia> samples = [rand(28, 28) for _ in 1:10]
+
+julia> adversarial_samples = AdversarialAttacks.run(fgsm, model, samples)
+```
+
+### Benchmark
+> **TODO**
