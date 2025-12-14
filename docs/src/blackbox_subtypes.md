@@ -1,11 +1,12 @@
-'''@meta CurrentModule
-    CurrentModule = AdversarialAttacks
-'''
+# Black Box Algorithms
 
+```@meta 
+    CurrentModule = AdversarialAttacks
+```
 This page documents the black box algorithms.
 
-'''@autodocs
-    Modules=AdversarialAttacks
-    order=[:type, :function]
-'''
+```@autodocs
+    Modules = [AdversarialAttacks.BlackBoxAttacks]
+    Order = [:type, :function]
+```
 

@@ -3,5 +3,9 @@ uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
 authors = ["Orestis Papandreou <orestis.papandreou@campus.tu-berlin.de>"]
 version = "1.0.0-DEV"
 
+[deps]
+LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
+
 [compat]
+LiveServer = "1.5.0"
 julia = "1.11"

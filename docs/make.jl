@@ -14,6 +14,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Attack Interface" => "attack_interface.md",
         "Black Box Algorithms" => "blackbox_subtypes.md"
     ],
 )
