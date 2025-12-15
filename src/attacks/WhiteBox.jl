@@ -1,7 +1,7 @@
 module FastGradientSignMethod
 
 using ..Attack: WhiteBoxAttack
-import ..Attack: craft
+import ..Attack: craft, hyperparameters
 
 
 """
@@ -20,6 +20,13 @@ struct FGSM <: WhiteBoxAttack
         new(Dict{String,Any}(parameters))
     end
 end
+
+""" 
+    hyperparameters(atk::FGSM) -> Dict{String,Any}
+
+Return hyperparameters for an FGSM attack. 
+"""
+hyperparameters(atk::FGSM) = atk.parameters
 
 """
     craft(sample, model, attack::FGSM)
