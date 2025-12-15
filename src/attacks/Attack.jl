@@ -60,4 +60,8 @@ end
 
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, craft
 
+<<<<<<< HEAD
 end
+=======
+end
+>>>>>>> origin/main

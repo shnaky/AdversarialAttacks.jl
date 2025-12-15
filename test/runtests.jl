@@ -1,6 +1,5 @@
 using AdversarialAttacks
 using Test
 
-@testset "AdversarialAttacks.jl" begin
-    # Write your tests here.
-end
+include("attacks/Attack.jl")
+include("models/Model.jl")
