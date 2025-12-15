@@ -1,24 +1,24 @@
 using Test
 using AdversarialAttacks
 
-const Model = AdversarialAttacks.FastGradientSignMethod.FGSM
+const FGSM_attack = AdversarialAttacks.FastGradientSignMethod.FGSM
 
 @testset "FGSM Struct" begin
 
     # Test default constructor
-    attack = Model()
-    @test attack isa Model
+    attack = FGSM_attack()
+    @test attack isa FGSM_attack
     @test attack.parameters == Dict{String,Any}()
     
     # Test constructor with parameters
     params = Dict("epsilon" => 0.25)
-    attack_with_params = Model(params)
-    @test attack_with_params isa Model
+    attack_with_params = FGSM_attack(params)
+    @test attack_with_params isa FGSM_attack
     @test attack_with_params.parameters == params
 
     # Test type hierarchy
-    @test Model <: AdversarialAttacks.WhiteBoxAttack
-    @test Model <: AdversarialAttacks.AbstractAttack
+    @test FGSM_attack <: AdversarialAttacks.WhiteBoxAttack
+    @test FGSM_attack <: AdversarialAttacks.AbstractAttack
 
     sample = [1.0, 2.0, 3.0]
     
