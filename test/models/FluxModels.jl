@@ -9,6 +9,8 @@ using AdversarialAttacks.FluxModels
   m = Chain(Dense(2, 2, relu), Dense(2, 2))
   model = FluxModel(m)
 
+  @test Model.name(model) == "FluxModel"
+
   # Batch of 4 samples (2 features each)
   x = rand(Float32, 2, 4)
   # One-hot labels for 4-class toy problem
