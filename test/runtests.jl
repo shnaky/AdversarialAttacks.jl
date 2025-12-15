@@ -1,6 +1,6 @@
 using AdversarialAttacks
 using Test
 
-@testset "AdversarialAttacks.jl" begin
-    include("attacks/FgsmAttack.jl")
-end
+include("attacks/Attack.jl")
+include("models/Model.jl")
+include("attacks/FgsmAttack.jl")

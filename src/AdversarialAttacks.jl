@@ -1,12 +1,23 @@
 module AdversarialAttacks
 
 include("attacks/Attack.jl")
+include("models/Model.jl")
+include("attacks/WhiteBox.jl")
+
+using .Attack
 using .Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
 
-include("attacks/WhiteBox.jl")
+using .Model
 using .FastGradientSignMethod: FGSM
 
-export FGSM, craft, AbstractAttack, WhiteBoxAttack, BlackBoxAttack
+export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, craft
+
+export AbstractModel, DifferentiableModel, NonDifferentiableModel, predict, loss, params
+
+export FGSM, craft, AbstractAttack
 
 end
+
+
+
 
