@@ -30,7 +30,7 @@ Return a human-readable name for the model.
 - `String`: Descriptive name of the model type (e.g. `"FluxModel"`, `"TreeModel"`).
 
 # Examples
-name(FluxModel(chain)) # "FluxModel"
+    name(FluxModel(chain)) # "FluxModel"
 """
 name(m::AbstractModel) = string(typeof(m))
 
@@ -49,7 +49,7 @@ For classifiers, this usually returns logits or class probabilities.
 - `y`: Model output with a type and shape defined by the concrete model, usually matching the shape expected by `loss`.
 
 # Examples
-ŷ = predict(model, x_batch)
+    ŷ = predict(model, x_batch)
 """
 predict(m::AbstractModel, x) =
   error("predict not implemented for $(typeof(m))")
@@ -70,7 +70,7 @@ White-box attacks will typically differentiate this loss with respect to the inp
 - `Real`: Scalar loss value used for training or attacks.
 
 # Examples
-ℓ = loss(model, x_batch, y_batch)
+    ℓ = loss(model, x_batch, y_batch)
 """
 loss(m::AbstractModel, x, y) =
   error("loss not implemented for $(typeof(m))")
@@ -89,7 +89,7 @@ White-box attacks may use this; black-box models can ignore it.
 - Implementation-defined: Typically a collection of arrays or a parameter container (e.g. `Flux.Params` for `FluxModel`).
 
 # Examples
-θ = params(model)
+    θ = params(model)
 """
 params(m::AbstractModel) =
   error("params not implemented for $(typeof(m))")
