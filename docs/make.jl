@@ -12,25 +12,27 @@ DocMeta.setdocmeta!(
 )
 
 makedocs(;
-  modules=[AdversarialAttacks],
-  # TODO: change author info
-  authors="FirstName LastName <orestis.papandreou@campus.tu-berlin.de>",
-  sitename="AdversarialAttacks.jl",
-  format=Documenter.HTML(;
-    canonical="https://shnaky.github.io/AdversarialAttacks.jl",
-    edit_link="main",
-    assets=String[], # TODO: create icon
-  ),
-  pages=[
-    "Getting Started" => "index.md",
-    "Developer Documentation" => [
-      "Attacks" => "attack_interface.md",
-      "Model Interface" => "model_interface.md",
+    modules=[AdversarialAttacks, AdversarialAttacks.Attack, AdversarialAttacks.FastGradientSignMethod],
+    authors="FirstName LastName <orestis.papandreou@campus.tu-berlin.de>",
+    sitename="AdversarialAttacks.jl",
+    format=Documenter.HTML(;
+        canonical="https://shnaky.github.io/AdversarialAttacks.jl",
+        edit_link="main",
+        assets=String[],
+    ),
+    pages=[
+        "Getting Started" => "index.md",
+        "Developer Documentation" => [
+          "Home" => "index.md",
+          "Attack Interface" => "attack_interface.md",
+          "Model Interface" => "model_interface.md",
+          "Fast Gradient Sign Method Attack" => "fgsm.md",
+          "Interface" => "interface.md",
+        ],
     ],
-  ],
 )
 
 deploydocs(;
-  repo="github.com/shnaky/AdversarialAttacks.jl",
-  devbranch="main",
+    repo="github.com/shnaky/AdversarialAttacks.jl",
+    devbranch="main",
 )
