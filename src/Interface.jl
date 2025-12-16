@@ -1,74 +1,64 @@
 module Interface
 
-export run, benchmark
+export attack, benchmark
 
-using ..Attack: AbstractAttack, craft
-using ..Model: AbstractModel
+using ..Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
+using ..Model: AbstractModel, DifferentiableModel, NonDifferentiableModel
 
 """
-    run(attack, model, sample)
+    attack(atk, model, sample; kwargs...)
 
-Fallback function that gives an error if no specific method exists
+Apply an adversarial attack to a sample using the given model.
 
-# Throws
-- `MethodError`: When no specific method is implemented
+# Arguments
+- `atk::AbstractAttack`: The attack object to apply.
+- `model::AbstractModel`: The model to attack.
+- `sample::AbstractArray{<:Number}`: Input sample.
+- `kwargs...`: Additional keyword arguments.
+
+# Returns
+- Adversarial sample produced by the attack.
+
+# Notes
+- `WhiteBoxAttack` requires a `DifferentiableModel`.
+- `BlackBoxAttack` works for any `AbstractModel`.
 """
-function run(attack, model, sample)
-    throw(MethodError(run, (attack, model, sample)))
+function attack(atk::WhiteBoxAttack, model::DifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
+    craft(sample, model, atk; kwargs...)
+end
+
+function attack(atk::BlackBoxAttack, model::AbstractModel, sample::AbstractArray{<:Number}; kwargs...)
+    craft(sample, model, atk; kwargs...)
+end
+
+function attack(atk::WhiteBoxAttack, model::NonDifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
+    error("$(typeof(atk)) is a white-box attack and requires a DifferentiableModel, " *
+          "but got $(typeof(model)). Consider using a black-box attack instead.")
+end
+
+# for custom attacks that don't subtype WhiteBox/BlackBox
+function attack(atk::AbstractAttack, model::AbstractModel, sample::AbstractArray{<:Number}; kwargs...)
+    craft(sample, model, atk; kwargs...)
 end
 
 """
-    run(attack::AbstractAttack, model::AbstractModel, sample::AbstractArray)
+    benchmark(atk::AbstractAttack, model::AbstractModel, dataset, metric::Function)
 
-Craft a single adversarial example by applying the attack to input `sample`.
-
-# Arguments
-- `attack::AbstractAttack`: Attack algorithm
-- `model::AbstractModel`: Target model to attack
-- `sample::AbstractArray`: Input sample
-
-# Returns
-- Adversarial sample
-"""
-function run(attack::AbstractAttack, model::AbstractModel, sample::AbstractArray; kwargs...)
-    return craft(sample, model, attack; kwargs...)
-end
-
-"""
-    run(attack::AbstractAttack, model::AbstractModel, samples::AbstractVector{<:AbstractArray})
-
-Batch processing: craft adversarial examples for multiple inputs.
+Evaluate attack performance on a dataset with labels using a given metric.
 
 # Arguments
-- `attack::AbstractAttack`: Attack algorithm
+- `atk::AbstractAttack`: Attack algorithm
 - `model::AbstractModel`: Target model to attack
-- `samples::AbstractVector{<:AbstractArray}`: Vector of input samples
+- `dataset`: Dataset with samples and labels
+- `metric::Function`: Evaluation metric with signature `metric(model, adv_samples, labels)`
 
 # Returns
-- Adversarial samples
+- Scalar metric value representing attack performance
 """
-function run(attack::AbstractAttack, model::AbstractModel, samples::AbstractVector{<:AbstractArray}; kwargs...)
-    return [run(attack, model, sample; kwargs...) for sample in samples]
-end
-
-"""
-    benchmark(attack::AbstractAttack, model::AbstractModel, dataset::AbstractVector{<:Tuple}, metric)::Number
-
-Evaluate attack performance on a dataset with labels using a given metric
-
-# Arguments
-- `attack::AbstractAttack`: Attack algorithm
-- `model::AbstractModel`: Target model to attack
-- `dataset::AbstractVector{<:Tuple}`: Vector of (input, label) pairs
-- `metric::Function`: Evaluation metric
-
-# Returns
-- `Number`: represents the metric score
-"""
-function benchmark(attack::AbstractAttack, model::AbstractModel, dataset::AbstractVector{<:Tuple}, metric::Function; kwargs...)::Number
-    adv_samples = [run(attack, model, x; kwargs...) for (x, _) in dataset]
+function benchmark(atk::AbstractAttack, model::AbstractModel, dataset, metric::Function; kwargs...)
+    adv_samples = [attack(atk, model, x; kwargs...) for (x, _) in dataset]
     labels = [y for (_, y) in dataset]
-    return metric(adv_samples, labels)
+    return metric(model, adv_samples, labels)
 end
 
 end # module
