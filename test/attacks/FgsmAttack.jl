@@ -14,7 +14,7 @@ const FGSM_attack = AdversarialAttacks.FastGradientSignMethod.FGSM
     params = Dict("epsilon" => 0.25)
     attack_with_params = FGSM_attack(params)
     @test attack_with_params isa FGSM_attack
-    @test attack_with_params.parameters == params
+    @test hyperparameters(attack_with_params) == params
 
     # Test type hierarchy
     @test FGSM_attack <: AdversarialAttacks.WhiteBoxAttack
