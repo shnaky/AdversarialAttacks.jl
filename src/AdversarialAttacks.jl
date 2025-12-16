@@ -12,7 +12,7 @@ using .Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
 using .Model
 using .FastGradientSignMethod: FGSM
 using .FluxModels
-using .Interface: run, benchmark
+using .Interface: attack, benchmark
 
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, craft
 
@@ -20,7 +20,7 @@ export AbstractModel, DifferentiableModel, NonDifferentiableModel, FluxModel, pr
 
 export FGSM, craft, AbstractAttack
 
-export run, benchmark
+export attack, benchmark
 
 end
 
