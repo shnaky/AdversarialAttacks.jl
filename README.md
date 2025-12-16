@@ -15,29 +15,49 @@ julia> ]add AdversarialAttacks
 ```
 
 ## Examples
-The following example is an example to create an adversarial sample out of a singe sample using the FGSM attack algorithm.
+
+>[!WARNING]
+>This project is still in early development. The attack algorithms have not been fully implemented yet.
+
+The following example shows how to create an adversarial sample from a **single input sample** using the FGSM attack:
 
 ```julia-repl
 julia> using AdversarialAttacks
 
 julia> struct MyModel <: DifferentiableModel end
 
-julia> fgsm = FGSM(ε=0.3)
+julia> fgsm = FGSM(Dict("ε"=>0.3))
 
 julia> model = MyModel()
 
-julia> sample = rand(28, 28)
+julia> sample = rand(10, 10)
 
-julia> adversarial_sample = AdversarialAttacks.run(fgsm, model, sample)
+julia> adv_sample = attack(fgsm, model, sample)
 ```
 
 ### Batch Example
+You can also apply an attack to a **batch of samples** represented as a tensor.
 
 ```julia-repl
-julia> samples = [rand(28, 28) for _ in 1:10]
+julia> tensor = rand(2, 2, 3)
 
-julia> adversarial_samples = AdversarialAttacks.run(fgsm, model, samples)
+julia> adv_samples = attack(fgsm, model, tensor)
 ```
 
-### Benchmark
-> **TODO**
+### Flux Integration
+This package can also work with **Flux.jl models**. Wrap your Flux model using the `FluxModel` interface:
+
+```julia-repl
+julia> using Flux
+
+julia> m = Chain(Dense(2, 2, relu), Dense(2, 2))
+
+julia> model = FluxModel(m)
+
+julia> fgsm = FGSM(Dict("ε"=>0.3))
+
+julia> sample = rand(10, 10)
+
+julia> adv_sample = attack(fgsm, model, sample)
+```
+
