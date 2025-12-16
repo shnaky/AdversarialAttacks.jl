@@ -11,7 +11,7 @@ You can install the package via the Julia package manager.
 In the Julia REPL, run:
 
 ```julia-repl
-julia> ]add AdversarialAttacks
+julia> ]add https://github.com/shnaky/AdversarialAttacks.jl
 ```
 
 ## Examples
