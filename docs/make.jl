@@ -27,6 +27,7 @@ makedocs(;
           "Attack Interface" => "attack_interface.md",
           "Model Interface" => "model_interface.md",
           "Fast Gradient Sign Method Attack" => "fgsm.md",
+          "Black Box Attacks" => "blackbox_subtypes.md",
           "Interface" => "interface.md",
         ],
     ],
