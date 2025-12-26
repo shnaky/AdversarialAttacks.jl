@@ -1,10 +1,18 @@
 using AdversarialAttacks
 using Documenter
 
-DocMeta.setdocmeta!(AdversarialAttacks, :DocTestSetup, :(using AdversarialAttacks); recursive=true)
+# Create index.md from README
+cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"); force=true)
+
+DocMeta.setdocmeta!(
+  AdversarialAttacks,
+  :DocTestSetup,
+  :(using AdversarialAttacks);
+  recursive=true,
+)
 
 makedocs(;
-    modules=[AdversarialAttacks],
+    modules=[AdversarialAttacks, AdversarialAttacks.Attack, AdversarialAttacks.FastGradientSignMethod],
     authors="FirstName LastName <orestis.papandreou@campus.tu-berlin.de>",
     sitename="AdversarialAttacks.jl",
     format=Documenter.HTML(;
@@ -13,10 +21,15 @@ makedocs(;
         assets=String[],
     ),
     pages=[
-        "Home" => "index.md",
-        "Attack Interface" => "attack_interface.md",
-        "Black Box Algorithms" => "blackbox_subtypes.md",
-        "Model Interface" => "model_interface.md",
+        "Getting Started" => "index.md",
+        "Developer Documentation" => [
+          "Home" => "index.md",
+          "Attack Interface" => "attack_interface.md",
+          "Model Interface" => "model_interface.md",
+          "Fast Gradient Sign Method Attack" => "fgsm.md",
+          "Black Box Attacks" => "blackbox_subtypes.md",
+          "Interface" => "interface.md",
+        ],
     ],
 )
 

@@ -5,6 +5,6 @@ CurrentModule = AdversarialAttacks
 ```
 
 ```@autodocs
-Modules = [AdversarialAttacks.Model]
+Modules = [AdversarialAttacks.Model, AdversarialAttacks.FluxModels]
 Order = [:type, :function]
 ```
