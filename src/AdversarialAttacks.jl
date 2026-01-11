@@ -23,6 +23,7 @@ using .Interface: attack, benchmark
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, craft
 export AbstractModel, DifferentiableModel, NonDifferentiableModel, predict, loss, params
 export BasicRandomSearch, SquareAttack, FGSM
+export FluxModel
 export attack, benchmark
 
 end

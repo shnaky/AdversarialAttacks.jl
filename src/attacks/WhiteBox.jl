@@ -1,7 +1,10 @@
 module FastGradientSignMethod
 
 using ..Attack: WhiteBoxAttack
+using ..Model
+using ..Model: DifferentiableModel
 import ..Attack: craft, hyperparameters
+import Flux
 
 
 """
@@ -35,14 +38,21 @@ Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the 
 Returns the adversarial example generated from the `sample`.
 
 # Arguments
-- `sample`: The input sample to be changed.
+- `sample`: The input sample to be changed: tuple (data, label)
 - `model`: The machine learning (deep learning) model to be attacked.
 - `attack::FGSM`: An instance of the `FGSM`.
 """
 function craft(sample, model, attack::FGSM)
-    return sample
+    x = sample.data
+    y = sample.label
+    ε = get(attack.parameters, "epsilon", 0.01)
+    grads = Flux.gradient(x_var -> Model.loss(model, x_var, y), x)[1]
+    perturbation = ε * sign.(grads)
+    adversarial_example = sample.data .+ perturbation
+    return adversarial_example
 end
 
 export FGSM, craft
 
 end
+
