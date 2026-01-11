@@ -1,5 +1,8 @@
 module AdversarialAttacks
 
+using Flux
+using MLDatasets: CIFAR10
+
 include("attacks/Attack.jl")
 include("models/Model.jl")
 include("attacks/BlackBoxAttacks.jl")
