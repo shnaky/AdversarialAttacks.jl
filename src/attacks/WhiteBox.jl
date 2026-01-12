@@ -38,7 +38,7 @@ Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the 
 Returns the adversarial example generated from the `sample`.
 
 # Arguments
-- `sample`: The input sample to be changed: tuple (data, label)
+- `sample`: The input sample to be changed: tuple (data, label).
 - `model`: The machine learning (deep learning) model to be attacked.
 - `attack::FGSM`: An instance of the `FGSM`.
 """

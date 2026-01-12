@@ -1,7 +1,6 @@
 module AdversarialAttacks
 
 using Flux
-using MLDatasets
 
 include("attacks/Attack.jl")
 include("models/Model.jl")
