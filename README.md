@@ -26,11 +26,36 @@ julia> using AdversarialAttacks
 
 julia> struct MyModel <: DifferentiableModel end
 
-julia> fgsm = FGSM(Dict("ε"=>0.3))
+julia> AdversarialAttacks.predict(::MyModel, x) = sigmoid.(sum(x, dims=1))
+
+julia> AdversarialAttacks.loss(::MyModel, x, y) = Flux.binarycrossentropy(predict(MyModel(), x), y)
+
+julia> AdversarialAttacks.params(::MyModel) = Flux.Params([])
 
 julia> model = MyModel()
 
-julia> sample = rand(10, 10)
+julia> fgsm = FGSM(Dict("epsilon"=>0.3))
+
+julia> sample = (data=rand(Float32, 10, 1), label=1)
+
+julia> adv_sample = attack(fgsm, model, sample)
+```
+
+### Flux Integration
+This package can also work with **Flux.jl models**. Wrap your Flux model using the `FluxModel` interface:
+
+```julia-repl
+julia> using AdversarialAttacks
+
+julia> using Flux
+
+julia> m = Chain(Dense(2, 2, tanh), Dense(2, 2))
+
+julia> model = FluxModel(m)
+
+julia> fgsm = FGSM(Dict("epsilon"=>0.3))
+
+julia> sample = (data=rand(Float32, 2, 1), label=Flux.onehot(1, 1:2) )
 
 julia> adv_sample = attack(fgsm, model, sample)
 ```
@@ -39,25 +64,21 @@ julia> adv_sample = attack(fgsm, model, sample)
 You can also apply an attack to a **batch of samples** represented as a tensor.
 
 ```julia-repl
-julia> tensor = rand(2, 2, 3)
+julia> using AdversarialAttacks
 
-julia> adv_samples = attack(fgsm, model, tensor)
-```
-
-### Flux Integration
-This package can also work with **Flux.jl models**. Wrap your Flux model using the `FluxModel` interface:
-
-```julia-repl
 julia> using Flux
 
-julia> m = Chain(Dense(2, 2, relu), Dense(2, 2))
+julia> m = Chain(Dense(4, 8, relu), Dense(8, 2))
 
 julia> model = FluxModel(m)
 
-julia> fgsm = FGSM(Dict("ε"=>0.3))
+julia> fgsm = FGSM(Dict("epsilon"=>0.3))
 
-julia> sample = rand(10, 10)
+julia> X = rand(Float32, 4, 3)  # 3 samples, 4 features each
 
-julia> adv_sample = attack(fgsm, model, sample)
+julia> Y = Flux.onehotbatch([1, 2, 1], 1:2)  # labels for each sample
+
+julia> tensor = (data=X, label=Y)
+
+julia> adv_samples = attack(fgsm, model, tensor)
 ```
-
