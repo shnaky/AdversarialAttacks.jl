@@ -13,7 +13,7 @@ Apply an adversarial attack to a sample using the given model.
 # Arguments
 - `atk::AbstractAttack`: The attack object to apply.
 - `model::AbstractModel`: The model to attack.
-- `sample::AbstractArray{<:Number}`: Input sample.
+- `sample::AbstractArray{<:Number}` or `NamedTuple`: Input sample (array) or named tuple with `data` and `label` fields.
 - `kwargs...`: Additional keyword arguments.
 
 # Returns
@@ -23,7 +23,7 @@ Apply an adversarial attack to a sample using the given model.
 - `WhiteBoxAttack` requires a `DifferentiableModel`.
 - `BlackBoxAttack` works for any `AbstractModel`.
 """
-function attack(atk::WhiteBoxAttack, model::DifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
+function attack(atk::WhiteBoxAttack, model::DifferentiableModel, sample::NamedTuple; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
