@@ -3,22 +3,44 @@
 
 julia&gt; struct MyModel &lt;: DifferentiableModel end
 
-julia&gt; fgsm = FGSM(Dict(&quot;ε&quot;=&gt;0.3))
+julia&gt; AdversarialAttacks.predict(::MyModel, x) = sigmoid.(sum(x, dims=1))
+
+julia&gt; AdversarialAttacks.loss(::MyModel, x, y) = Flux.binarycrossentropy(predict(MyModel(), x), y)
+
+julia&gt; AdversarialAttacks.params(::MyModel) = Flux.Params([])
 
 julia&gt; model = MyModel()
 
-julia&gt; sample = rand(10, 10)
+julia&gt; fgsm = FGSM(Dict(&quot;epsilon&quot;=&gt;0.3))
 
-julia&gt; adv_sample = attack(fgsm, model, sample)</code></pre><h3 id="Batch-Example"><a class="docs-heading-anchor" href="#Batch-Example">Batch Example</a><a id="Batch-Example-1"></a><a class="docs-heading-anchor-permalink" href="#Batch-Example" title="Permalink"></a></h3><p>You can also apply an attack to a <strong>batch of samples</strong> represented as a tensor.</p><pre><code class="language-julia-repl hljs">julia&gt; tensor = rand(2, 2, 3)
+julia&gt; sample = (data=rand(Float32, 10, 1), label=1)
 
-julia&gt; adv_samples = attack(fgsm, model, tensor)</code></pre><h3 id="Flux-Integration"><a class="docs-heading-anchor" href="#Flux-Integration">Flux Integration</a><a id="Flux-Integration-1"></a><a class="docs-heading-anchor-permalink" href="#Flux-Integration" title="Permalink"></a></h3><p>This package can also work with <strong>Flux.jl models</strong>. Wrap your Flux model using the <code>FluxModel</code> interface:</p><pre><code class="language-julia-repl hljs">julia&gt; using Flux
+julia&gt; adv_sample = attack(fgsm, model, sample)</code></pre><h3 id="Flux-Integration"><a class="docs-heading-anchor" href="#Flux-Integration">Flux Integration</a><a id="Flux-Integration-1"></a><a class="docs-heading-anchor-permalink" href="#Flux-Integration" title="Permalink"></a></h3><p>This package can also work with <strong>Flux.jl models</strong>. Wrap your Flux model using the <code>FluxModel</code> interface:</p><pre><code class="language-julia-repl hljs">julia&gt; using AdversarialAttacks
 
-julia&gt; m = Chain(Dense(2, 2, relu), Dense(2, 2))
+julia&gt; using Flux
+
+julia&gt; m = Chain(Dense(2, 2, tanh), Dense(2, 2))
 
 julia&gt; model = FluxModel(m)
 
-julia&gt; fgsm = FGSM(Dict(&quot;ε&quot;=&gt;0.3))
+julia&gt; fgsm = FGSM(Dict(&quot;epsilon&quot;=&gt;0.3))
 
-julia&gt; sample = rand(10, 10)
+julia&gt; sample = (data=rand(Float32, 2, 1), label=Flux.onehot(1, 1:2) )
 
-julia&gt; adv_sample = attack(fgsm, model, sample)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href>Home »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 26 December 2025 10:10">Friday 26 December 2025</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+julia&gt; adv_sample = attack(fgsm, model, sample)</code></pre><h3 id="Batch-Example"><a class="docs-heading-anchor" href="#Batch-Example">Batch Example</a><a id="Batch-Example-1"></a><a class="docs-heading-anchor-permalink" href="#Batch-Example" title="Permalink"></a></h3><p>You can also apply an attack to a <strong>batch of samples</strong> represented as a tensor.</p><pre><code class="language-julia-repl hljs">julia&gt; using AdversarialAttacks
+
+julia&gt; using Flux
+
+julia&gt; m = Chain(Dense(4, 8, relu), Dense(8, 2))
+
+julia&gt; model = FluxModel(m)
+
+julia&gt; fgsm = FGSM(Dict(&quot;epsilon&quot;=&gt;0.3))
+
+julia&gt; X = rand(Float32, 4, 3)  # 3 samples, 4 features each
+
+julia&gt; Y = Flux.onehotbatch([1, 2, 1], 1:2)  # labels for each sample
+
+julia&gt; tensor = (data=X, label=Y)
+
+julia&gt; adv_samples = attack(fgsm, model, tensor)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href>Home »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 13 January 2026 22:15">Tuesday 13 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
