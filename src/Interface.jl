@@ -31,6 +31,10 @@ function attack(atk::BlackBoxAttack, model::AbstractModel, sample::AbstractArray
     craft(sample, model, atk; kwargs...)
 end
 
+function attack(atk::BlackBoxAttack, model::AbstractModel, sample::NamedTuple; kwargs...)
+    craft(sample, model, atk; kwargs...)
+end
+
 function attack(atk::WhiteBoxAttack, model::NonDifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
     error("$(typeof(atk)) is a white-box attack and requires a DifferentiableModel, " *
           "but got $(typeof(model)). Consider using a black-box attack instead.")

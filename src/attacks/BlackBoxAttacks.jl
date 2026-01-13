@@ -1,6 +1,7 @@
 module BlackBoxAttacks
 
     using ..Attack: BlackBoxAttack
+    using ..Model: AbstractModel
     import ..Attack: craft
 
     """
@@ -45,10 +46,10 @@ module BlackBoxAttacks
 
     # Arguments
     - attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
-    - model: The machine learning (deep learning, classical machine learning) model to be attacked.
+    - model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
     - sample: The input sample to be changed.
     """
-    function craft(attack::BasicRandomSearch, model, sample)
+    function craft(attack::BasicRandomSearch, model::AbstractModel, sample)
         return sample
     end
 
@@ -60,10 +61,10 @@ module BlackBoxAttacks
 
     # Arguments
     - attack::SquareAttack: An instance of the SquareAttack (BlackBox) attack.
-    - model: The machine learning (deep learning, classical machine learning) model to be attacked.
+    - model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
     - sample: The input sample to be changed.
     """
-    function craft(attack::SquareAttack, model, sample)
+    function craft(attack::SquareAttack, model::AbstractModel, sample)
         return sample
     end
 

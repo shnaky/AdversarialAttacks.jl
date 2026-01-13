@@ -1,7 +1,5 @@
 module AdversarialAttacks
 
-using Flux
-
 include("attacks/Attack.jl")
 include("models/Model.jl")
 include("attacks/BlackBoxAttacks.jl")
@@ -13,7 +11,6 @@ using .Attack
 using .Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
 
 using .Model
-using .Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
 using .BlackBoxAttacks: BasicRandomSearch, SquareAttack
 using .FastGradientSignMethod: FGSM
 using .FluxModels
