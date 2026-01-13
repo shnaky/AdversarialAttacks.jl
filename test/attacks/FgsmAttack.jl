@@ -2,6 +2,7 @@ using Test
 using AdversarialAttacks
 
 const FGSM_attack = AdversarialAttacks.FastGradientSignMethod.FGSM
+const Model = AdversarialAttacks.Model
 
 @testset "FGSM Struct" begin
 
@@ -20,11 +21,16 @@ const FGSM_attack = AdversarialAttacks.FastGradientSignMethod.FGSM
     @test FGSM_attack <: AdversarialAttacks.WhiteBoxAttack
     @test FGSM_attack <: AdversarialAttacks.AbstractAttack
 
-    sample = [1.0, 2.0, 3.0]
+    # Minimal dummy model with MSE loss
+    struct TestModel <: Model.AbstractModel end
+    Model.loss(::TestModel, x, y) = sum((x .- y).^2)
+
+    # Create sample with data and label fields
+    sample = (data=[1.0, 2.0, 3.0], label=[0.0, 1.0, 0.0])
+    model = TestModel()
     
-    result = craft(sample, :m, attack_with_params)
-    @test result == sample
-    @test size(result) == size(sample)
-    @test eltype(result) == eltype(sample)
+    result = craft(sample, model, attack_with_params)
+    @test size(result) == size(sample.data)
+    @test eltype(result) == eltype(sample.data)
 
 end
