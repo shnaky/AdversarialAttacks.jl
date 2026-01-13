@@ -2,7 +2,7 @@
 
 julia_version = "1.11.7"
 manifest_format = "2.0"
-project_hash = "498ccb22f34050947a5e6d76e59267e8d2c8de23"
+project_hash = "6fbf1c2a303c36ff8f418dcc9d62093d90025d06"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -49,6 +49,12 @@ weakdeps = ["SparseArrays", "StaticArrays"]
     [deps.Adapt.extensions]
     AdaptSparseArraysExt = "SparseArrays"
     AdaptStaticArraysExt = "StaticArrays"
+
+[[deps.AdversarialAttacks]]
+deps = ["Flux"]
+path = ".."
+uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
+version = "1.0.0-DEV"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
