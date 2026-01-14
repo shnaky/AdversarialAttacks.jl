@@ -12,7 +12,7 @@ DocMeta.setdocmeta!(
 )
 
 makedocs(;
-    modules=[AdversarialAttacks, AdversarialAttacks.Attack, AdversarialAttacks.FastGradientSignMethod],
+    modules=[AdversarialAttacks],
     authors="FirstName LastName <orestis.papandreou@campus.tu-berlin.de>",
     sitename="AdversarialAttacks.jl",
     format=Documenter.HTML(;
