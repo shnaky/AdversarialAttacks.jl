@@ -3,29 +3,26 @@ using AdversarialAttacks
 using Flux
 using Flux: Chain, Dense
 
-const FGSM_attack = AdversarialAttacks.FastGradientSignMethod.FGSM
-const Model = AdversarialAttacks.Model
-
 @testset "FGSM Struct" begin
 
     # Test default constructor
-    attack = FGSM_attack()
-    @test attack isa FGSM_attack
+    attack = FGSM()
+    @test attack isa FGSM
     @test attack.parameters == Dict{String,Any}()
 
     # Test constructor with parameters
     params = Dict("epsilon" => 0.25)
-    attack_with_params = FGSM_attack(params)
-    @test attack_with_params isa FGSM_attack
+    attack_with_params = FGSM(params)
+    @test attack_with_params isa FGSM
     @test hyperparameters(attack_with_params) == params
 
     # Test type hierarchy
-    @test FGSM_attack <: AdversarialAttacks.WhiteBoxAttack
-    @test FGSM_attack <: AdversarialAttacks.AbstractAttack
+    @test FGSM <: WhiteBoxAttack
+    @test FGSM <: AbstractAttack
 
     # Test with minimal DifferentiableModel (teammate's test)
-    struct TestModel <: Model.DifferentiableModel end
-    Model.loss(::TestModel, x, y) = sum((x .- y).^2)
+    struct TestModel <: DifferentiableModel end
+    AdversarialAttacks.loss(::TestModel, x, y) = sum((x .- y).^2)
 
     sample_simple = (data=[1.0, 2.0, 3.0], label=[0.0, 1.0, 0.0])
     test_model = TestModel()

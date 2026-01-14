@@ -1,29 +1,30 @@
 using Test
 using AdversarialAttacks
 
-const Model = AdversarialAttacks.Model
-
 @testset "Model abstractions" begin
+    @testset "Abstract types" begin
+        @test isabstracttype(AbstractModel)
+        @test isabstracttype(DifferentiableModel)
+        @test isabstracttype(NonDifferentiableModel)
+        @test DifferentiableModel <: AbstractModel
+        @test NonDifferentiableModel <: AbstractModel
+    end
 
-  @test isabstracttype(Model.AbstractModel)
-  @test isabstracttype(Model.DifferentiableModel)
-  @test isabstracttype(Model.NonDifferentiableModel)
-  @test Model.DifferentiableModel <: Model.AbstractModel
-  @test Model.NonDifferentiableModel <: Model.AbstractModel
+    @testset "DummyModel implementation" begin
+        struct DummyModel <: AbstractModel
+            factor::Int
+        end
 
-  struct DummyModel <: Model.AbstractModel
-    factor::Int
-  end
+        AdversarialAttacks.name(::DummyModel) = "DummyModel"
+        AdversarialAttacks.predict(m::DummyModel, x) = m.factor * x
+        AdversarialAttacks.loss(m::DummyModel, x, y) = sum(abs.(predict(m, x) .- y))
+        AdversarialAttacks.params(m::DummyModel) = (m.factor,)
 
-  Model.name(::DummyModel) = "DummyModel"
-  Model.predict(m::DummyModel, x) = m.factor * x
-  Model.loss(m::DummyModel, x, y) = sum(abs.(Model.predict(m, x) .- y))
-  Model.params(m::DummyModel) = (m.factor,)
+        m = DummyModel(2)
 
-  m = DummyModel(2)
-
-  @test Model.name(m) == "DummyModel"
-  @test Model.predict(m, [1, 2, 3]) == [2, 4, 6]
-  @test Model.loss(m, [1, 2], [2, 4]) == 0.0
-  @test Model.params(m) == (2,)
+        @test name(m) == "DummyModel"
+        @test predict(m, [1, 2, 3]) == [2, 4, 6]
+        @test loss(m, [1, 2], [2, 4]) == 0.0
+        @test params(m) == (2,)
+    end
 end
