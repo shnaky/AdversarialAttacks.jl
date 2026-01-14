@@ -30,7 +30,7 @@ Return a human-readable name for the model.
 # Examples
     name(FluxModel(chain)) # "FluxModel"
 """
-name(m::AbstractModel) = string(typeof(m))
+name(m::AbstractModel)::String = string(typeof(m))
 
 """
     predict(m::AbstractModel, x) -> y

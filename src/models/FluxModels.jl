@@ -29,7 +29,7 @@ Return a human-readable name for the Flux model.
 # Returns
 - `String`: `"FluxModel"`
 """
-name(::FluxModel) = "FluxModel"
+name(::FluxModel)::String = "FluxModel"
 
 
 
