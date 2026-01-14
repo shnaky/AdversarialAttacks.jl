@@ -33,35 +33,35 @@ end
 
 
 """
-    craft(attack::BasicRandomSearch, model, sample)
+    craft(sample, model, attack::BasicRandomSearch)
 
 Performs a black-box adversarial attack on the given model using the provided sample using Basic Random Search.
 
 # Arguments
-- attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
-- model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
 - sample: The input sample to be changed.
+- model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
+- attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
 
 # Returns
 - Adversarial example (same type and shape as `sample`).
 """
-function craft(attack::BasicRandomSearch, model::AbstractModel, sample)
+function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     return sample
 end
 
 """
-    craft(attack::SquareAttack, model, sample)
+    craft(sample, model, attack::SquareAttack)
 
 Performs a black-box adversarial attack on the given model using the provided sample using the SquareAttack algorithm.
 
 # Arguments
-- attack::SquareAttack: An instance of the SquareAttack (BlackBox) attack.
-- model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
 - sample: The input sample to be changed.
+- model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
+- attack::SquareAttack: An instance of the SquareAttack (BlackBox) attack.
 
 # Returns
 - Adversarial example (same type and shape as `sample`).
 """
-function craft(attack::SquareAttack, model::AbstractModel, sample)
+function craft(sample, model::AbstractModel, attack::SquareAttack)
     return sample
 end

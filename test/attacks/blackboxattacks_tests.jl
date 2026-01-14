@@ -1,6 +1,10 @@
 using Test
 using AdversarialAttacks
 
+# Shared dummy model for black-box attack tests
+struct DummyBlackBoxModel <: AbstractModel end
+AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
+
 @testset "BasicRandomSearch Struct" begin
 
     # Test default constructor
@@ -9,7 +13,7 @@ using AdversarialAttacks
     @test attack.parameters == Dict{String,Any}()
 
     # Test constructor with parameters
-    params = Dict("epsilon" => 0.25)
+    params = Dict{String,Any}("epsilon" => 0.25)
     attack_with_params = BasicRandomSearch(params)
     @test attack_with_params isa BasicRandomSearch
     @test attack_with_params.parameters == params
@@ -19,8 +23,9 @@ using AdversarialAttacks
     @test BasicRandomSearch <: AbstractAttack
 
     sample = [1.0, 2.0, 3.0]
+    model = DummyBlackBoxModel()
 
-    result = craft(sample, :m, attack_with_params)
+    result = craft(sample, model, attack_with_params)
     @test result == sample
     @test size(result) == size(sample)
     @test eltype(result) == eltype(sample)
@@ -35,7 +40,7 @@ end
     @test attack.parameters == Dict{String,Any}()
 
     # Test constructor with parameters
-    params = Dict("epsilon" => 0.25)
+    params = Dict{String,Any}("epsilon" => 0.25)
     attack_with_params = SquareAttack(params)
     @test attack_with_params isa SquareAttack
     @test attack_with_params.parameters == params
@@ -45,8 +50,9 @@ end
     @test SquareAttack <: AbstractAttack
 
     sample = [1.0, 2.0, 3.0]
+    model = DummyBlackBoxModel()
 
-    result = craft(sample, :m, attack_with_params)
+    result = craft(sample, model, attack_with_params)
     @test result == sample
     @test size(result) == size(sample)
     @test eltype(result) == eltype(sample)
