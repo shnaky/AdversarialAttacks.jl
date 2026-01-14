@@ -2,24 +2,26 @@ module AdversarialAttacks
 
 include("attacks/Attack.jl")
 include("models/Model.jl")
+include("models/FluxModels.jl")
 include("attacks/BlackBoxAttacks.jl")
 include("attacks/WhiteBox.jl")
-include("models/FluxModels.jl")
 include("Interface.jl")
 
-using .Attack
-using .Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
+# Export attack types
+export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
+export FGSM, BasicRandomSearch, SquareAttack
 
-using .Model
-using .BlackBoxAttacks: BasicRandomSearch, SquareAttack
-using .FastGradientSignMethod: FGSM
-using .FluxModels
-using .Interface: attack, benchmark
-
-export AbstractAttack, WhiteBoxAttack, BlackBoxAttack, name, hyperparameters, craft
-export AbstractModel, DifferentiableModel, NonDifferentiableModel, predict, loss, params
-export BasicRandomSearch, SquareAttack, FGSM
+# Export model types
+export AbstractModel, DifferentiableModel, NonDifferentiableModel
 export FluxModel
+
+# Export attack interface functions
+export craft, name, hyperparameters
+
+# Export model interface functions
+export predict, loss, params
+
+# Export high-level interface
 export attack, benchmark
 
 end

@@ -1,6 +1,3 @@
-module FluxModels
-
-using ..Model
 using Flux
 
 """
@@ -8,7 +5,7 @@ using Flux
 
 Flux-based differentiable model wrapper.
 
-Allows using `Flux.Chain` with the `Model.DifferentiableModel` interface.
+Allows using `Flux.Chain` with the `DifferentiableModel` interface.
 
 # Arguments
 - `model::Flux.Chain`: Flux chain model to wrap.
@@ -19,25 +16,25 @@ chain = Chain(Dense(10 => 5), Dense(5 => 2))
 model = FluxModel(chain)
 ```
 """
-struct FluxModel <: Model.DifferentiableModel
-  model::Flux.Chain
+struct FluxModel <: DifferentiableModel
+    model::Flux.Chain
 end
 
 
 """
-    Model.name(m::FluxModel)
+    name(m::FluxModel)
 
 Return a human-readable name for the Flux model.
 
 # Returns
 - `String`: `"FluxModel"`
 """
-Model.name(::FluxModel) = "FluxModel"
+name(::FluxModel) = "FluxModel"
 
 
 
 """
-    Model.predict(m::FluxModel, x)
+    predict(m::FluxModel, x)
 
 Forward pass: delegate to the wrapped `Flux.Chain`.
 
@@ -48,12 +45,12 @@ Forward pass: delegate to the wrapped `Flux.Chain`.
 # Returns
 - `model(x)`: Flux chain output
 """
-Model.predict(m::FluxModel, x) = m.model(x)
+predict(m::FluxModel, x) = m.model(x)
 
 
 
 """
-    Model.loss(m::FluxModel, x, y)
+    loss(m::FluxModel, x, y)
 
 Cross-entropy loss for classification tasks.
 
@@ -66,11 +63,11 @@ Cross-entropy loss for classification tasks.
 # Returns
 - `Float32`: logitcrossentropy loss value
 """
-Model.loss(m::FluxModel, x, y) = Flux.logitcrossentropy(m.model(x), y)
+loss(m::FluxModel, x, y) = Flux.logitcrossentropy(m.model(x), y)
 
 
 """
-    Model.params(m::FluxModel)
+    params(m::FluxModel)
 
 Return all trainable parameters of the wrapped Flux model.
 White-box attacks may use this; black-box models can ignore it.
@@ -83,14 +80,10 @@ White-box attacks may use this; black-box models can ignore it.
 
 # Examples
 ```
-θ = Model.params(model)
+θ = params(model)
 grads = gradient(θ) do
-    Model.loss(model, x, y)
+    loss(model, x, y)
 end
 ```
 """
-Model.params(m::FluxModel) = Flux.trainable(m.model)
-
-export FluxModel
-
-end
+params(m::FluxModel) = Flux.trainable(m.model)

@@ -1,11 +1,4 @@
-module FastGradientSignMethod
-
-using ..Attack: WhiteBoxAttack
-using ..Model
-using ..Model: DifferentiableModel
-import ..Attack: craft, hyperparameters
 using Flux: gradient
-
 
 """
     FGSM(parameters::Dict=Dict{String,Any}())
@@ -46,13 +39,8 @@ function craft(sample, model::DifferentiableModel, attack::FGSM)
     x = sample.data
     y = sample.label
     ε = convert(eltype(x), get(attack.parameters, "epsilon", 0.1))
-    grads = gradient(xx -> Model.loss(model, xx, y), x)[1]
+    grads = gradient(xx -> loss(model, xx, y), x)[1]
     perturbation = ε * sign.(grads)
     adversarial_example = x .+ perturbation
     return adversarial_example
 end
-
-export FGSM, craft
-
-end
-
