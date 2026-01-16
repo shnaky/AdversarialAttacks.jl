@@ -4,7 +4,14 @@
 CurrentModule = AdversarialAttacks
 ```
 
-```@autodocs
-Modules = [AdversarialAttacks.Model, AdversarialAttacks.FluxModels]
-Order = [:type, :function]
+```@docs
+AbstractModel
+DifferentiableModel
+NonDifferentiableModel
+FluxModel
+AdversarialAttacks.name(::AbstractModel)
+AdversarialAttacks.name(::FluxModel)
+AdversarialAttacks.predict
+AdversarialAttacks.loss
+AdversarialAttacks.params
 ```

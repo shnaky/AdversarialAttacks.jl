@@ -8,7 +8,8 @@ This page documents the Fast Gradient Sign Method.
 
 ## FGSM Implementation
 
-```@autodocs
-Modules = [AdversarialAttacks.FastGradientSignMethod]
-Order = [:type, :function]
+```@docs
+FGSM
+AdversarialAttacks.craft(::Any, ::DifferentiableModel, ::FGSM)
+AdversarialAttacks.hyperparameters(::FGSM)
 ```

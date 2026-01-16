@@ -1,5 +1,3 @@
-module Model
-
 """
 Abstract base for all models that can be attacked.
 
@@ -32,7 +30,7 @@ Return a human-readable name for the model.
 # Examples
     name(FluxModel(chain)) # "FluxModel"
 """
-name(m::AbstractModel) = string(typeof(m))
+name(m::AbstractModel)::String = string(typeof(m))
 
 """
     predict(m::AbstractModel, x) -> y
@@ -93,7 +91,3 @@ White-box attacks may use this; black-box models can ignore it.
 """
 params(m::AbstractModel) =
   error("params not implemented for $(typeof(m))")
-
-export AbstractModel, DifferentiableModel, NonDifferentiableModel, predict, loss, params
-
-end

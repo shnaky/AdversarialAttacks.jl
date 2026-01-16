@@ -1,10 +1,3 @@
-module Interface
-
-export attack, benchmark
-
-using ..Attack: AbstractAttack, WhiteBoxAttack, BlackBoxAttack, craft
-using ..Model: AbstractModel, DifferentiableModel, NonDifferentiableModel
-
 """
     attack(atk, model, sample; kwargs...)
 
@@ -64,5 +57,3 @@ function benchmark(atk::AbstractAttack, model::AbstractModel, dataset, metric::F
     labels = [y for (_, y) in dataset]
     return metric(model, adv_samples, labels)
 end
-
-end # module
