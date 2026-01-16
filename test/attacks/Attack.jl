@@ -2,26 +2,30 @@ using Test
 using AdversarialAttacks
 
 @testset "Attack abstractions" begin
-    @test isabstracttype(AbstractAttack)
-    @test isabstracttype(WhiteBoxAttack)
-    @test isabstracttype(BlackBoxAttack)
-    @test WhiteBoxAttack <: AbstractAttack
-    @test BlackBoxAttack <: AbstractAttack
-
-    struct DummyWB <: WhiteBoxAttack
-        params::Dict{String,Any}
+    @testset "Abstract types" begin
+        @test isabstracttype(AbstractAttack)
+        @test isabstracttype(WhiteBoxAttack)
+        @test isabstracttype(BlackBoxAttack)
+        @test WhiteBoxAttack <: AbstractAttack
+        @test BlackBoxAttack <: AbstractAttack
     end
 
-    AdversarialAttacks.name(::DummyWB) = "dummy-wb"
-    AdversarialAttacks.hyperparameters(d::DummyWB) = d.params
-    AdversarialAttacks.craft(sample, model, ::DummyWB; kwargs...) = (:adv, sample, model, kwargs)
+    @testset "DummyAttack implementation" begin
+        struct DummyAttack <: AbstractAttack
+            params::Dict{String,Any}
+        end
 
-    dummy = DummyWB(Dict("eps" => 0.1))
-    @test name(dummy) == "dummy-wb"
-    @test hyperparameters(dummy) == Dict("eps" => 0.1)
-    adv, sample, model, kwargs = craft(:x, :m, dummy; steps=5)
-    @test adv == :adv
-    @test sample == :x
-    @test model == :m
-    @test (; kwargs...) == (; steps=5)
+        AdversarialAttacks.name(::DummyAttack) = "DummyAttack"
+        AdversarialAttacks.hyperparameters(d::DummyAttack) = d.params
+        AdversarialAttacks.craft(sample, model, ::DummyAttack; kwargs...) = (:adv, sample, model, kwargs)
+
+        dummy = DummyAttack(Dict("eps" => 0.1))
+        @test name(dummy) == "DummyAttack"
+        @test hyperparameters(dummy) == Dict("eps" => 0.1)
+        adv, sample, model, kwargs = craft(:x, :m, dummy; steps=5)
+        @test adv == :adv
+        @test sample == :x
+        @test model == :m
+        @test (; kwargs...) == (; steps=5)
+    end
 end
