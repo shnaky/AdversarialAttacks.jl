@@ -10,6 +10,15 @@ using AdversarialAttacks
         @test BlackBoxAttack <: AbstractAttack
     end
 
+    @testset "Default name() implementation" begin
+        struct TestAttackDefaultName <: AbstractAttack end
+
+        m = TestAttackDefaultName()
+
+        @test AdversarialAttacks.name(m) == "TestAttackDefaultName"
+        @test AdversarialAttacks.name(m) == string(typeof(m))
+    end
+
     @testset "DummyAttack implementation" begin
         struct DummyAttack <: AbstractAttack
             params::Dict{String,Any}
