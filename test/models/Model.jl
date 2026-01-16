@@ -10,6 +10,19 @@ using AdversarialAttacks
         @test NonDifferentiableModel <: AbstractModel
     end
 
+    @testset "Default name() implementation" begin
+        struct TestModelDefaultName <: AbstractModel end
+
+        AdversarialAttacks.predict(::TestModelDefaultName, x) = x
+        AdversarialAttacks.loss(::TestModelDefaultName, x, y) = 0.0
+        AdversarialAttacks.params(::TestModelDefaultName) = ()
+
+        m = TestModelDefaultName()
+
+        @test AdversarialAttacks.name(m) == "TestModelDefaultName"
+        @test AdversarialAttacks.name(m) == string(typeof(m))
+    end
+
     @testset "DummyModel implementation" begin
         struct DummyModel <: AbstractModel
             factor::Int
