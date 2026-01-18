@@ -39,7 +39,6 @@ function evaluate_robustness(
     test_data;
     num_samples::Int=100
 )
-    # TODO: Implementation
     if num_samples <= 0
         throw(ArgumentError("num_samples must be positive"))
     end
@@ -49,21 +48,33 @@ function evaluate_robustness(
 
     println("Testing $n_test samples...")
 
-    # TODO: evaluate attacks and compute success rate
     num_successful = 0
 
     for i in 1:n_test
         sample = test_data[i]
 
-        # TODO: run attack on sample
         println("  Sample $i/$n_test")
 
-        # temp: 50% success rate
-        if rand() > 0.5
-            num_successful += 1
+        try
+            original_pred = predict(model, sample.data)
+            original_label = argmax(original_pred)
+
+            adversarial_data = craft(sample, model, attack)
+
+            adv_pred = predict(model, adversarial_data)
+            adv_label = argmax(adv_pred)
+
+            if original_label != adv_label
+                num_successful += 1
+            end
+        catch e
+            @warn "Failed to evaluate sample $i" exception = e
+        end
+
+        if i % 10 == 0 || i == n_test
+            println("  Processed $i/$n_test samples...")
         end
     end
-
 
     # Placeholder values
     success_rate = num_successful / n_test

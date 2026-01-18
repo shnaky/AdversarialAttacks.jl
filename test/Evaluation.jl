@@ -1,16 +1,18 @@
 using Test
 using AdversarialAttacks
+using Flux
 
 @testset "Evaluation Suite" begin
+    model_flux = Chain(Dense(4, 3), softmax)
+    model = FluxModel(model_flux)
+
+    test_data = [
+        (data=randn(Float32, 4), label=Flux.onehot(rand(1:3), 1:3))
+        for _ in 1:10
+    ]
+    attack = FGSM(epsilon=0.1)
 
     @testset "evaluate_robustness - basic functionality" begin
-
-        test_data = [(data=i, label=i) for i in 1:10]
-
-        # Use nil objects since actual implementation is not ready yet
-        model = nothing
-        attack = nothing
-
         result = evaluate_robustness(model, attack, test_data; num_samples=5)
 
         @test haskey(result, "success_rate")
@@ -33,20 +35,16 @@ using AdversarialAttacks
 
 
     @testset "evaluate_robustness - num_samples handling" begin
-        test_data = [(data=i, label=i) for i in 1:10]
-
         # Should use all available samples (10) instead of requested (20)
-        result = evaluate_robustness(nothing, nothing, test_data; num_samples=20)
+        result = evaluate_robustness(model, attack, test_data; num_samples=20)
         @test result["num_samples"] == 10
 
         # Should only process the requested number of samples
-        result = evaluate_robustness(nothing, nothing, test_data; num_samples=3)
+        result = evaluate_robustness(model, attack, test_data; num_samples=3)
         @test result["num_samples"] == 3
     end
 
     @testset "evaluate_robustness - edge cases" begin
-        test_data = [(data=i, label=i) for i in 1:10]
-
         @test_throws ArgumentError evaluate_robustness(
             nothing, nothing, test_data; num_samples=0
         )
@@ -55,5 +53,4 @@ using AdversarialAttacks
             nothing, nothing, test_data; num_samples=-1
         )
     end
-
 end
