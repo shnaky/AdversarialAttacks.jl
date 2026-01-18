@@ -23,3 +23,25 @@ using Flux
     θ = params(model)
     @test length(θ) > 0               # has trainable parameters
 end
+
+@testset "Pretrained CIFAR-10 model" begin
+    model = load_pretrained_c10_model()
+
+    @test name(model) == "FluxModel"
+    @test model isa FluxModel
+    @test model.model isa Flux.Chain
+
+    # Batch of 8 CIFAR-10 images (3x32x32)
+    x = rand(Float32, 32, 32, 3, 8)
+    # One-hot labels for 10-class CIFAR-10
+    y = Flux.onehotbatch(rand(1:10, 8), 1:10)
+
+    ŷ = predict(model, x)
+    @test size(ŷ) == size(y)          # output shape matches labels
+
+    ℓ = loss(model, x, y)
+    @test ℓ isa Real                  # loss is a scalar
+
+    θ = params(model)
+    @test length(θ) > 0               # has trainable parameters
+end
