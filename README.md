@@ -34,7 +34,7 @@ julia> AdversarialAttacks.params(::MyModel) = Flux.Params([])
 
 julia> model = MyModel()
 
-julia> fgsm = FGSM(Dict("epsilon"=>0.3))
+julia> fgsm = FGSM(; epsilon=0.3)
 
 julia> sample = (data=rand(Float32, 10, 1), label=1)
 
@@ -53,7 +53,7 @@ julia> m = Chain(Dense(2, 2, tanh), Dense(2, 2))
 
 julia> model = FluxModel(m)
 
-julia> fgsm = FGSM(Dict("epsilon"=>0.3))
+julia> fgsm = FGSM(; epsilon=0.3)
 
 julia> sample = (data=rand(Float32, 2, 1), label=Flux.onehot(1, 1:2) )
 
@@ -72,7 +72,7 @@ julia> m = Chain(Dense(4, 8, relu), Dense(8, 2))
 
 julia> model = FluxModel(m)
 
-julia> fgsm = FGSM(Dict("epsilon"=>0.3))
+julia> fgsm = FGSM(; epsilon=0.3)
 
 julia> X = rand(Float32, 4, 3)  # 3 samples, 4 features each
 
