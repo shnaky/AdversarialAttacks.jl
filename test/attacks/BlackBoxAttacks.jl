@@ -22,13 +22,19 @@ AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
     @test BasicRandomSearch <: BlackBoxAttack
     @test BasicRandomSearch <: AbstractAttack
 
-    sample = [1.0, 2.0, 3.0]
-    model = DummyBlackBoxModel()
+    # Test for FluxModel
+    sample = (data=Float32[1.0, 2.0, 3.0, 7.0], label=Flux.onehot(1, 1:2))
+    model = FluxModel(Chain(Dense(4 => 2)))
+    x_copy = copy(sample.data)
 
     result = craft(sample, model, attack_with_params)
-    @test result == sample
-    @test size(result) == size(sample)
-    @test eltype(result) == eltype(sample)
+    @test result isa Vector
+    @test size(result) == size(sample.data)
+    @test eltype(result) == eltype(sample.data)
+    @test x_copy == sample.data  
+    @test result != sample.data #as we know epsilon is larger 0 here
+    # TODO: Add tests for different models
+
 
 end
 
