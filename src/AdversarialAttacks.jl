@@ -1,5 +1,7 @@
 module AdversarialAttacks
 
+using Random 
+
 include("attacks/Attack.jl")
 include("models/Model.jl")
 include("models/FluxModels.jl")
