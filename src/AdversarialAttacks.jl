@@ -6,6 +6,7 @@ include("models/FluxModels.jl")
 include("attacks/BlackBoxAttacks.jl")
 include("attacks/WhiteBox.jl")
 include("Interface.jl")
+include("evaluation.jl")
 
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
@@ -20,6 +21,9 @@ export craft, name, hyperparameters
 
 # Export model interface functions
 export predict, loss, params
+
+# Export evaluation functions
+export evaluate_robustness
 
 # Export high-level interface
 export attack, benchmark
