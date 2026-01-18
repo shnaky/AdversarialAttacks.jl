@@ -6,5 +6,3 @@
 /docs/build/
 /docs/src/index.md
 /.vscode
-*.bson
-trained_model.bson
