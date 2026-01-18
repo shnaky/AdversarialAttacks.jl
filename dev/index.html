@@ -11,7 +11,7 @@ julia&gt; AdversarialAttacks.params(::MyModel) = Flux.Params([])
 
 julia&gt; model = MyModel()
 
-julia&gt; fgsm = FGSM(Dict(&quot;epsilon&quot;=&gt;0.3))
+julia&gt; fgsm = FGSM(; epsilon=0.3)
 
 julia&gt; sample = (data=rand(Float32, 10, 1), label=1)
 
@@ -23,7 +23,7 @@ julia&gt; m = Chain(Dense(2, 2, tanh), Dense(2, 2))
 
 julia&gt; model = FluxModel(m)
 
-julia&gt; fgsm = FGSM(Dict(&quot;epsilon&quot;=&gt;0.3))
+julia&gt; fgsm = FGSM(; epsilon=0.3)
 
 julia&gt; sample = (data=rand(Float32, 2, 1), label=Flux.onehot(1, 1:2) )
 
@@ -35,7 +35,7 @@ julia&gt; m = Chain(Dense(4, 8, relu), Dense(8, 2))
 
 julia&gt; model = FluxModel(m)
 
-julia&gt; fgsm = FGSM(Dict(&quot;epsilon&quot;=&gt;0.3))
+julia&gt; fgsm = FGSM(; epsilon=0.3)
 
 julia&gt; X = rand(Float32, 4, 3)  # 3 samples, 4 features each
 
@@ -43,4 +43,4 @@ julia&gt; Y = Flux.onehotbatch([1, 2, 1], 1:2)  # labels for each sample
 
 julia&gt; tensor = (data=X, label=Y)
 
-julia&gt; adv_samples = attack(fgsm, model, tensor)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href>Home »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 16 January 2026 19:47">Friday 16 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+julia&gt; adv_samples = attack(fgsm, model, tensor)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href>Home »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Sunday 18 January 2026 13:37">Sunday 18 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
