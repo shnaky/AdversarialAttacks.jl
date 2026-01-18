@@ -6,7 +6,7 @@ include("models/FluxModels.jl")
 include("attacks/BlackBoxAttacks.jl")
 include("attacks/WhiteBox.jl")
 include("Interface.jl")
-include("evaluation.jl")
+include("Evaluation.jl")
 
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
