@@ -9,8 +9,8 @@ Subtype of BlackBoxAttack. Can be used to create an adversarial example in the b
 struct BasicRandomSearch <: BlackBoxAttack
     parameters::Dict{String,Any}
 
-    function BasicRandomSearch(parameters::Dict{String,Any}=Dict{String,Any}())
-        new(parameters)
+    function BasicRandomSearch(parameters::Dict=Dict{String,Any}())
+        new(Dict{String,Any}(parameters))
     end
 end
 
@@ -26,7 +26,7 @@ Subtype of BlackBoxAttack. Can be used to create an adversarial example in the b
 struct SquareAttack <: BlackBoxAttack
     parameters::Dict{String,Any}
 
-    function SquareAttack(parameters::Dict{String,Any}=Dict{String,Any}())
+    function SquareAttack(parameters::Dict=Dict{String,Any}())
         new(parameters)
     end
 end
@@ -35,7 +35,7 @@ end
 """
     craft(sample, model, attack::BasicRandomSearch)
 
-Performs a black-box adversarial attack on the given model using the provided sample using Basic Random Search.
+Performs a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
 # Arguments
 - sample: The input sample to be changed.
@@ -46,7 +46,35 @@ Performs a black-box adversarial attack on the given model using the provided sa
 - Adversarial example (same type and shape as `sample`).
 """
 function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
-    return sample
+    x = sample.data
+    y = sample.label
+    ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
+    ndims = length(x)
+    perm = randperm(ndims)
+    pred = model.model(x)
+    last_prob = pred[y]
+    #println("Initial probability of true class: ", pred)
+    for i in 1:ndims
+        diff = zeros(eltype(x), ndims)
+        diff[perm[i]] = ε
+        δ = reshape(diff, size(x))
+        
+        x_left = clamp.(x .- δ, 0, 1)
+        left_prob = model.model(x_left)[y]
+        if left_prob < last_prob
+            last_prob = left_prob
+            x = x_left
+        else
+            x_right = clamp.(x .+ δ, 0, 1)
+            right_prob = model.model(x_right)[y]
+            #print("Iteration $i: Left prob = $left_prob, Right prob = ")
+            if right_prob < last_prob
+                last_prob = right_prob
+                x = x_right
+            end
+        end
+    end
+    return x
 end
 
 """
