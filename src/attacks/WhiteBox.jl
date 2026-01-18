@@ -1,21 +1,19 @@
 using Flux: gradient
 
 """
-    FGSM(parameters::Dict=Dict{String,Any}())
+    FGSM(; epsilon=0.1)
 
 A struct that can be used to create a white-box adversarial attack of type Fast Gradient Sign Method.
-Subtypes of `WhiteBoxAttack`.
+Subtype of `WhiteBoxAttack`.
 
 # Arguments
-- `parameters::Dict`: A dictionary of parameters for the attack. Defaults to an empty dictionary.
+- `epsilon`: Step size used to scale the sign of the gradient. Defaults to `0.1`.
 """
-struct FGSM <: WhiteBoxAttack
-    parameters::Dict{String,Any}
-
-    function FGSM(parameters::Dict=Dict{String,Any}())
-        new(Dict{String,Any}(parameters))
-    end
+struct FGSM{T<:Real} <: WhiteBoxAttack
+    epsilon::T
 end
+
+FGSM(; epsilon::Real = 0.1) = FGSM(epsilon)
 
 """
     hyperparameters(atk::FGSM) -> Dict{String,Any}
@@ -25,7 +23,7 @@ Return hyperparameters for an FGSM attack.
 # Returns
 - `Dict{String,Any}`: Dictionary containing attack hyperparameters (e.g., epsilon).
 """
-hyperparameters(atk::FGSM)::Dict{String,Any} = atk.parameters
+hyperparameters(atk::FGSM)::Dict{String,Any} = Dict("epsilon" => atk.epsilon)
 
 """
     craft(sample, model, attack::FGSM)
@@ -33,7 +31,7 @@ hyperparameters(atk::FGSM)::Dict{String,Any} = atk.parameters
 Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the given `model` using the provided `sample`.
 
 # Arguments
-- `sample`: The input sample to be changed: tuple (data, label).
+- `sample`: Input sample as a named tuple with `data` and `label`.
 - `model::DifferentiableModel`: The machine learning (deep learning) model to be attacked.
 - `attack::FGSM`: An instance of the `FGSM`.
 
@@ -43,9 +41,9 @@ Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the 
 function craft(sample, model::DifferentiableModel, attack::FGSM)
     x = sample.data
     y = sample.label
-    ε = convert(eltype(x), get(attack.parameters, "epsilon", 0.1))
+    ε = convert(eltype(x), attack.epsilon)
     grads = gradient(xx -> loss(model, xx, y), x)[1]
-    perturbation = ε * sign.(grads)
+    perturbation = ε .* sign.(grads)
     adversarial_example = x .+ perturbation
     return adversarial_example
 end
