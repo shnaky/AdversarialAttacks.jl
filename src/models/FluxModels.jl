@@ -87,3 +87,62 @@ end
 ```
 """
 params(m::FluxModel) = Flux.trainable(m.model)
+
+
+"""
+    load_pretrained_c10_model() -> FluxModel
+
+Loads the FluxModel state of a model trained on CIFAR-10 from Github and initializes it as a FluxModel.
+
+# Returns
+- `FluxModel`: FluxModel instance with pretrained weights for CIFAR-10 classification.
+"""
+function load_pretrained_c10_model()
+
+    url = "https://raw.githubusercontent.com/shnaky/AdversarialAttacks.jl/46-find-a-pretrained-model-for-cifar10-or-build-one/model_cifar10.bson"
+
+    model = Chain(
+
+        # Block 1
+        Conv((3,3), 3 => 96, pad=1),
+        relu,
+        Dropout(0.2),
+
+        Conv((3,3), 96 => 96, pad=1),
+        relu,
+
+        Conv((3,3), 96 => 96, pad=1),
+        relu,
+
+        MaxPool((3,3), stride=2),
+        Dropout(0.5),
+
+        # Block 2
+        Conv((3,3), 96 => 192, pad=1),
+        relu,
+
+        Conv((3,3), 192 => 192, pad=0),   
+        relu,
+
+        Conv((3,3), 192 => 192, pad=1),
+        relu,
+
+        MaxPool((3,3), stride=2),
+        Dropout(0.5),
+
+        # Block 3
+        Conv((3,3), 192 => 192, pad=1),
+        relu,
+
+        Conv((1,1), 192 => 192, pad=0),
+        relu,
+
+        Conv((1,1), 192 => 10, pad=0),
+
+        GlobalMeanPool(),
+        Flux.flatten
+    )
+    @load download(url, "model_cifar10_downloaded.bson") model_state
+    Flux.loadmodel!(model, model_state)
+    return FluxModel(model)
+end

@@ -1,5 +1,9 @@
 module AdversarialAttacks
 
+using Random: randperm
+using Downloads: download
+using BSON: @load
+
 include("attacks/Attack.jl")
 include("models/Model.jl")
 include("models/FluxModels.jl")
@@ -14,7 +18,7 @@ export FGSM, BasicRandomSearch, SquareAttack
 
 # Export model types
 export AbstractModel, DifferentiableModel, NonDifferentiableModel
-export FluxModel
+export FluxModel, load_pretrained_c10_model
 
 # Export attack interface functions
 export craft, name, hyperparameters
