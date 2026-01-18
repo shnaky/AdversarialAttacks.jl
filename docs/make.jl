@@ -5,10 +5,10 @@ using Documenter
 cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"); force=true)
 
 DocMeta.setdocmeta!(
-  AdversarialAttacks,
-  :DocTestSetup,
-  :(using AdversarialAttacks);
-  recursive=true,
+    AdversarialAttacks,
+    :DocTestSetup,
+    :(using AdversarialAttacks);
+    recursive=true,
 )
 
 makedocs(;
@@ -23,12 +23,13 @@ makedocs(;
     pages=[
         "Getting Started" => "index.md",
         "Developer Documentation" => [
-          "Home" => "index.md",
-          "Attack Interface" => "attack_interface.md",
-          "Model Interface" => "model_interface.md",
-          "Fast Gradient Sign Method Attack" => "fgsm.md",
-          "Black Box Attacks" => "blackbox_subtypes.md",
-          "Interface" => "interface.md",
+            "Home" => "index.md",
+            "Attack Interface" => "attack_interface.md",
+            "Model Interface" => "model_interface.md",
+            "Fast Gradient Sign Method Attack" => "fgsm.md",
+            "Black Box Attacks" => "blackbox_subtypes.md",
+            "Robustness Evaluation Suite" => "evaluation.md",
+            "Interface" => "interface.md",
         ],
     ],
 )
