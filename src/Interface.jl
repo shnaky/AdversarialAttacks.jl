@@ -20,6 +20,10 @@ function attack(atk::WhiteBoxAttack, model::DifferentiableModel, sample::NamedTu
     craft(sample, model, atk; kwargs...)
 end
 
+function attack(atk::BlackBoxAttack, model::DifferentiableModel, sample::NamedTuple; kwargs...)
+    craft(sample, model, atk; kwargs...)
+end
+
 function attack(atk::BlackBoxAttack, model::AbstractModel, sample::AbstractArray{<:Number}; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
