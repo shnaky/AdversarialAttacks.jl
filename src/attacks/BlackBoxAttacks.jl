@@ -34,21 +34,6 @@ struct SquareAttack <: BlackBoxAttack
     end
 end
 
-"""
-    _basic_random_search_core(x0, true_label, predict_proba, ε)
-
-Core Basic Random Search loop shared across different model types.
-
-- `x0`: initial input (array, any shape)
-- `true_label`: integer class index (1-based)
-- `predict_proba`: function `predict_proba(x_flat)::AbstractVector`
-                   that returns a probability vector over classes
-                   for a single flattened sample
-- `ε`: step size for coordinate-wise perturbations
-
-# Returns
-- Adversarial example reshaped to original input shape
-"""
 function _basic_random_search_core(x0, true_label::Int, predict_proba::Function, ε)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
@@ -121,18 +106,6 @@ function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     return _basic_random_search_core(x, true_label, predict_proba, ε)
 end
 
-"""
-    dt_predict_proba(model::DecisionTreeClassifier, x_flat::AbstractArray)
-
-Helper function to get probability predictions from DecisionTreeClassifier.
-
-# Arguments
-- `model`: Trained DecisionTreeClassifier
-- `x_flat`: Flattened input features (Array)
-
-# Returns
-- Probability vector for the single sample
-"""
 function dt_predict_proba(model::DecisionTreeClassifier, x_flat::AbstractArray)
     x_vec = reshape(Float64.(x_flat), 1, :)
     probs_list = DecisionTree.predict_proba(model, x_vec)
