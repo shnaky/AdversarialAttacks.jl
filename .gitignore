@@ -6,3 +6,5 @@
 /docs/build/
 /docs/src/index.md
 /.vscode
+.ipynb_checkpoints
+*.ipynb
