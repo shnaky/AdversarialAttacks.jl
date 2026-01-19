@@ -48,9 +48,20 @@ Performs a black-box adversarial attack on the given model using the provided sa
 function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
+
     ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
+    bounds = get(attack.parameters, "bounds", nothing)
+
     ndims = length(x)
     perm = randperm(ndims)
+
+    if bounds === nothing
+        lb, ub = zeros(eltype(x), ndims), ones(eltype(x), ndims)
+    else
+        lb = [b[1] for b in bounds]
+        ub = [b[2] for b in bounds]
+    end
+
     pred = model.model(x)
     last_prob = pred[y]
     #println("Initial probability of true class: ", pred)
@@ -58,14 +69,14 @@ function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
         diff = zeros(eltype(x), ndims)
         diff[perm[i]] = ε
         δ = reshape(diff, size(x))
-        
-        x_left = clamp.(x .- δ, 0, 1)
+
+        x_left = clamp.(x .- δ, lb, ub)
         left_prob = model.model(x_left)[y]
         if left_prob < last_prob
             last_prob = left_prob
             x = x_left
         else
-            x_right = clamp.(x .+ δ, 0, 1)
+            x_right = clamp.(x .+ δ, lb, ub)
             right_prob = model.model(x_right)[y]
             #print("Iteration $i: Left prob = $left_prob, Right prob = ")
             if right_prob < last_prob

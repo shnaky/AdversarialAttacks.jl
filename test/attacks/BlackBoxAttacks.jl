@@ -101,6 +101,54 @@ end
     @test adv_const == sample_const.data      # no change if prob is constant
 end
 
+@testset "Custom Bounds Support" begin
+    Random.seed!(1234)
+
+    # Iris-like bounds: per-feature [lb, ub]
+    iris_bounds = [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
+
+    # Test 1: Bounds parsing from parameters
+    attack_bounds = BasicRandomSearch(Dict("epsilon" => 0.1f0, "bounds" => iris_bounds))
+    @test haskey(attack_bounds.parameters, "bounds")
+    @test attack_bounds.parameters["bounds"] == iris_bounds
+
+    # Test 2: Default [0,1] bounds when nothing provided
+    attack_default = BasicRandomSearch(Dict("epsilon" => 0.1f0))
+    @test !haskey(attack_default.parameters, "bounds")
+
+    # Test 3: SumModel with custom bounds - left direction clamped correctly
+    struct BoundedSumModel <: AbstractModel end
+    AdversarialAttacks.predict(::BoundedSumModel, x) = x
+    function Base.getproperty(::BoundedSumModel, s::Symbol)
+        s === :model && return x -> Float32[sum(x), 0.0f0]  # minimize sum(x)
+        return getfield(BoundedSumModel, s)
+    end
+
+    # Sample near lower bound, expect clamping
+    sample_near_lb = (data=Float32[4.4, 2.1, 1.1, 0.2], label=1)  # just above iris_bounds lb
+    attack_near_lb = BasicRandomSearch(Dict("epsilon" => 0.2f0, "bounds" => iris_bounds))
+    adv_near_lb = craft(sample_near_lb, BoundedSumModel(), attack_near_lb)
+
+    @test all(adv_near_lb .>= [4.3, 2.0, 1.0, 0.1])     # >= lb
+    @test all(adv_near_lb .<= [7.9, 4.4, 6.9, 2.5])     # <= ub  
+    @test any(adv_near_lb .< sample_near_lb.data)     # decreased (success)
+
+    # Test 4: No bounds → [0,1] default (image compatibility)
+    attack_no_bounds = BasicRandomSearch(Dict("epsilon" => 0.1f0))
+    sample_image = (data=Float32[0.2, 0.8, 0.3, 0.9], label=1)
+    adv_image = craft(sample_image, BoundedSumModel(), attack_no_bounds)
+    @test all(0 .<= adv_image .<= 1)                  # [0,1] respected
+    @test any(adv_image .< sample_image.data)         # perturbation applied
+
+    # Test 5: Bounds length validation (should error on mismatch)
+    invalid_bounds = [(0.0f0, 1.0f0), (0.0f0, 1.0f0), (0.0f0, 1.0f0)]  # 3 bounds for 4 features
+    @test_throws DimensionMismatch craft(
+        sample_near_lb,
+        BoundedSumModel(),
+        BasicRandomSearch(Dict("epsilon" => 0.1f0, "bounds" => invalid_bounds)),
+    )
+end
+
 @testset "SquareAttack Struct" begin
 
     # Test default constructor
