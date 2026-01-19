@@ -1,6 +1,6 @@
 module AdversarialAttacks
 
-using Random 
+using Random
 
 include("attacks/Attack.jl")
 include("models/Model.jl")

@@ -1,3 +1,6 @@
+using OneHotArrays: OneHotVector
+using DecisionTree
+
 """
     BasicRandomSearch(parameters::Dict=Dict{String,Any}())
 
@@ -31,9 +34,63 @@ struct SquareAttack <: BlackBoxAttack
     end
 end
 
+"""
+    _basic_random_search_core(x0, true_label, predict_proba, ε)
+
+Core Basic Random Search loop shared across different model types.
+
+- `x0`: initial input (array, any shape)
+- `true_label`: integer class index (1-based)
+- `predict_proba`: function `predict_proba(x_flat)::AbstractVector`
+                   that returns a probability vector over classes
+                   for a single flattened sample
+- `ε`: step size for coordinate-wise perturbations
+
+# Returns
+- Adversarial example reshaped to original input shape
+"""
+function _basic_random_search_core(x0, true_label::Int, predict_proba::Function, ε)
+    # Work in flattened space for coordinate-wise updates
+    x_flat = vec(Float32.(x0))
+    ndims = length(x_flat)
+    perm = randperm(ndims)
+
+    # Initial probability of the true class
+    probs = predict_proba(x_flat)
+    last_prob = probs[true_label]
+
+    for i in 1:ndims
+        diff = zeros(eltype(x_flat), ndims)
+        diff[perm[i]] = ε
+
+        # Left direction
+        x_left = clamp.(x_flat .- diff, 0, 1)
+        probs_left = predict_proba(x_left)
+        left_prob = probs_left[true_label]
+
+        if left_prob < last_prob
+            last_prob = left_prob
+            x_flat = x_left
+        else
+            # Right direction
+            x_right = clamp.(x_flat .+ diff, 0, 1)
+            probs_right = predict_proba(x_right)
+            right_prob = probs_right[true_label]
+
+            if right_prob < last_prob
+                last_prob = right_prob
+                x_flat = x_right
+            end
+        end
+    end
+
+    # Reshape back to original shape of x0
+    return reshape(x_flat, size(x0))
+end
+
 
 """
-    craft(sample, model, attack::BasicRandomSearch)
+    craft(sample, model::AbstractModel, attack::BasicRandomSearch)
 
 Performs a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
@@ -43,38 +100,71 @@ Performs a black-box adversarial attack on the given model using the provided sa
 - attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
 
 # Returns
-- Adversarial example (same type and shape as `sample`).
+- Adversarial example (same type and shape as `sample.data`).
 """
 function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
+
     ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
-    ndims = length(x)
-    perm = randperm(ndims)
-    pred = model.model(x)
-    last_prob = pred[y]
-    #println("Initial probability of true class: ", pred)
-    for i in 1:ndims
-        diff = zeros(eltype(x), ndims)
-        diff[perm[i]] = ε
-        δ = reshape(diff, size(x))
-        
-        x_left = clamp.(x .- δ, 0, 1)
-        left_prob = model.model(x_left)[y]
-        if left_prob < last_prob
-            last_prob = left_prob
-            x = x_left
-        else
-            x_right = clamp.(x .+ δ, 0, 1)
-            right_prob = model.model(x_right)[y]
-            #print("Iteration $i: Left prob = $left_prob, Right prob = ")
-            if right_prob < last_prob
-                last_prob = right_prob
-                x = x_right
-            end
-        end
+
+    true_label = isa(y, OneHotVector) ? Flux.onecold(y) : Int(y)
+
+    # Define a closure that matches the shared interface: x_flat → prob vector
+    predict_proba = function (x_flat)
+        # reshape back to original shape before passing to model
+        x_reshaped = reshape(x_flat, size(x))
+        probs = model.model(x_reshaped)
+        return probs
     end
-    return x
+
+    return _basic_random_search_core(x, true_label, predict_proba, ε)
+end
+
+"""
+    dt_predict_proba(model::DecisionTreeClassifier, x_flat::AbstractArray)
+
+Helper function to get probability predictions from DecisionTreeClassifier.
+
+# Arguments
+- `model`: Trained DecisionTreeClassifier
+- `x_flat`: Flattened input features (Array)
+
+# Returns
+- Probability vector for the single sample
+"""
+function dt_predict_proba(model::DecisionTreeClassifier, x_flat::AbstractArray)
+    x_vec = reshape(Float64.(x_flat), 1, :)
+    probs_list = DecisionTree.predict_proba(model, x_vec)
+    return probs_list
+end
+
+"""
+    craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
+
+Specialized craft function for DecisionTreeClassifier models.
+
+# Arguments
+- `sample`: The input sample to be changed.
+- `model::DecisionTreeClassifier`: DecisionTree model to be attacked.
+- `attack::BasicRandomSearch`: An instance of BasicRandomSearch attack.
+
+# Returns
+- Adversarial example (same type and shape as `sample.data`).
+"""
+function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
+    x = sample.data
+    y = sample.label
+
+    ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
+
+    # Convert one-hot label to integer if needed (1-based)
+    true_label = isa(y, OneHotVector) ? Flux.onecold(y) : Int(y)
+
+    # Closure: x_flat → prob vector
+    predict_proba = x_flat -> dt_predict_proba(model, x_flat)
+
+    return _basic_random_search_core(x, true_label, predict_proba, ε)
 end
 
 """
