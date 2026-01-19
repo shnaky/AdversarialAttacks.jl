@@ -100,7 +100,7 @@ julia> attack = FGSM(epsilon=0.3)
 
 julia> report = evaluate_robustness(model, attack, test_data)
 
-julia> print(report)
+julia> println(report)
 === Robustness Evaluation Report ===
 
 Dataset
