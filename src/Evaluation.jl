@@ -6,6 +6,64 @@
 """
 
 """
+    RobustnessReport
+
+Report on model robustness against an adversarial attack.
+
+# Fields
+- `num_samples::Int`: Total samples evaluated
+- `num_clean_correct::Int`: Samples correctly classified before attack
+- `clean_accuracy::Float64`: Accuracy on clean samples
+- `adv_accuracy::Float64`: Accuracy on adversarial samples
+- `attack_success_rate::Float64`: (ASR) Fraction of successful attacks (on correctly classified samples)
+- `robustness_score::Float64`: 1.0 - attack_success_rate (ASR)
+- `num_successful_attacks::Int`: Number of successful attacks
+
+# Note
+An attack succeeds when the clean prediction is correct but the adversarial prediction is incorrect.
+"""
+struct RobustnessReport
+    num_samples::Int
+    num_clean_correct::Int
+    clean_accuracy::Float64
+    adv_accuracy::Float64
+    attack_success_rate::Float64
+    robustness_score::Float64
+    num_successful_attacks::Int
+end
+
+function Base.show(io::IO, report::RobustnessReport)
+    println(io, "=== Robustness Evaluation Report ===")
+
+    println(io, "\nDataset")
+    println(io, "  Total samples evaluated        : ", report.num_samples)
+    println(io, "  Clean-correct samples          : ",
+            report.num_clean_correct, " / ", report.num_samples)
+
+    println(io, "\nClean Performance")
+    println(io, "  Clean accuracy                 : ",
+            round(report.clean_accuracy * 100, digits=2), "%")
+
+    println(io, "\nAdversarial Performance")
+    println(io, "  Adversarial accuracy           : ",
+            round(report.adv_accuracy * 100, digits=2), "%")
+
+    println(io, "\nAttack Effectiveness")
+    println(io, "  Successful attacks             : ",
+            report.num_successful_attacks, " / ", report.num_clean_correct)
+    println(io, "  Attack success rate (ASR)      : ",
+            round(report.attack_success_rate * 100, digits=2), "%")
+    println(io, "  Robustness score (1 - ASR)     : ",
+            round(report.robustness_score * 100, digits=2), "%")
+
+    println(io, "\nNotes")
+    println(io, "  • Attack success is counted only when:")
+    println(io, "    - the clean prediction is correct")
+    println(io, "    - the adversarial prediction is incorrect")
+    println(io, "===================================")
+end
+
+"""
     evaluate_robustness(model, attack, test_data; num_samples=100)
 
 Evaluate model robustness by running attack on multiple samples.
@@ -18,19 +76,12 @@ Evaluate model robustness by running attack on multiple samples.
   uses all available samples.
 
 # Returns
-- `Dict{String,Any}`: Dictionary containing:
-    - `"success_rate"`: Fraction of successful attacks (0.0-1.0)
-    - `"robustness_score"`: 1.0 - success_rate
-    - `"num_samples"`: Number of samples tested
-    - `"num_successful_attacks"`: Count of successful attacks
-
-# Throws
-    - `ArgumentError`: If `num_samples` is zero or negative
+- `RobustnessReport`: Report containing accuracy, attack success rate, and robustness metrics
 
 # Example
 ```julia
-results = evaluate_robustness(model, attack, test_data; num_samples=50)
-println("Model robustness: ", results["robustness_score"])
+report = evaluate_robustness(model, FGSM(ε=0.1), test_data, num_samples=50)
+print(report)
 ```
 """
 function evaluate_robustness(
@@ -48,24 +99,34 @@ function evaluate_robustness(
 
     println("Testing $n_test samples...")
 
-    num_successful = 0
+    # aggregators
+    num_clean_correct = 0
+    num_adv_correct = 0
+    num_successful_attacks = 0
 
     for i in 1:n_test
         sample = test_data[i]
+        true_label = argmax(sample.label)
 
         println("  Sample $i/$n_test")
 
         try
-            original_pred = predict(model, sample.data)
-            original_label = argmax(original_pred)
+            # clean output
+            clean_pred = predict(model, sample.data)
+            clean_label = argmax(clean_pred)
+            is_clean_correct = (clean_label == true_label)
+            num_clean_correct += is_clean_correct
 
-            adversarial_data = craft(sample, model, attack)
-
-            adv_pred = predict(model, adversarial_data)
+            # adverserial output
+            adv_data = craft(sample, model, attack)
+            adv_pred = predict(model, adv_data)
             adv_label = argmax(adv_pred)
+            is_adv_correct = (adv_label == true_label)
+            num_adv_correct += is_adv_correct
 
-            if original_label != adv_label
-                num_successful += 1
+            # successful attack condition (a flip happened in prediction)
+            if is_clean_correct && !is_adv_correct
+                num_successful_attacks += 1
             end
         catch e
             @warn "Failed to evaluate sample $i" exception = e
@@ -76,18 +137,22 @@ function evaluate_robustness(
         end
     end
 
-    # Placeholder values
-    success_rate = num_successful / n_test
-    robustness_score = 1.0 - success_rate
-    num_successful_attacks = num_successful
+    # Metrics
+    clean_accuracy = num_clean_correct / n_test
+    adv_accuracy = num_adv_correct / n_test
+    attack_success_rate = num_successful_attacks / num_clean_correct
+    robustness_score = 1.0 - attack_success_rate
 
     println("Evaluation complete!")
 
-    return Dict{String,Any}(
-        "success_rate" => success_rate,
-        "robustness_score" => robustness_score,
-        "num_samples" => n_test,
-        "num_successful_attacks" => num_successful_attacks
+    return RobustnessReport(
+        n_test,
+        num_clean_correct,
+        clean_accuracy,
+        adv_accuracy,
+        attack_success_rate,
+        robustness_score,
+        num_successful_attacks,
     )
 
 end
