@@ -9,6 +9,8 @@
     RobustnessReport
 
 Report on model robustness against an adversarial attack.
+Printing a `RobustnessReport` (via `println(report)`) displays a nicely formatted summary
+including clean/adversarial accuracy, attack success rate, and robustness score.
 
 # Fields
 - `num_samples::Int`: Total samples evaluated
@@ -31,6 +33,16 @@ struct RobustnessReport
     robustness_score::Float64
     num_successful_attacks::Int
 end
+
+"""
+    Base.show(io::IO, report::RobustnessReport)
+
+Internal method that defines how a `RobustnessReport` is displayed
+when printed. Shows dataset statistics, clean and adversarial accuracy,
+attack success rate, and robustness score in a formatted report.
+
+Typically called automatically by `println(report)`.
+"""
 
 function Base.show(io::IO, report::RobustnessReport)
     println(io, "=== Robustness Evaluation Report ===")
@@ -81,7 +93,7 @@ Evaluate model robustness by running attack on multiple samples.
 # Example
 ```julia
 report = evaluate_robustness(model, FGSM(ε=0.1), test_data, num_samples=50)
-print(report)
+println(report)
 ```
 """
 function evaluate_robustness(
