@@ -9,6 +9,7 @@ AbstractModel
 DifferentiableModel
 NonDifferentiableModel
 FluxModel
+load_pretrained_c10_model()
 AdversarialAttacks.name(::AbstractModel)
 AdversarialAttacks.name(::FluxModel)
 AdversarialAttacks.predict
