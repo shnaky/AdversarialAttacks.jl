@@ -2,6 +2,7 @@ module InterfaceTests
 
 using Test
 using AdversarialAttacks
+using DecisionTree
 
 @testset "Interface module" begin
 
@@ -19,11 +20,11 @@ using AdversarialAttacks
         @test_throws MethodError attack(DummyAttack(), DummyModel(), "asdf")
     end
 
-   @testset "Sample tests" begin
+    @testset "Sample tests" begin
         sample = [1.0, 2.0]
         @test attack(DummyAttack(), DummyModel(), sample) == [2.0, 3.0]
 
-        matrix = ones((2,2))
+        matrix = ones((2, 2))
         @test attack(DummyAttack(), DummyModel(), matrix) == [2.0 2.0; 2.0 2.0]
 
         tensor = ones(2, 2, 3)
@@ -55,6 +56,24 @@ using AdversarialAttacks
         end
         result = benchmark(DummyAttack(), DummyModel(), dataset, metric)
         @test result == 2
+    end
+
+    @testset "DecisionTree dispatch" begin
+        struct DummyBBTree <: BlackBoxAttack end
+
+        AdversarialAttacks.craft(sample, ::DecisionTreeClassifier, ::BlackBoxAttack; kwargs...) = sample .+ 5.0
+
+        # Minimal DecisionTreeClassifier instance
+        X = [0.0 1.0;
+            1.0 0.0]            # 2 samples, 2 features
+        y = [1, 2]               # 1-based labels
+
+        tree = DecisionTreeClassifier(max_depth=2)
+        fit!(tree, X, y)
+
+        raw_sample = [1.0, 2.0]
+        adv_raw = attack(DummyBBTree(), tree, raw_sample)
+        @test adv_raw == raw_sample .+ 5.0
     end
 end
 end # module

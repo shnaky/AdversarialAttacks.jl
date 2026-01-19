@@ -1,3 +1,5 @@
+# using DecisionTree: DecisionTreeClassifier
+
 """
     attack(atk, model, sample; kwargs...)
 
@@ -5,7 +7,10 @@ Apply an adversarial attack to a sample using the given model.
 
 # Arguments
 - `atk::AbstractAttack`: The attack object to apply.
-- `model::AbstractModel`: The model to attack.
+- `model`: The model to attack. This can be:
+    * `AbstractModel` (library-defined model wrapper)
+    * `DifferentiableModel` (for white-box attacks)
+    * Native models such as `DecisionTreeClassifier` (for black-box attacks)
 - `sample::AbstractArray{<:Number}` or `NamedTuple`: Input sample (array) or named tuple with `data` and `label` fields.
 - `kwargs...`: Additional keyword arguments.
 
@@ -14,8 +19,16 @@ Apply an adversarial attack to a sample using the given model.
 
 # Notes
 - `WhiteBoxAttack` requires a `DifferentiableModel`.
-- `BlackBoxAttack` works for any `AbstractModel`.
+- `BlackBoxAttack` works for:
+    * any `AbstractModel`, and
+    * selected native model types (e.g. `DecisionTreeClassifier`) for which
+      a dedicated `craft` / `attack` method is provided.
 """
+function attack(atk::WhiteBoxAttack, model::NonDifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
+    error("$(typeof(atk)) is a white-box attack and requires a DifferentiableModel, " *
+          "but got $(typeof(model)). Consider using a black-box attack instead.")
+end
+
 function attack(atk::WhiteBoxAttack, model::DifferentiableModel, sample::NamedTuple; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
@@ -32,9 +45,8 @@ function attack(atk::BlackBoxAttack, model::AbstractModel, sample::NamedTuple; k
     craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::WhiteBoxAttack, model::NonDifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
-    error("$(typeof(atk)) is a white-box attack and requires a DifferentiableModel, " *
-          "but got $(typeof(model)). Consider using a black-box attack instead.")
+function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::AbstractArray{<:Number}; kwargs...)
+    craft(sample, model, atk; kwargs...)
 end
 
 # for custom attacks that don't subtype WhiteBox/BlackBox
