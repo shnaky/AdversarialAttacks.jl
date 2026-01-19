@@ -61,4 +61,18 @@ using Flux
             nothing, nothing, test_data; num_samples=-1
         )
     end
+
+    @testset "evaluate_robustness - RobustnessReport show" begin
+        # dummy report
+        report = RobustnessReport(1, 0.0, 0.0, 0.0, 1.0, 0, 0)
+
+        # get output
+        io = IOBuffer()
+        show(io, report)
+        output = String(take!(io))
+
+        # check if key phrases appear in the output
+        @test occursin("Robustness Evaluation Report", output)
+        @test occursin("Total samples evaluated", output)
+    end
 end
