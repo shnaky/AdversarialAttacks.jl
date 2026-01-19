@@ -34,11 +34,18 @@ struct SquareAttack <: BlackBoxAttack
     end
 end
 
-function _basic_random_search_core(x0, true_label::Int, predict_proba::Function, ε)
+function _basic_random_search_core(x0, true_label::Int, predict_proba::Function, ε; bounds=nothing)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
     perm = randperm(ndims)
+
+    if bounds === nothing
+        lb, ub = zeros(eltype(x_flat), ndims), ones(eltype(x_flat), ndims)
+    else
+        lb = [b[1] for b in bounds]
+        ub = [b[2] for b in bounds]
+    end
 
     # Initial probability of the true class
     probs = predict_proba(x_flat)
@@ -49,7 +56,7 @@ function _basic_random_search_core(x0, true_label::Int, predict_proba::Function,
         diff[perm[i]] = ε
 
         # Left direction
-        x_left = clamp.(x_flat .- diff, 0, 1)
+        x_left = clamp.(x_flat .- diff, lb, ub)
         probs_left = predict_proba(x_left)
         left_prob = probs_left[true_label]
 
@@ -58,7 +65,7 @@ function _basic_random_search_core(x0, true_label::Int, predict_proba::Function,
             x_flat = x_left
         else
             # Right direction
-            x_right = clamp.(x_flat .+ diff, 0, 1)
+            x_right = clamp.(x_flat .+ diff, lb, ub)
             probs_right = predict_proba(x_right)
             right_prob = probs_right[true_label]
 
@@ -92,6 +99,7 @@ function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     y = sample.label
 
     ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
+    bounds = get(attack.parameters, "bounds", nothing)
 
     true_label = isa(y, OneHotVector) ? Flux.onecold(y) : Int(y)
 
@@ -103,7 +111,7 @@ function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
         return probs
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba, ε)
+    return _basic_random_search_core(x, true_label, predict_proba, ε, bounds=bounds)
 end
 
 function dt_predict_proba(model::DecisionTreeClassifier, x_flat::AbstractArray)
@@ -130,6 +138,7 @@ function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
     y = sample.label
 
     ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
+    bounds = get(attack.parameters, "bounds", nothing)
 
     # Convert one-hot label to integer if needed (1-based)
     true_label = isa(y, OneHotVector) ? Flux.onecold(y) : Int(y)
@@ -137,7 +146,7 @@ function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
     # Closure: x_flat → prob vector
     predict_proba = x_flat -> dt_predict_proba(model, x_flat)
 
-    return _basic_random_search_core(x, true_label, predict_proba, ε)
+    return _basic_random_search_core(x, true_label, predict_proba, ε, bounds=bounds)
 end
 
 """
