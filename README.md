@@ -23,6 +23,8 @@ The following example shows how to create an adversarial sample from a **single 
 ```julia-repl
 julia> using AdversarialAttacks
 
+julia> using Flux
+
 julia> struct MyModel <: DifferentiableModel end
 
 julia> AdversarialAttacks.predict(::MyModel, x) = sigmoid.(sum(x, dims=1))
