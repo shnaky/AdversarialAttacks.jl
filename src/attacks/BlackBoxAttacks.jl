@@ -1,17 +1,22 @@
 """
-    BasicRandomSearch(parameters::Dict=Dict{String,Any}())
+    BasicRandomSearch(; epsilon=0.1, bounds=nothing)
 
-Subtype of BlackBoxAttack. Can be used to create an adversarial example in the black-box setting using random search.
+Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random search algorithm.
 
 # Arguments
-- 'parameters': can be used to pass attack parameters as a dict
+- `epsilon`: Step size for perturbations (default: 0.1)
+- `bounds`: Optional vector of (lower, upper) tuples specifying per-feature bounds.
+            If `nothing`, defaults to [0, 1] for all features (suitable for normalized images).
+            For tabular data, provide bounds matching feature ranges, e.g.,
+            `[(4.3, 7.9), (2.0, 4.4), ...]` for Iris-like data.
 """
-struct BasicRandomSearch <: BlackBoxAttack
-    parameters::Dict{String,Any}
+struct BasicRandomSearch{T<:Real, B<:Union{Nothing, Vector{<:Tuple{Real,Real}}}} <: BlackBoxAttack
+    epsilon::T
+    bounds::B
+end
 
-    function BasicRandomSearch(parameters::Dict=Dict{String,Any}())
-        new(Dict{String,Any}(parameters))
-    end
+function BasicRandomSearch(; epsilon::Real=0.1, bounds=nothing)
+    BasicRandomSearch(epsilon, bounds)
 end
 
 
@@ -48,26 +53,39 @@ Performs a black-box adversarial attack on the given model using the provided sa
 function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
-    ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
-    ndims = length(x)
-    perm = randperm(ndims)
+    n = length(x)
+
+    ε = convert(eltype(x), attack.epsilon)
+
+    # Set up bounds
+    if attack.bounds === nothing
+        lb = zeros(eltype(x), n)
+        ub = ones(eltype(x), n)
+    else
+        if length(attack.bounds) != n
+            throw(DimensionMismatch("bounds length ($(length(attack.bounds))) must match input dimensions ($n)"))
+        end
+        lb = eltype(x)[b[1] for b in attack.bounds]
+        ub = eltype(x)[b[2] for b in attack.bounds]
+    end
+
+    perm = randperm(n)
     pred = model.model(x)
     last_prob = pred[y]
-    #println("Initial probability of true class: ", pred)
-    for i in 1:ndims
-        diff = zeros(eltype(x), ndims)
+
+    for i in 1:n
+        diff = zeros(eltype(x), n)
         diff[perm[i]] = ε
         δ = reshape(diff, size(x))
-        
-        x_left = clamp.(x .- δ, 0, 1)
+
+        x_left = clamp.(x .- δ, lb, ub)
         left_prob = model.model(x_left)[y]
         if left_prob < last_prob
             last_prob = left_prob
             x = x_left
         else
-            x_right = clamp.(x .+ δ, 0, 1)
+            x_right = clamp.(x .+ δ, lb, ub)
             right_prob = model.model(x_right)[y]
-            #print("Iteration $i: Left prob = $left_prob, Right prob = ")
             if right_prob < last_prob
                 last_prob = right_prob
                 x = x_right

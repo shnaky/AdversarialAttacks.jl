@@ -13,13 +13,20 @@ AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
     # Test default constructor
     attack = BasicRandomSearch()
     @test attack isa BasicRandomSearch
-    @test attack.parameters == Dict{String,Any}()
+    @test attack.epsilon == 0.1
+    @test attack.bounds === nothing
 
     # Test constructor with parameters
-    params = Dict{String,Any}("epsilon" => 0.25)
-    attack_with_params = BasicRandomSearch(params)
+    attack_with_params = BasicRandomSearch(epsilon=0.25)
     @test attack_with_params isa BasicRandomSearch
-    @test attack_with_params.parameters == params
+    @test attack_with_params.epsilon == 0.25
+    @test attack_with_params.bounds === nothing
+
+    # Test constructor with bounds
+    bounds = [(0.0, 1.0), (0.0, 2.0)]
+    attack_with_bounds = BasicRandomSearch(epsilon=0.1, bounds=bounds)
+    @test attack_with_bounds.epsilon == 0.1
+    @test attack_with_bounds.bounds == bounds
 
     # Test type hierarchy
     @test BasicRandomSearch <: BlackBoxAttack
@@ -36,10 +43,7 @@ AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
     @test size(result) == size(sample.data)
     @test eltype(result) == eltype(sample.data)
     @test x_copy == sample.data
-    @test result != sample.data #as we know epsilon is larger 0 here
-    # TODO: Add tests for different models
-
-
+    @test result != sample.data  # epsilon > 0, so perturbation expected
 end
 
 @testset "BasicRandomSearch SimBA core behavior" begin
@@ -55,7 +59,7 @@ end
     end
 
     ε = 0.1f0
-    atk = BasicRandomSearch(Dict("epsilon" => ε))
+    atk = BasicRandomSearch(epsilon=ε)
 
     # Case 1: left move should be chosen at least once
     sample_left = (data=Float32[0.5, 0.5, 0.5, 0.5], label=1)
@@ -99,6 +103,54 @@ end
 
     adv_const = craft(sample_const, model_const, atk)
     @test adv_const == sample_const.data      # no change if prob is constant
+end
+
+@testset "Custom Bounds Support" begin
+    Random.seed!(1234)
+
+    # Iris-like bounds: per-feature [lb, ub]
+    iris_bounds = [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
+
+    # Test 1: Bounds stored correctly in struct
+    attack_bounds = BasicRandomSearch(epsilon=0.1f0, bounds=iris_bounds)
+    @test attack_bounds.bounds == iris_bounds
+    @test attack_bounds.epsilon == 0.1f0
+
+    # Test 2: Default bounds is nothing
+    attack_default = BasicRandomSearch(epsilon=0.1f0)
+    @test attack_default.bounds === nothing
+
+    # Test 3: SumModel with custom bounds - left direction clamped correctly
+    struct BoundedSumModel <: AbstractModel end
+    AdversarialAttacks.predict(::BoundedSumModel, x) = x
+    function Base.getproperty(::BoundedSumModel, s::Symbol)
+        s === :model && return x -> Float32[sum(x), 0.0f0]  # minimize sum(x)
+        return getfield(BoundedSumModel, s)
+    end
+
+    # Sample near lower bound, expect clamping
+    sample_near_lb = (data=Float32[4.4, 2.1, 1.1, 0.2], label=1)  # just above iris_bounds lb
+    attack_near_lb = BasicRandomSearch(epsilon=0.2f0, bounds=iris_bounds)
+    adv_near_lb = craft(sample_near_lb, BoundedSumModel(), attack_near_lb)
+
+    @test all(adv_near_lb .>= [4.3, 2.0, 1.0, 0.1])     # >= lb
+    @test all(adv_near_lb .<= [7.9, 4.4, 6.9, 2.5])     # <= ub
+    @test any(adv_near_lb .< sample_near_lb.data)       # decreased (success)
+
+    # Test 4: No bounds → [0,1] default (image compatibility)
+    attack_no_bounds = BasicRandomSearch(epsilon=0.1f0)
+    sample_image = (data=Float32[0.2, 0.8, 0.3, 0.9], label=1)
+    adv_image = craft(sample_image, BoundedSumModel(), attack_no_bounds)
+    @test all(0 .<= adv_image .<= 1)                    # [0,1] respected
+    @test any(adv_image .< sample_image.data)           # perturbation applied
+
+    # Test 5: Bounds length validation (should error on mismatch)
+    invalid_bounds = [(0.0f0, 1.0f0), (0.0f0, 1.0f0), (0.0f0, 1.0f0)]  # 3 bounds for 4 features
+    @test_throws DimensionMismatch craft(
+        sample_near_lb,
+        BoundedSumModel(),
+        BasicRandomSearch(epsilon=0.1f0, bounds=invalid_bounds),
+    )
 end
 
 @testset "SquareAttack Struct" begin
