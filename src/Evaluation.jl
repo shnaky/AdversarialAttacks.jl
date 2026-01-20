@@ -50,23 +50,23 @@ function Base.show(io::IO, report::RobustnessReport)
     println(io, "\nDataset")
     println(io, "  Total samples evaluated        : ", report.num_samples)
     println(io, "  Clean-correct samples          : ",
-            report.num_clean_correct, " / ", report.num_samples)
+        report.num_clean_correct, " / ", report.num_samples)
 
     println(io, "\nClean Performance")
     println(io, "  Clean accuracy                 : ",
-            round(report.clean_accuracy * 100, digits=2), "%")
+        round(report.clean_accuracy * 100, digits=2), "%")
 
     println(io, "\nAdversarial Performance")
     println(io, "  Adversarial accuracy           : ",
-            round(report.adv_accuracy * 100, digits=2), "%")
+        round(report.adv_accuracy * 100, digits=2), "%")
 
     println(io, "\nAttack Effectiveness")
     println(io, "  Successful attacks             : ",
-            report.num_successful_attacks, " / ", report.num_clean_correct)
+        report.num_successful_attacks, " / ", report.num_clean_correct)
     println(io, "  Attack success rate (ASR)      : ",
-            round(report.attack_success_rate * 100, digits=2), "%")
+        round(report.attack_success_rate * 100, digits=2), "%")
     println(io, "  Robustness score (1 - ASR)     : ",
-            round(report.robustness_score * 100, digits=2), "%")
+        round(report.robustness_score * 100, digits=2), "%")
 
     println(io, "\nNotes")
     println(io, "  • Attack success is counted only when:")
@@ -152,7 +152,7 @@ function evaluate_robustness(
     # Metrics
     clean_accuracy = num_clean_correct / n_test
     adv_accuracy = num_adv_correct / n_test
-    attack_success_rate = num_successful_attacks / num_clean_correct
+    attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
     robustness_score = 1.0 - attack_success_rate
 
     println("Evaluation complete!")
