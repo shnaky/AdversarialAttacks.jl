@@ -2,6 +2,7 @@ module InterfaceTests
 
 using Test
 using AdversarialAttacks
+using DecisionTree
 
 @testset "Interface module" begin
 
@@ -57,10 +58,35 @@ using AdversarialAttacks
         sample_wb = (data=[1.0, 2.0], label=1)
         @test attack(MockWB(), MockDiffModel(), sample_wb) == [2.0, 4.0]
 
-        # BlackBox + DifferentiableModel + NamedTuple  
+        # BlackBox + DifferentiableModel + NamedTuple
         AdversarialAttacks.craft(sample::NamedTuple, ::MockDiffModel, ::MockBB) = sample.data .* 1.5
         sample_bb = (data=[1.0, 2.0], label=1)
         @test attack(MockBB(), MockDiffModel(), sample_bb) == [1.5, 3.0]
+    end
+
+    @testset "DecisionTree dispatch" begin
+        struct DummyBBTree <: BlackBoxAttack end
+
+        # Define craft for DecisionTreeClassifier with the dummy attack
+        AdversarialAttacks.craft(sample, ::DecisionTreeClassifier, ::DummyBBTree) = sample .+ 5.0
+        AdversarialAttacks.craft(sample::NamedTuple, ::DecisionTreeClassifier, ::DummyBBTree) = sample.data .+ 5.0
+
+        # Create a minimal DecisionTreeClassifier
+        X = [0.0 1.0; 1.0 0.0]  # 2 samples, 2 features
+        y = [1, 2]              # 1-based labels
+
+        tree = DecisionTreeClassifier(; max_depth=2)
+        fit!(tree, X, y)
+
+        # Test AbstractArray sample
+        raw_sample = [1.0, 2.0]
+        adv_raw = attack(DummyBBTree(), tree, raw_sample)
+        @test adv_raw == raw_sample .+ 5.0
+
+        # Test NamedTuple sample
+        nt_sample = (data=[1.0, 2.0], label=1)
+        adv_nt = attack(DummyBBTree(), tree, nt_sample)
+        @test adv_nt == nt_sample.data .+ 5.0
     end
 
     @testset "TreeModel dispatch with NamedTuple" begin
@@ -79,7 +105,7 @@ using AdversarialAttacks
         sample_nt = (data=[1.0, 2.0], label=1)
         @test attack(DummyBB(), MockTreeModel(), sample_nt) ≈ [1.1, 2.2] atol = 1e-6
 
-        # NamedTuple (Vector{Int} label)  
+        # NamedTuple (Vector{Int} label)
         sample_vec_label = (data=[3.0, 4.0], label=[2])
         @test attack(DummyBB(), MockTreeModel(), sample_vec_label) ≈ [3.3, 4.4] atol = 1e-6
     end

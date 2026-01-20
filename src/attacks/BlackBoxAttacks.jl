@@ -1,3 +1,5 @@
+using DecisionTree: DecisionTreeClassifier, predict_proba
+
 """
     BasicRandomSearch(; epsilon=0.1, bounds=nothing)
 
@@ -36,9 +38,58 @@ struct SquareAttack <: BlackBoxAttack
     end
 end
 
+function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε; bounds=nothing)
+    # Work in flattened space for coordinate-wise updates
+    x_flat = vec(Float32.(x0))
+    ndims = length(x_flat)
+    perm = randperm(ndims)
+
+    if bounds === nothing
+        lb, ub = zeros(eltype(x_flat), ndims), ones(eltype(x_flat), ndims)
+    else
+        if length(bounds) != ndims
+            throw(DimensionMismatch("bounds length ($(length(bounds))) must match input dimensions ($ndims)"))
+        end
+        lb = eltype(x_flat)[b[1] for b in bounds]
+        ub = eltype(x_flat)[b[2] for b in bounds]
+    end
+
+    # Initial probability of the true class
+    probs = predict_proba_fn(x_flat)
+    last_prob = probs[true_label]
+
+    for i in 1:ndims
+        diff = zeros(eltype(x_flat), ndims)
+        diff[perm[i]] = ε
+
+        # Left direction
+        x_left = clamp.(x_flat .- diff, lb, ub)
+        probs_left = predict_proba_fn(x_left)
+        left_prob = probs_left[true_label]
+
+        if left_prob < last_prob
+            last_prob = left_prob
+            x_flat = x_left
+        else
+            # Right direction
+            x_right = clamp.(x_flat .+ diff, lb, ub)
+            probs_right = predict_proba_fn(x_right)
+            right_prob = probs_right[true_label]
+
+            if right_prob < last_prob
+                last_prob = right_prob
+                x_flat = x_right
+            end
+        end
+    end
+
+    # Reshape back to original shape of x0
+    return reshape(x_flat, size(x0))
+end
+
 
 """
-    craft(sample, model, attack::BasicRandomSearch)
+    craft(sample, model::AbstractModel, attack::BasicRandomSearch)
 
 Performs a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
@@ -48,51 +99,56 @@ Performs a black-box adversarial attack on the given model using the provided sa
 - attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
 
 # Returns
-- Adversarial example (same type and shape as `sample`).
+- Adversarial example (same type and shape as `sample.data`).
 """
 function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
-    n = length(x)
 
     ε = convert(eltype(x), attack.epsilon)
 
-    # Set up bounds
-    if attack.bounds === nothing
-        lb = zeros(eltype(x), n)
-        ub = ones(eltype(x), n)
-    else
-        if length(attack.bounds) != n
-            throw(DimensionMismatch("bounds length ($(length(attack.bounds))) must match input dimensions ($n)"))
-        end
-        lb = eltype(x)[b[1] for b in attack.bounds]
-        ub = eltype(x)[b[2] for b in attack.bounds]
+    true_label = isa(y, Flux.OneHotVector) ? Flux.onecold(y) : Int(y)
+
+    # Define a closure that matches the shared interface: x_flat → prob vector
+    predict_proba_fn = function (x_flat)
+        # reshape back to original shape before passing to model
+        x_reshaped = reshape(x_flat, size(x))
+        probs = model.model(x_reshaped)
+        return probs
     end
 
-    perm = randperm(n)
-    pred = model.model(x)
-    last_prob = pred[y]
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds=attack.bounds)
+end
 
-    for i in 1:n
-        diff = zeros(eltype(x), n)
-        diff[perm[i]] = ε
-        δ = reshape(diff, size(x))
+"""
+    craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
 
-        x_left = clamp.(x .- δ, lb, ub)
-        left_prob = model.model(x_left)[y]
-        if left_prob < last_prob
-            last_prob = left_prob
-            x = x_left
-        else
-            x_right = clamp.(x .+ δ, lb, ub)
-            right_prob = model.model(x_right)[y]
-            if right_prob < last_prob
-                last_prob = right_prob
-                x = x_right
-            end
-        end
+Performs a black-box adversarial attack on a DecisionTreeClassifier using BasicRandomSearch (SimBA).
+
+# Arguments
+- `sample`: NamedTuple with `data` and `label` fields.
+- `model::DecisionTreeClassifier`: DecisionTree.jl classifier to attack.
+- `attack::BasicRandomSearch`: Attack instance with `epsilon` and optional `bounds`.
+
+# Returns
+- Adversarial example (same shape as `sample.data`).
+"""
+function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
+    x = sample.data
+    y = sample.label
+
+    ε = convert(eltype(x), attack.epsilon)
+
+    # Convert one-hot label to integer if needed (1-based)
+    true_label = isa(y, Flux.OneHotVector) ? Flux.onecold(y) : Int(y)
+
+    # Closure: x_flat → prob vector
+    predict_proba_fn = function (x_flat)
+        x_row = reshape(Float64.(x_flat), 1, :)
+        return predict_proba(model, x_row)
     end
-    return x
+
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds=attack.bounds)
 end
 
 """

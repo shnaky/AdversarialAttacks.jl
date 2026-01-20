@@ -2,6 +2,7 @@ using Test
 using AdversarialAttacks
 using Random
 using Flux
+using DecisionTree
 
 # Shared dummy model for black-box attack tests
 struct DummyBlackBoxModel <: AbstractModel end
@@ -44,6 +45,33 @@ AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
     @test eltype(result) == eltype(sample.data)
     @test x_copy == sample.data
     @test result != sample.data  # epsilon > 0, so perturbation expected
+end
+
+@testset "BasicRandomSearch with DecisionTreeClassifier" begin
+    Random.seed!(1234)
+
+    classes = ["A", "B", "C"]
+    labels = vcat(fill(classes[1], 8), fill(classes[2], 8), fill(classes[3], 8))
+    features = rand(24, 4) .* 4
+
+    dt_model = DecisionTreeClassifier(; classes=classes)
+    fit!(dt_model, features, labels)
+
+    # Verify predict_proba returns 3 probs
+    test_x = reshape(Float64[1.0, 1.5, 2.0, 2.5], 1, 4)
+    probs = predict_proba(dt_model, test_x)
+    @test length(probs) == 3
+    @test all(0 .<= probs .<= 1)
+
+    # Test craft with typed API
+    sample = (data=Float32[0.5, 0.8, 1.2, 1.0], label=Flux.onehot(1, 1:3))
+    attack = BasicRandomSearch(epsilon=0.1f0)
+    x_copy = copy(sample.data)
+
+    result = craft(sample, dt_model, attack)
+    @test result isa Vector{Float32}
+    @test size(result) == size(sample.data)
+    @test x_copy == sample.data  # Original unchanged
 end
 
 @testset "BasicRandomSearch SimBA core behavior" begin
