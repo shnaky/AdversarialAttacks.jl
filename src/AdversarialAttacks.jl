@@ -25,6 +25,7 @@ export craft, name, hyperparameters
 export predict, loss, params
 
 # Export evaluation functions
+export RobustnessReport
 export evaluate_robustness
 
 # Export high-level interface

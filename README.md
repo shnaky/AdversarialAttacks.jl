@@ -2,6 +2,7 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://shnaky.github.io/AdversarialAttacks.jl/dev/)
 [![Build Status](https://github.com/shnaky/AdversarialAttacks.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/shnaky/AdversarialAttacks.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/shnaky/AdversarialAttacks.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/shnaky/AdversarialAttacks.jl)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
 
@@ -80,3 +81,49 @@ julia> tensor = (data=X, label=Y)
 
 julia> adv_samples = attack(fgsm, model, tensor)
 ```
+
+### Evaluation Example
+Get an evaluation report on your adversarial attack.
+
+```julia-repl
+julia> using AdversarialAttacks, Flux
+
+julia> using Flux
+
+julia> model_flux = Chain(Dense(4, 3), softmax)
+
+julia> model = FluxModel(model_flux)
+
+julia> test_data = [ (data=randn(Float32, 4), label=Flux.onehot(rand(1:3), 1:3)) for _ in 1:10 ]
+
+julia> attack = FGSM(epsilon=0.3)
+
+julia> report = evaluate_robustness(model, attack, test_data)
+
+julia> println(report)
+=== Robustness Evaluation Report ===
+
+Dataset
+  Total samples evaluated        : 10
+  Clean-correct samples          : 4 / 10
+
+Clean Performance
+  Clean accuracy                 : 40.0%
+
+Adversarial Performance
+  Adversarial accuracy           : 30.0%
+
+Attack Effectiveness
+  Successful attacks             : 1 / 4
+  Attack success rate (ASR)      : 25.0%
+  Robustness score (1 - ASR)     : 75.0%
+
+Notes
+  • Attack success is counted only when:
+    - the clean prediction is correct
+    - the adversarial prediction is incorrect
+===================================
+```
+
+## License
+This package is licensed under the MIT License. See [LICENSE](https://github.com/shnaky/AdversarialAttacks.jl/blob/main/LICENSE) for details.
