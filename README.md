@@ -127,4 +127,4 @@ Notes
 ```
 
 ## License
-This package is licensed under the MIT License. See [LICENSE](https://opensource.org/licenses/MIT) for details.
+This package is licensed under the MIT License. See [LICENSE](https://github.com/shnaky/AdversarialAttacks.jl/blob/main/LICENSE) for details.
