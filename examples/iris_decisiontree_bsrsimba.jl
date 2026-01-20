@@ -17,10 +17,10 @@ y_str = String.(iris.Species)
 classes = ["setosa", "versicolor", "virginica"]
 
 dt_model = DecisionTreeClassifier(
-  max_depth=3,
-  min_samples_leaf=1,
-  min_samples_split=2,
-  classes=classes,
+    max_depth=3,
+    min_samples_leaf=1,
+    min_samples_split=2,
+    classes=classes,
 )
 fit!(dt_model, X, y_str)
 
@@ -29,9 +29,9 @@ println("Classes = ", dt_model.classes)
 
 # helper
 function predict_class_index(model::DecisionTreeClassifier, x::AbstractVector)
-  x_mat = reshape(Float64.(x), 1, :)
-  probs = DecisionTree.predict_proba(model, x_mat)
-  return argmax(probs)
+    x_mat = reshape(Float64.(x), 1, :)
+    probs = DecisionTree.predict_proba(model, x_mat)
+    return argmax(probs)
 end
 
 # ------------------------------------
@@ -40,14 +40,14 @@ end
 demo_idx = findfirst(==("versicolor"), y_str)
 
 for i in 1:size(X, 1)
-  xi = X[i, :]
-  yi_str = y_str[i]
-  true_idx_i = findfirst(==(yi_str), classes)
-  pred_idx_i = predict_class_index(dt_model, xi)
-  if pred_idx_i == true_idx_i
-    demo_idx = i
-    break
-  end
+    xi = X[i, :]
+    yi_str = y_str[i]
+    true_idx_i = findfirst(==(yi_str), classes)
+    pred_idx_i = predict_class_index(dt_model, xi)
+    if pred_idx_i == true_idx_i
+        demo_idx = i
+        break
+    end
 end
 
 x0 = X[demo_idx, :]
@@ -75,10 +75,10 @@ println("Original predicted class index = ", argmax(orig_probs_vec))
 # 4. Run BasicRandomSearch
 # ------------------------------------
 ε = 0.3f0
-attack = BasicRandomSearch(Dict(
-  "epsilon" => ε,
-  "bounds" => [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
-))
+attack = BasicRandomSearch(
+    ε,
+    [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
+)
 println("\nRunning BasicRandomSearch with epsilon = ", ε, " ...")
 Random.seed!(42)
 
@@ -98,9 +98,9 @@ println("\nTrue-class probability before attack: ", orig_true_prob)
 println("True-class probability after attack:  ", adv_true_prob)
 
 if adv_true_prob < orig_true_prob
-  println("\n[INFO] Attack decreased the true-class confidence (success).")
+    println("\n[INFO] Attack decreased the true-class confidence (success).")
 else
-  println("\n[INFO] True-class confidence did not decrease.")
+    println("\n[INFO] True-class confidence did not decrease.")
 end
 
 # ------------------------------------
