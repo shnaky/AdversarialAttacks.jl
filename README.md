@@ -88,7 +88,7 @@ julia> adv_samples = attack(fgsm, model, tensor)
 Get an evaluation report on your adversarial attack.
 
 ```julia-repl
-julia> using AdversarialAttacks, Flux
+julia> using AdversarialAttacks
 
 julia> using Flux
 
@@ -98,9 +98,9 @@ julia> model = FluxModel(model_flux)
 
 julia> test_data = [ (data=randn(Float32, 4), label=Flux.onehot(rand(1:3), 1:3)) for _ in 1:10 ]
 
-julia> attack = FGSM(epsilon=0.3)
+julia> fgsm = FGSM(epsilon=0.3)
 
-julia> report = evaluate_robustness(model, attack, test_data)
+julia> report = evaluate_robustness(model, fgsm, test_data)
 
 julia> println(report)
 === Robustness Evaluation Report ===
