@@ -1,20 +1,24 @@
-using OneHotArrays: OneHotVector
-using DecisionTree
+using DecisionTree: DecisionTreeClassifier, predict_proba
 
 """
-    BasicRandomSearch(parameters::Dict=Dict{String,Any}())
+    BasicRandomSearch(; epsilon=0.1, bounds=nothing)
 
-Subtype of BlackBoxAttack. Can be used to create an adversarial example in the black-box setting using random search.
+Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random search algorithm.
 
 # Arguments
-- 'parameters': can be used to pass attack parameters as a dict
+- `epsilon`: Step size for perturbations (default: 0.1)
+- `bounds`: Optional vector of (lower, upper) tuples specifying per-feature bounds.
+            If `nothing`, defaults to [0, 1] for all features (suitable for normalized images).
+            For tabular data, provide bounds matching feature ranges, e.g.,
+            `[(4.3, 7.9), (2.0, 4.4), ...]` for Iris-like data.
 """
-struct BasicRandomSearch <: BlackBoxAttack
-    parameters::Dict{String,Any}
+struct BasicRandomSearch{T<:Real, B<:Union{Nothing, Vector{<:Tuple{Real,Real}}}} <: BlackBoxAttack
+    epsilon::T
+    bounds::B
+end
 
-    function BasicRandomSearch(parameters::Dict=Dict{String,Any}())
-        new(Dict{String,Any}(parameters))
-    end
+function BasicRandomSearch(; epsilon::Real=0.1, bounds=nothing)
+    BasicRandomSearch(epsilon, bounds)
 end
 
 
@@ -34,7 +38,7 @@ struct SquareAttack <: BlackBoxAttack
     end
 end
 
-function _basic_random_search_core(x0, true_label::Int, predict_proba::Function, ε; bounds=nothing)
+function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε; bounds=nothing)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
@@ -43,12 +47,15 @@ function _basic_random_search_core(x0, true_label::Int, predict_proba::Function,
     if bounds === nothing
         lb, ub = zeros(eltype(x_flat), ndims), ones(eltype(x_flat), ndims)
     else
-        lb = [b[1] for b in bounds]
-        ub = [b[2] for b in bounds]
+        if length(bounds) != ndims
+            throw(DimensionMismatch("bounds length ($(length(bounds))) must match input dimensions ($ndims)"))
+        end
+        lb = eltype(x_flat)[b[1] for b in bounds]
+        ub = eltype(x_flat)[b[2] for b in bounds]
     end
 
     # Initial probability of the true class
-    probs = predict_proba(x_flat)
+    probs = predict_proba_fn(x_flat)
     last_prob = probs[true_label]
 
     for i in 1:ndims
@@ -57,7 +64,7 @@ function _basic_random_search_core(x0, true_label::Int, predict_proba::Function,
 
         # Left direction
         x_left = clamp.(x_flat .- diff, lb, ub)
-        probs_left = predict_proba(x_left)
+        probs_left = predict_proba_fn(x_left)
         left_prob = probs_left[true_label]
 
         if left_prob < last_prob
@@ -66,7 +73,7 @@ function _basic_random_search_core(x0, true_label::Int, predict_proba::Function,
         else
             # Right direction
             x_right = clamp.(x_flat .+ diff, lb, ub)
-            probs_right = predict_proba(x_right)
+            probs_right = predict_proba_fn(x_right)
             right_prob = probs_right[true_label]
 
             if right_prob < last_prob
@@ -98,55 +105,50 @@ function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
 
-    ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
-    bounds = get(attack.parameters, "bounds", nothing)
+    ε = convert(eltype(x), attack.epsilon)
 
-    true_label = isa(y, OneHotVector) ? Flux.onecold(y) : Int(y)
+    true_label = isa(y, Flux.OneHotVector) ? Flux.onecold(y) : Int(y)
 
     # Define a closure that matches the shared interface: x_flat → prob vector
-    predict_proba = function (x_flat)
+    predict_proba_fn = function (x_flat)
         # reshape back to original shape before passing to model
         x_reshaped = reshape(x_flat, size(x))
         probs = model.model(x_reshaped)
         return probs
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba, ε, bounds=bounds)
-end
-
-function dt_predict_proba(model::DecisionTreeClassifier, x_flat::AbstractArray)
-    x_vec = reshape(Float64.(x_flat), 1, :)
-    probs_list = DecisionTree.predict_proba(model, x_vec)
-    return probs_list
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds=attack.bounds)
 end
 
 """
     craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
 
-Specialized craft function for DecisionTreeClassifier models.
+Performs a black-box adversarial attack on a DecisionTreeClassifier using BasicRandomSearch (SimBA).
 
 # Arguments
-- `sample`: The input sample to be changed.
-- `model::DecisionTreeClassifier`: DecisionTree model to be attacked.
-- `attack::BasicRandomSearch`: An instance of BasicRandomSearch attack.
+- `sample`: NamedTuple with `data` and `label` fields.
+- `model::DecisionTreeClassifier`: DecisionTree.jl classifier to attack.
+- `attack::BasicRandomSearch`: Attack instance with `epsilon` and optional `bounds`.
 
 # Returns
-- Adversarial example (same type and shape as `sample.data`).
+- Adversarial example (same shape as `sample.data`).
 """
 function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
 
-    ε = convert(eltype(x), get(attack.parameters, "epsilon", attack.parameters["epsilon"]))
-    bounds = get(attack.parameters, "bounds", nothing)
+    ε = convert(eltype(x), attack.epsilon)
 
     # Convert one-hot label to integer if needed (1-based)
-    true_label = isa(y, OneHotVector) ? Flux.onecold(y) : Int(y)
+    true_label = isa(y, Flux.OneHotVector) ? Flux.onecold(y) : Int(y)
 
     # Closure: x_flat → prob vector
-    predict_proba = x_flat -> dt_predict_proba(model, x_flat)
+    predict_proba_fn = function (x_flat)
+        x_row = reshape(Float64.(x_flat), 1, :)
+        return predict_proba(model, x_row)
+    end
 
-    return _basic_random_search_core(x, true_label, predict_proba, ε, bounds=bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds=attack.bounds)
 end
 
 """

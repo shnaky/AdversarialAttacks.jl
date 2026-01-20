@@ -48,6 +48,31 @@ using DecisionTree
         @test_throws ErrorException attack(DummyWB(), DummyNonDiffModel(), [1.0, 2.0])
     end
 
+    @testset "DecisionTree dispatch" begin
+        struct DummyBBTree <: BlackBoxAttack end
+
+        # Define craft for DecisionTreeClassifier with the dummy attack
+        AdversarialAttacks.craft(sample, ::DecisionTreeClassifier, ::DummyBBTree) = sample .+ 5.0
+        AdversarialAttacks.craft(sample::NamedTuple, ::DecisionTreeClassifier, ::DummyBBTree) = sample.data .+ 5.0
+
+        # Create a minimal DecisionTreeClassifier
+        X = [0.0 1.0; 1.0 0.0]  # 2 samples, 2 features
+        y = [1, 2]              # 1-based labels
+
+        tree = DecisionTreeClassifier(; max_depth=2)
+        fit!(tree, X, y)
+
+        # Test AbstractArray sample
+        raw_sample = [1.0, 2.0]
+        adv_raw = attack(DummyBBTree(), tree, raw_sample)
+        @test adv_raw == raw_sample .+ 5.0
+
+        # Test NamedTuple sample
+        nt_sample = (data=[1.0, 2.0], label=1)
+        adv_nt = attack(DummyBBTree(), tree, nt_sample)
+        @test adv_nt == nt_sample.data .+ 5.0
+    end
+
     @testset "Benchmark" begin
         dataset = [([1.0], 0), ([2.0], 1)]
         function metric(model, adv_samples, labels)
@@ -56,24 +81,6 @@ using DecisionTree
         end
         result = benchmark(DummyAttack(), DummyModel(), dataset, metric)
         @test result == 2
-    end
-
-    @testset "DecisionTree dispatch" begin
-        struct DummyBBTree <: BlackBoxAttack end
-
-        AdversarialAttacks.craft(sample, ::DecisionTreeClassifier, ::BlackBoxAttack; kwargs...) = sample .+ 5.0
-
-        # Minimal DecisionTreeClassifier instance
-        X = [0.0 1.0;
-            1.0 0.0]            # 2 samples, 2 features
-        y = [1, 2]               # 1-based labels
-
-        tree = DecisionTreeClassifier(max_depth=2)
-        fit!(tree, X, y)
-
-        raw_sample = [1.0, 2.0]
-        adv_raw = attack(DummyBBTree(), tree, raw_sample)
-        @test adv_raw == raw_sample .+ 5.0
     end
 end
 end # module

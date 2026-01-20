@@ -1,4 +1,4 @@
-# using DecisionTree: DecisionTreeClassifier
+using DecisionTree: DecisionTreeClassifier
 
 """
     attack(atk, model, sample; kwargs...)
@@ -7,10 +7,9 @@ Apply an adversarial attack to a sample using the given model.
 
 # Arguments
 - `atk::AbstractAttack`: The attack object to apply.
-- `model`: The model to attack. This can be:
-    * `AbstractModel` (library-defined model wrapper)
-    * `DifferentiableModel` (for white-box attacks)
-    * Native models such as `DecisionTreeClassifier` (for black-box attacks)
+- `model`: The model to attack. Supports:
+    * `AbstractModel` subtypes (library-defined model wrappers)
+    * Native models like `DecisionTreeClassifier` (for black-box attacks)
 - `sample::AbstractArray{<:Number}` or `NamedTuple`: Input sample (array) or named tuple with `data` and `label` fields.
 - `kwargs...`: Additional keyword arguments.
 
@@ -19,10 +18,7 @@ Apply an adversarial attack to a sample using the given model.
 
 # Notes
 - `WhiteBoxAttack` requires a `DifferentiableModel`.
-- `BlackBoxAttack` works for:
-    * any `AbstractModel`, and
-    * selected native model types (e.g. `DecisionTreeClassifier`) for which
-      a dedicated `craft` / `attack` method is provided.
+- `BlackBoxAttack` works for any `AbstractModel` or supported native models.
 """
 function attack(atk::WhiteBoxAttack, model::NonDifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
     error("$(typeof(atk)) is a white-box attack and requires a DifferentiableModel, " *
@@ -45,12 +41,17 @@ function attack(atk::BlackBoxAttack, model::AbstractModel, sample::NamedTuple; k
     craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::AbstractArray{<:Number}; kwargs...)
+# for custom attacks that don't subtype WhiteBox/BlackBox
+function attack(atk::AbstractAttack, model::AbstractModel, sample::AbstractArray{<:Number}; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
-# for custom attacks that don't subtype WhiteBox/BlackBox
-function attack(atk::AbstractAttack, model::AbstractModel, sample::AbstractArray{<:Number}; kwargs...)
+# DecisionTreeClassifier support for black-box attacks
+function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::NamedTuple; kwargs...)
+    craft(sample, model, atk; kwargs...)
+end
+
+function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::AbstractArray{<:Number}; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
