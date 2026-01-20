@@ -46,4 +46,14 @@ using AdversarialAttacks
         @test model == :m
         @test (; kwargs...) == (; steps=5)
     end
+
+    @testset "craft fallback MethodError" begin
+        sample = (data=[1.0], label=1)
+        struct MockModel <: AbstractModel end
+        struct MockAttack <: AbstractAttack end
+
+        # fallback dispatch hit
+        @test_throws MethodError craft(sample, MockModel(), MockAttack())
+        @test_throws MethodError attack(MockAttack(), MockModel(), sample)
+    end
 end
