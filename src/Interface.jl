@@ -24,7 +24,6 @@ Apply an adversarial attack to a sample using the given model.
 - `BlackBoxAttack` is supported for both `Flux.Chain` and `DecisionTreeClassifier`
   (treated as black-box models, using only model outputs).
 """
-# Flux.Chain support for white-box attacks
 function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
@@ -33,7 +32,6 @@ function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::AbstractArray{<:
     craft(sample, model, atk; kwargs...)
 end
 
-# Flux.Chain support for black-box attacks
 function attack(atk::BlackBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
@@ -47,7 +45,6 @@ function attack(atk::AbstractAttack, model, sample::AbstractArray{<:Number}; kwa
     craft(sample, model, atk; kwargs...)
 end
 
-# DecisionTreeClassifier support for black-box attacks
 function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::NamedTuple; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
@@ -63,7 +60,7 @@ Evaluate attack performance on a dataset with labels using a given metric.
 
 # Arguments
 - `atk::AbstractAttack`: Attack algorithm
-- `model::AbstractModel`: Target model to attack
+- `model`: Target model to attack
 - `dataset`: Dataset with samples and labels
 - `metric::Function`: Evaluation metric with signature `metric(model, adv_samples, labels)`
 

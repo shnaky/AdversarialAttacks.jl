@@ -22,23 +22,6 @@ function BasicRandomSearch(; epsilon::Real=0.1, bounds=nothing)
     BasicRandomSearch(epsilon, bounds)
 end
 
-
-"""
-    SquareAttack(parameters::Dict=Dict{String,Any}())
-
-Subtype of BlackBoxAttack. Can be used to create an adversarial example in the black-box setting using the square attack algorithm.
-
-# Arguments
-- parameters: can be used to pass attack parameters as a dict
-"""
-struct SquareAttack <: BlackBoxAttack
-    parameters::Dict{String,Any}
-
-    function SquareAttack(parameters::Dict=Dict{String,Any}())
-        new(parameters)
-    end
-end
-
 function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε; bounds=nothing)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
@@ -96,7 +79,7 @@ Performs a black-box adversarial attack on the given model using the provided sa
 
 # Arguments
 - sample: The input sample to be changed.
-- model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
+- model::Flux.Chain: The machine learning (deep learning, classical machine learning) model to be attacked.
 - attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
 
 # Returns
