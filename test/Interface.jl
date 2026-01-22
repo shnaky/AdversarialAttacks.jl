@@ -65,6 +65,31 @@ using DecisionTree
         @test attack(MockBB(), model, sample_bb) == [1.5, 3.0]
     end
 
+    @testset "WhiteBox / BlackBox dispatch with AbstractArray" begin
+        struct WBArrayAttack <: WhiteBoxAttack end
+        struct BBArrayAttack <: BlackBoxAttack end
+
+        # identity-like model
+        model = Chain(x -> x)
+
+        # craft for array samples
+        AdversarialAttacks.craft(sample::AbstractArray, ::Flux.Chain, ::WBArrayAttack; kwargs...) =
+            sample .+ 10.0
+        AdversarialAttacks.craft(sample::AbstractArray, ::Flux.Chain, ::BBArrayAttack; kwargs...) =
+            sample .* 2.0
+
+        vec = [1.0, 2.0]
+        mat = ones(2, 2)
+
+        # WhiteBox + AbstractArray
+        @test attack(WBArrayAttack(), model, vec) == [11.0, 12.0]
+        @test attack(WBArrayAttack(), model, mat) == fill(11.0, 2, 2)
+
+        # BlackBox + AbstractArray
+        @test attack(BBArrayAttack(), model, vec) == [2.0, 4.0]
+        @test attack(BBArrayAttack(), model, mat) == fill(2.0, 2, 2)
+    end
+
     @testset "DecisionTree dispatch" begin
         struct DummyBBTree <: BlackBoxAttack end
 
