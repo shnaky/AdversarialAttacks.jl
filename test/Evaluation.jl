@@ -3,8 +3,7 @@ using AdversarialAttacks
 using Flux
 
 @testset "Evaluation Suite" begin
-    model_flux = Chain(Dense(4, 3), softmax)
-    model = FluxModel(model_flux)
+    model = Chain(Dense(4, 3), softmax)
 
     test_data = [
         (data=randn(Float32, 4), label=Flux.onehot(rand(1:3), 1:3))

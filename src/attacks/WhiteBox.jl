@@ -13,7 +13,7 @@ struct FGSM{T<:Real} <: WhiteBoxAttack
     epsilon::T
 end
 
-FGSM(; epsilon::Real = 0.1) = FGSM(epsilon)
+FGSM(; epsilon::Real=0.1) = FGSM(epsilon)
 
 """
     hyperparameters(atk::FGSM) -> Dict{String,Any}
@@ -25,6 +25,8 @@ Return hyperparameters for an FGSM attack.
 """
 hyperparameters(atk::FGSM)::Dict{String,Any} = Dict("epsilon" => atk.epsilon)
 
+default_loss(m, x, y) = Flux.crossentropy(m(x), y)
+
 """
     craft(sample, model, attack::FGSM)
 
@@ -32,13 +34,13 @@ Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the 
 
 # Arguments
 - `sample`: Input sample as a named tuple with `data` and `label`.
-- `model::DifferentiableModel`: The machine learning (deep learning) model to be attacked.
+- `model::FluxModel`: The machine learning (deep learning) model to be attacked.
 - `attack::FGSM`: An instance of the `FGSM`.
 
 # Returns
 - Adversarial example (same type and shape as `sample.data`).
 """
-function craft(sample, model::DifferentiableModel, attack::FGSM)
+function craft(sample, model::Flux.Chain, attack::FGSM; loss=default_loss)
     x = sample.data
     y = sample.label
     ε = convert(eltype(x), attack.epsilon)

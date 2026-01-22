@@ -30,7 +30,6 @@ makedocs(;
         "Developer Documentation" => [
             "Home" => "index.md",
             "Attack Interface" => "attack_interface.md",
-            "Model Interface" => "model_interface.md",
             "Fast Gradient Sign Method Attack" => "fgsm.md",
             "Black Box Attacks" => "blackbox_subtypes.md",
             "Robustness Evaluation Suite" => "evaluation.md",
