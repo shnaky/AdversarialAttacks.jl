@@ -22,6 +22,11 @@ makedocs(;
     ),
     pages=[
         "Getting Started" => "index.md",
+        "Tutorials & Examples" => [
+            "Overview" => "examples/index.md",
+            "White-Box – FGSM (Flux, MNIST)" => "examples/whitebox_fgsm_flux_mnist.md",
+            "Black-Box – Basic Random Search (DecisionTree, Iris)" => "examples/blackbox_basicrandomsearch_decisiontree_iris.md",
+        ],
         "Developer Documentation" => [
             "Home" => "index.md",
             "Attack Interface" => "attack_interface.md",
