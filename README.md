@@ -6,6 +6,8 @@
 
 **AdversarialAttacks.jl** is a lightweight Julia package for experimenting with adversarial attacks against neural networks and tree‑based models, focusing on FGSM (white‑box) and random‑search–based (black‑box) attacks.
 
+Currently, this package supports only models implemented as Flux chains (neural networks) and decision trees from the DecisionTree.jl package. Support for other model types may be added in the future.
+
 ## Installation
 
 You can install the package via the Julia package manager.
