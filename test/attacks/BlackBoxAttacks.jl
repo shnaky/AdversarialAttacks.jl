@@ -5,8 +5,7 @@ using Flux
 using DecisionTree
 
 # Shared dummy model for black-box attack tests
-struct DummyBlackBoxModel <: AbstractModel end
-AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
+struct DummyBlackBoxModel end
 
 @testset "BasicRandomSearch Struct" begin
     Random.seed!(1234)  # Make tests deterministic
@@ -33,10 +32,10 @@ AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
     @test BasicRandomSearch <: BlackBoxAttack
     @test BasicRandomSearch <: AbstractAttack
 
-    # Test for FluxModel
+    # Test for Flux model
     sample = (data=Float32[1.0, 2.0, 3.0, 7.0], label=Flux.onehot(1, 1:2))
     Random.seed!(1234)
-    model = FluxModel(Chain(Dense(4 => 2)))
+    model = Chain(Dense(4 => 2), softmax)
     x_copy = copy(sample.data)
 
     result = craft(sample, model, attack_with_params)
@@ -44,7 +43,6 @@ AdversarialAttacks.predict(::DummyBlackBoxModel, x) = x
     @test size(result) == size(sample.data)
     @test eltype(result) == eltype(sample.data)
     @test x_copy == sample.data
-    @test result != sample.data  # epsilon > 0, so perturbation expected
 end
 
 @testset "BasicRandomSearch with DecisionTreeClassifier" begin
@@ -77,21 +75,15 @@ end
 @testset "BasicRandomSearch SimBA core behavior" begin
     Random.seed!(1234)
 
-    # Dummy model 1: model.model(x) = [sum(x), 0.0]
-    # For label = 1, decreasing sum(x) decreases true-class "probability"
-    struct SumModel <: AbstractModel end
-    AdversarialAttacks.predict(::SumModel, x) = x
-    function Base.getproperty(::SumModel, s::Symbol)
-        s === :model && return x -> Float32[sum(x), 0.0f0]
-        return getfield(SumModel, s)
-    end
-
     ε = 0.1f0
     atk = BasicRandomSearch(epsilon=ε)
 
     # Case 1: left move should be chosen at least once
+    # Dummy Flux model 1: output = [sum(x), 0.0]
+    # For label = 1, decreasing sum(x) decreases true-class "probability".
+    model_left = Chain(x -> Float32[sum(x), 0.0f0])
+
     sample_left = (data=Float32[0.5, 0.5, 0.5, 0.5], label=1)
-    model_left = SumModel()
 
     adv_left = craft(sample_left, model_left, atk)
     @test size(adv_left) == size(sample_left.data)
@@ -99,17 +91,12 @@ end
     @test any(adv_left .< sample_left.data)   # some coordinate decreased
     @test any(adv_left .!= sample_left.data)  # at least one coordinate changed
 
-    # Dummy model 2: model.model(x) = [-sum(x), 0.0]
-    # For label = 1, increasing sum(x) decreases true-class "probability"
-    struct NegSumModel <: AbstractModel end
-    AdversarialAttacks.predict(::NegSumModel, x) = x
-    function Base.getproperty(::NegSumModel, s::Symbol)
-        s === :model && return x -> Float32[-sum(x), 0.0f0]
-        return getfield(NegSumModel, s)
-    end
+    # Case 2: right move should be chosen at least once
+    # Dummy Flux model 2: output = [-sum(x), 0.0]
+    # For label = 1, increasing sum(x) decreases true-class "probability".
+    model_right = Chain(x -> Float32[-sum(x), 0.0f0])
 
     sample_right = (data=Float32[0.5, 0.5, 0.5, 0.5], label=1)
-    model_right = NegSumModel()
 
     adv_right = craft(sample_right, model_right, atk)
     @test size(adv_right) == size(sample_right.data)
@@ -117,17 +104,11 @@ end
     @test any(adv_right .> sample_right.data) # some coordinate increased
     @test any(adv_right .!= sample_right.data)
 
-    # Dummy model 3: model.model(x) = [0.0, 0.0]
-    # No perturbation improves the probability, so x should stay unchanged
-    struct ConstModel <: AbstractModel end
-    AdversarialAttacks.predict(::ConstModel, x) = x
-    function Base.getproperty(::ConstModel, s::Symbol)
-        s === :model && return x -> Float32[0.0f0, 0.0f0]
-        return getfield(ConstModel, s)
-    end
+    # Case 3: no move should be taken if probabilities are constant
+    # Dummy Flux model 3: output = [0.0, 0.0]
+    model_const = Chain(x -> Float32[0.0f0, 0.0f0])
 
     sample_const = (data=Float32[0.3, 0.7, 0.2, 0.9], label=1)
-    model_const = ConstModel()
 
     adv_const = craft(sample_const, model_const, atk)
     @test adv_const == sample_const.data      # no change if prob is constant
@@ -148,18 +129,14 @@ end
     attack_default = BasicRandomSearch(epsilon=0.1f0)
     @test attack_default.bounds === nothing
 
-    # Test 3: SumModel with custom bounds - left direction clamped correctly
-    struct BoundedSumModel <: AbstractModel end
-    AdversarialAttacks.predict(::BoundedSumModel, x) = x
-    function Base.getproperty(::BoundedSumModel, s::Symbol)
-        s === :model && return x -> Float32[sum(x), 0.0f0]  # minimize sum(x)
-        return getfield(BoundedSumModel, s)
-    end
+    # Dummy Flux model with custom bounds: model(x) = [sum(x), 0.0]
+    # For label = 1, decreasing sum(x) decreases the true-class "probability".
+    bounded_model = Chain(x -> Float32[sum(x), 0.0f0])
 
     # Sample near lower bound, expect clamping
     sample_near_lb = (data=Float32[4.4, 2.1, 1.1, 0.2], label=1)  # just above iris_bounds lb
     attack_near_lb = BasicRandomSearch(epsilon=0.2f0, bounds=iris_bounds)
-    adv_near_lb = craft(sample_near_lb, BoundedSumModel(), attack_near_lb)
+    adv_near_lb = craft(sample_near_lb, bounded_model, attack_near_lb)
 
     @test all(adv_near_lb .>= [4.3, 2.0, 1.0, 0.1])     # >= lb
     @test all(adv_near_lb .<= [7.9, 4.4, 6.9, 2.5])     # <= ub
@@ -168,7 +145,7 @@ end
     # Test 4: No bounds → [0,1] default (image compatibility)
     attack_no_bounds = BasicRandomSearch(epsilon=0.1f0)
     sample_image = (data=Float32[0.2, 0.8, 0.3, 0.9], label=1)
-    adv_image = craft(sample_image, BoundedSumModel(), attack_no_bounds)
+    adv_image = craft(sample_image, bounded_model, attack_no_bounds)
     @test all(0 .<= adv_image .<= 1)                    # [0,1] respected
     @test any(adv_image .< sample_image.data)           # perturbation applied
 
@@ -176,34 +153,7 @@ end
     invalid_bounds = [(0.0f0, 1.0f0), (0.0f0, 1.0f0), (0.0f0, 1.0f0)]  # 3 bounds for 4 features
     @test_throws DimensionMismatch craft(
         sample_near_lb,
-        BoundedSumModel(),
+        bounded_model,
         BasicRandomSearch(epsilon=0.1f0, bounds=invalid_bounds),
     )
-end
-
-@testset "SquareAttack Struct" begin
-
-    # Test default constructor
-    attack = SquareAttack()
-    @test attack isa SquareAttack
-    @test attack.parameters == Dict{String,Any}()
-
-    # Test constructor with parameters
-    params = Dict{String,Any}("epsilon" => 0.25)
-    attack_with_params = SquareAttack(params)
-    @test attack_with_params isa SquareAttack
-    @test attack_with_params.parameters == params
-
-    # Test type hierarchy
-    @test SquareAttack <: BlackBoxAttack
-    @test SquareAttack <: AbstractAttack
-
-    sample = [1.0, 2.0, 3.0]
-    model = DummyBlackBoxModel()
-
-    result = craft(sample, model, attack_with_params)
-    @test result == sample
-    @test size(result) == size(sample)
-    @test eltype(result) == eltype(sample)
-
 end

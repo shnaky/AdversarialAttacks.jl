@@ -1,5 +1,6 @@
 using Test
 using AdversarialAttacks
+using Flux
 
 @testset "Attack abstractions" begin
     @testset "Abstract types" begin
@@ -49,7 +50,7 @@ using AdversarialAttacks
 
     @testset "craft fallback MethodError" begin
         sample = (data=[1.0], label=1)
-        struct MockModel <: AbstractModel end
+        struct MockModel end
         struct MockAttack <: AbstractAttack end
 
         # fallback dispatch hit

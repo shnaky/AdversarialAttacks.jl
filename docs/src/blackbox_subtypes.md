@@ -7,8 +7,7 @@ This page documents the black box algorithms.
 
 ```@docs
 BasicRandomSearch
-SquareAttack
-AdversarialAttacks.craft(::Any, ::AbstractModel, ::BasicRandomSearch)
-AdversarialAttacks.craft(::Any, ::AbstractModel, ::SquareAttack)
+AdversarialAttacks.craft(::Any, ::Flux.Chain, ::BasicRandomSearch)
+AdversarialAttacks.craft(::Any, ::DecisionTreeClassifier, ::BasicRandomSearch)
 ```
 

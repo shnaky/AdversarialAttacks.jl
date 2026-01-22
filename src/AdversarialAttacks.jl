@@ -3,8 +3,6 @@ module AdversarialAttacks
 using Random
 
 include("attacks/Attack.jl")
-include("models/Model.jl")
-include("models/FluxModels.jl")
 include("attacks/BlackBoxAttacks.jl")
 include("attacks/WhiteBox.jl")
 include("Interface.jl")
@@ -13,10 +11,6 @@ include("Evaluation.jl")
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
 export FGSM, BasicRandomSearch, SquareAttack
-
-# Export model types
-export AbstractModel, DifferentiableModel, NonDifferentiableModel
-export FluxModel
 
 # Export attack interface functions
 export craft, name, hyperparameters

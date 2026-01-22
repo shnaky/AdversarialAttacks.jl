@@ -10,6 +10,6 @@ This page documents the Fast Gradient Sign Method.
 
 ```@docs
 FGSM
-AdversarialAttacks.craft(::Any, ::DifferentiableModel, ::FGSM)
+AdversarialAttacks.craft(::Any, ::Flux.Chain, ::FGSM)
 AdversarialAttacks.hyperparameters(::FGSM)
 ```

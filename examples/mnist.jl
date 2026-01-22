@@ -48,8 +48,6 @@ for epoch in 1:5
   end
 end
 
-flux_model = FluxModel(model)
-
 # Simple accuracy on the training subset (for sanity check)
 function eval_acc(model, X_test, y_test)
   correct = 0
@@ -99,7 +97,7 @@ println("Clean true prob: ", round(orig_true_prob, digits=3))
 fgsm_attack = FGSM(epsilon=ε)
 println("\nRunning FGSM with ε = $ε ...")
 
-x_adv = craft(sample, flux_model, fgsm_attack)
+x_adv = craft(sample, model, fgsm_attack)
 x_adv = clamp.(x_adv, 0f0, 1f0)  # keep pixels in [0,1]
 
 adv_pred = model(x_adv)
