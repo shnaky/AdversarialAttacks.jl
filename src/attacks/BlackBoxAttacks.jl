@@ -1,4 +1,5 @@
 using DecisionTree: DecisionTreeClassifier, predict_proba
+using Flux
 
 """
     BasicRandomSearch(; epsilon=0.1, bounds=nothing)
@@ -12,7 +13,7 @@ Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random s
             For tabular data, provide bounds matching feature ranges, e.g.,
             `[(4.3, 7.9), (2.0, 4.4), ...]` for Iris-like data.
 """
-struct BasicRandomSearch{T<:Real, B<:Union{Nothing, Vector{<:Tuple{Real,Real}}}} <: BlackBoxAttack
+struct BasicRandomSearch{T<:Real,B<:Union{Nothing,Vector{<:Tuple{Real,Real}}}} <: BlackBoxAttack
     epsilon::T
     bounds::B
 end
@@ -89,7 +90,7 @@ end
 
 
 """
-    craft(sample, model::AbstractModel, attack::BasicRandomSearch)
+    craft(sample, model::Flux.Chain, attack::BasicRandomSearch)
 
 Performs a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
@@ -101,7 +102,7 @@ Performs a black-box adversarial attack on the given model using the provided sa
 # Returns
 - Adversarial example (same type and shape as `sample.data`).
 """
-function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
+function craft(sample, model::Flux.Chain, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
 
@@ -113,11 +114,11 @@ function craft(sample, model::AbstractModel, attack::BasicRandomSearch)
     predict_proba_fn = function (x_flat)
         # reshape back to original shape before passing to model
         x_reshaped = reshape(x_flat, size(x))
-        probs = model.model(x_reshaped)
+        probs = model(x_reshaped)
         return probs
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds=attack.bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε; bounds=attack.bounds)
 end
 
 """
@@ -149,21 +150,4 @@ function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
     end
 
     return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds=attack.bounds)
-end
-
-"""
-    craft(sample, model, attack::SquareAttack)
-
-Performs a black-box adversarial attack on the given model using the provided sample using the SquareAttack algorithm.
-
-# Arguments
-- sample: The input sample to be changed.
-- model::AbstractModel: The machine learning (deep learning, classical machine learning) model to be attacked.
-- attack::SquareAttack: An instance of the SquareAttack (BlackBox) attack.
-
-# Returns
-- Adversarial example (same type and shape as `sample`).
-"""
-function craft(sample, model::AbstractModel, attack::SquareAttack)
-    return sample
 end

@@ -1,4 +1,5 @@
 using DecisionTree: DecisionTreeClassifier
+using Flux
 
 """
     attack(atk, model, sample; kwargs...)
@@ -8,41 +9,41 @@ Apply an adversarial attack to a sample using the given model.
 # Arguments
 - `atk::AbstractAttack`: The attack object to apply.
 - `model`: The model to attack. Supports:
-    * `AbstractModel` subtypes (library-defined model wrappers)
-    * Native models like `DecisionTreeClassifier` (for black-box attacks)
-- `sample::AbstractArray{<:Number}` or `NamedTuple`: Input sample (array) or named tuple with `data` and `label` fields.
+    * `Flux.Chain` (for white-box and black-box attacks)
+    * `DecisionTreeClassifier` (for black-box attacks)
+- `sample::AbstractArray{<:Number}` or `NamedTuple`:
+    * Raw input array, or
+    * NamedTuple with `data` and `label` fields.
 - `kwargs...`: Additional keyword arguments.
 
 # Returns
 - Adversarial sample produced by the attack.
 
 # Notes
-- `WhiteBoxAttack` requires a `DifferentiableModel`.
-- `BlackBoxAttack` works for any `AbstractModel` or supported native models.
+- `WhiteBoxAttack` is supported for `Flux.Chain`.
+- `BlackBoxAttack` is supported for both `Flux.Chain` and `DecisionTreeClassifier`
+  (treated as black-box models, using only model outputs).
 """
-function attack(atk::WhiteBoxAttack, model::NonDifferentiableModel, sample::AbstractArray{<:Number}; kwargs...)
-    error("$(typeof(atk)) is a white-box attack and requires a DifferentiableModel, " *
-          "but got $(typeof(model)). Consider using a black-box attack instead.")
-end
-
-function attack(atk::WhiteBoxAttack, model::DifferentiableModel, sample::NamedTuple; kwargs...)
+# Flux.Chain support for white-box attacks
+function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::BlackBoxAttack, model::DifferentiableModel, sample::NamedTuple; kwargs...)
+function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::AbstractArray{<:Number}; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::BlackBoxAttack, model::AbstractModel, sample::AbstractArray{<:Number}; kwargs...)
+# Flux.Chain support for black-box attacks
+function attack(atk::BlackBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::BlackBoxAttack, model::AbstractModel, sample::NamedTuple; kwargs...)
+function attack(atk::BlackBoxAttack, model::Flux.Chain, sample::AbstractArray{<:Number}; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
 # for custom attacks that don't subtype WhiteBox/BlackBox
-function attack(atk::AbstractAttack, model::AbstractModel, sample::AbstractArray{<:Number}; kwargs...)
+function attack(atk::AbstractAttack, model, sample::AbstractArray{<:Number}; kwargs...)
     craft(sample, model, atk; kwargs...)
 end
 
@@ -56,7 +57,7 @@ function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::Abst
 end
 
 """
-    benchmark(atk::AbstractAttack, model::AbstractModel, dataset, metric::Function)
+    benchmark(atk::AbstractAttack, model, dataset, metric::Function; kwargs...)
 
 Evaluate attack performance on a dataset with labels using a given metric.
 
@@ -69,7 +70,7 @@ Evaluate attack performance on a dataset with labels using a given metric.
 # Returns
 - Scalar metric value representing attack performance
 """
-function benchmark(atk::AbstractAttack, model::AbstractModel, dataset, metric::Function; kwargs...)
+function benchmark(atk::AbstractAttack, model, dataset, metric::Function; kwargs...)
     adv_samples = [attack(atk, model, x; kwargs...) for (x, _) in dataset]
     labels = [y for (_, y) in dataset]
     return metric(model, adv_samples, labels)
