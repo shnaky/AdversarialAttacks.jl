@@ -68,3 +68,32 @@ jobs:
           using AdversarialAttacks
           DocMeta.setdocmeta!(AdversarialAttacks, :DocTestSetup, :(using AdversarialAttacks); recursive=true)
           doctest(AdversarialAttacks)
+
+  format:
+    name: Format Code
+    runs-on: ubuntu-latest
+    # Only run on push events, not on PRs
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+
+      - uses: julia-actions/cache@v2
+
+      - name: Install Runic
+        run: julia --project=@runic -e 'using Pkg; Pkg.add("Runic")'
+
+      - name: Run Runic formatter
+        run: julia --project=@runic -m Runic --inplace .
+
+      - name: Commit formatted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format code with Runic.jl"
+          file_pattern: "*.jl"
+
