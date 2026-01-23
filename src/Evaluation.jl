@@ -20,9 +20,12 @@ including clean/adversarial accuracy, attack success rate, and robustness score.
 - `attack_success_rate::Float64`: (ASR) Fraction of successful attacks (on correctly classified samples)
 - `robustness_score::Float64`: 1.0 - attack_success_rate (ASR)
 - `num_successful_attacks::Int`: Number of successful attacks
+- `linf_norm_max::Float64`: Maximum L_inf norm of perturbations across all samples
+- `linf_norm_mean::Float64`: Mean L_inf norm of perturbations across all samples
 
 # Note
 An attack succeeds when the clean prediction is correct but the adversarial prediction is incorrect.
+The L_inf norm measures the maximum absolute change in any feature of the input.
 """
 struct RobustnessReport
     num_samples::Int
@@ -32,6 +35,8 @@ struct RobustnessReport
     attack_success_rate::Float64
     robustness_score::Float64
     num_successful_attacks::Int
+    linf_norm_max::Float64
+    linf_norm_mean::Float64
 end
 
 """
@@ -80,6 +85,12 @@ function Base.show(io::IO, report::RobustnessReport)
         round(report.robustness_score * 100, digits = 2), "%"
     )
 
+    println(io, "\nPerturbation Analysis (L_inf norm)")
+    println(io, "  Maximum perturbation           : ",
+        round(report.linf_norm_max, digits=2))
+    println(io, "  Mean perturbation              : ",
+        round(report.linf_norm_mean, digits=2))
+
     println(io, "\nNotes")
     println(io, "  • Attack success is counted only when:")
     println(io, "    - the clean prediction is correct")
@@ -127,6 +138,7 @@ function evaluate_robustness(
     num_clean_correct = 0
     num_adv_correct = 0
     num_successful_attacks = 0
+    linf_norms = Float64[]
 
     for i in 1:n_test
         sample = test_data[i]
@@ -148,6 +160,11 @@ function evaluate_robustness(
             is_adv_correct = (adv_label == true_label)
             num_adv_correct += is_adv_correct
 
+            # compute L_inf norm of perturbation
+            perturbation = abs.(adv_data .- sample.data)
+            linf_norm = maximum(perturbation)
+            push!(linf_norms, linf_norm)
+
             # successful attack condition (a flip happened in prediction)
             if is_clean_correct && !is_adv_correct
                 num_successful_attacks += 1
@@ -166,6 +183,8 @@ function evaluate_robustness(
     adv_accuracy = num_adv_correct / n_test
     attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
     robustness_score = 1.0 - attack_success_rate
+    linf_norm_max = length(linf_norms) > 0 ? maximum(linf_norms) : 0.0
+    linf_norm_mean = length(linf_norms) > 0 ? sum(linf_norms) / length(linf_norms) : 0.0
 
     println("Evaluation complete!")
 
@@ -177,6 +196,11 @@ function evaluate_robustness(
         attack_success_rate,
         robustness_score,
         num_successful_attacks,
+        linf_norm_max,
+        linf_norm_mean,
     )
 
 end
+
+
+

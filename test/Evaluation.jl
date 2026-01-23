@@ -22,6 +22,15 @@ using Flux
         @test hasfield(RobustnessReport, :num_successful_attacks)
         @test hasfield(RobustnessReport, :num_clean_correct)
 
+        # L_inf norm fields
+        @test hasfield(RobustnessReport, :linf_norm_max)
+        @test hasfield(RobustnessReport, :linf_norm_mean)
+        @test result.linf_norm_max isa Float64
+        @test result.linf_norm_mean isa Float64
+        @test result.linf_norm_max >= 0.0
+        @test result.linf_norm_mean >= 0.0
+        @test result.linf_norm_max >= result.linf_norm_mean
+
         @test result.num_samples isa Int
         @test result.num_clean_correct isa Int
         @test result.clean_accuracy isa Float64
@@ -71,7 +80,7 @@ using Flux
 
     @testset "evaluate_robustness - RobustnessReport show" begin
         # dummy report
-        report = RobustnessReport(1, 0.0, 0.0, 0.0, 1.0, 0, 0)
+        report = RobustnessReport(1, 0, 0.0, 0.0, 0.0, 1.0, 0, 0.0, 0.0)
 
         # get output
         io = IOBuffer()
@@ -81,5 +90,19 @@ using Flux
         # check if key phrases appear in the output
         @test occursin("Robustness Evaluation Report", output)
         @test occursin("Total samples evaluated", output)
+    end
+
+    @testset "evaluate_robustness - L_inf norm correctness" begin
+        # simple attack that adds a fixed perturbation
+        struct TestLinfAttack end
+        AdversarialAttacks.craft(sample, model, ::TestLinfAttack) = sample.data .+ Float32[0.1, 0.5, 0.2, 0.3]
+        
+        # single test sample with an anonymous dummy function as model
+        test_data = [(data=Float32[1, 2, 3, 4], label=Flux.onehot(1, 1:3))]
+        result = evaluate_robustness(x -> Flux.onehot(1, 1:3), TestLinfAttack(), test_data; num_samples=1)
+        
+        # check L_inf norms 
+        @test result.linf_norm_max == 0.5
+        @test result.linf_norm_mean == 0.5
     end
 end
