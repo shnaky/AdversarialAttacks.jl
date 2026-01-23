@@ -24,7 +24,6 @@ using Flux
         struct DummyAttack <: AbstractAttack end
 
         AdversarialAttacks.name(::DummyAttack) = "DummyAttack"
-        AdversarialAttacks.hyperparameters(d::DummyAttack) = d.params
         AdversarialAttacks.attack(::DummyAttack, model, sample; kwargs...) = (:adv, model, sample, kwargs)
 
         dummy = DummyAttack()
