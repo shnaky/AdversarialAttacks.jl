@@ -10,7 +10,7 @@ using Flux
     @test attack.epsilon == 0.1
 
     # Test constructor with keyword argument
-    attack_with_epsilon = FGSM(epsilon=0.25)
+    attack_with_epsilon = FGSM(epsilon = 0.25)
     @test attack_with_epsilon isa FGSM
     @test attack_with_epsilon.epsilon == 0.25
     @test hyperparameters(attack_with_epsilon) == Dict("epsilon" => 0.25)
@@ -19,7 +19,7 @@ using Flux
     @test FGSM <: WhiteBoxAttack
     @test FGSM <: AbstractAttack
 
-    sample = (data=Float32[1.0, 2.0, 3.0], label=Flux.onehot(1, 1:2))
+    sample = (data = Float32[1.0, 2.0, 3.0], label = Flux.onehot(1, 1:2))
     model = Chain(
         Dense(3 => 2),
         softmax,

@@ -55,13 +55,13 @@ using DecisionTree
         # WhiteBox + Flux.Chain + NamedTuple
         AdversarialAttacks.craft(sample::NamedTuple, m::Flux.Chain, ::MockWB) = sample.data .* 2.0
 
-        sample_wb = (data=[1.0, 2.0], label=1)
+        sample_wb = (data = [1.0, 2.0], label = 1)
         @test attack(MockWB(), model, sample_wb) == [2.0, 4.0]
 
         # BlackBox + Flux.Chain + NamedTuple
         AdversarialAttacks.craft(sample::NamedTuple, m::Flux.Chain, ::MockBB) = sample.data .* 1.5
 
-        sample_bb = (data=[1.0, 2.0], label=1)
+        sample_bb = (data = [1.0, 2.0], label = 1)
         @test attack(MockBB(), model, sample_bb) == [1.5, 3.0]
     end
 
@@ -101,7 +101,7 @@ using DecisionTree
         X = [0.0 1.0; 1.0 0.0]  # 2 samples, 2 features
         y = [1, 2]              # 1-based labels
 
-        tree = DecisionTreeClassifier(; max_depth=2)
+        tree = DecisionTreeClassifier(; max_depth = 2)
         fit!(tree, X, y)
 
         # Test AbstractArray sample
@@ -110,7 +110,7 @@ using DecisionTree
         @test adv_raw == raw_sample .+ 5.0
 
         # Test NamedTuple sample
-        nt_sample = (data=[1.0, 2.0], label=1)
+        nt_sample = (data = [1.0, 2.0], label = 1)
         adv_nt = attack(DummyBBTree(), tree, nt_sample)
         @test adv_nt == nt_sample.data .+ 5.0
     end
@@ -120,7 +120,7 @@ using DecisionTree
 
         X = [0.0 1.0; 1.0 0.0]
         y = [1, 2]
-        tree = DecisionTreeClassifier(; max_depth=2)
+        tree = DecisionTreeClassifier(; max_depth = 2)
         fit!(tree, X, y)
 
         AdversarialAttacks.craft(sample::AbstractArray, ::DecisionTreeClassifier, ::DummyBB2) = sample .* 1.1
@@ -129,15 +129,15 @@ using DecisionTree
         sample_vec = [1.0, 2.0]
 
         # Raw vector
-        @test attack(DummyBB2(), tree, sample_vec) ≈ [1.1, 2.2] atol = 1e-6
+        @test attack(DummyBB2(), tree, sample_vec) ≈ [1.1, 2.2] atol = 1.0e-6
 
         # NamedTuple (Int label)
-        sample_nt = (data=[1.0, 2.0], label=1)
-        @test attack(DummyBB2(), tree, sample_nt) ≈ [1.1, 2.2] atol = 1e-6
+        sample_nt = (data = [1.0, 2.0], label = 1)
+        @test attack(DummyBB2(), tree, sample_nt) ≈ [1.1, 2.2] atol = 1.0e-6
 
         # NamedTuple (Vector{Int} label)
-        sample_vec_label = (data=[3.0, 4.0], label=[2])
-        @test attack(DummyBB2(), tree, sample_vec_label) ≈ [3.3, 4.4] atol = 1e-6
+        sample_vec_label = (data = [3.0, 4.0], label = [2])
+        @test attack(DummyBB2(), tree, sample_vec_label) ≈ [3.3, 4.4] atol = 1.0e-6
     end
 
 

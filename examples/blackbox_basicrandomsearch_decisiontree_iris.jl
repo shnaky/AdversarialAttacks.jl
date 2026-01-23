@@ -17,10 +17,10 @@ y_str = String.(iris.Species)
 classes = ["setosa", "versicolor", "virginica"]
 
 dt_model = DecisionTreeClassifier(
-    max_depth=3,
-    min_samples_leaf=1,
-    min_samples_split=2,
-    classes=classes,
+    max_depth = 3,
+    min_samples_leaf = 1,
+    min_samples_split = 2,
+    classes = classes,
 )
 fit!(dt_model, X, y_str)
 
@@ -62,7 +62,7 @@ println("True label string: ", label_str, " (index ", true_idx, ")")
 # 3. Build sample NamedTuple
 # ------------------------------------
 y0 = Flux.onehot(true_idx, 1:length(classes))
-sample = (data=Float32.(x0), label=y0)
+sample = (data = Float32.(x0), label = y0)
 
 x0_mat = reshape(Float64.(x0), 1, :)
 orig_probs_vec = DecisionTree.predict_proba(dt_model, x0_mat)
@@ -111,27 +111,27 @@ idx_versicolor = findall(==("versicolor"), y_str)
 idx_virginica = findall(==("virginica"), y_str)
 
 # Plot 1: features 1 & 2
-p12 = plot(xlabel="SepalLength", ylabel="SepalWidth", title="Iris (features 1&2)", legend=false)
-scatter!(p12, X[idx_setosa, 1], X[idx_setosa, 2], color=:blue, markershape=:circle)
-scatter!(p12, X[idx_versicolor, 1], X[idx_versicolor, 2], color=:green, markershape=:utriangle)
-scatter!(p12, X[idx_virginica, 1], X[idx_virginica, 2], color=:red, markershape=:square)
-scatter!(p12, [x0[1]], [x0[2]], markersize=10, color=:black, label="")
-scatter!(p12, [x_adv[1]], [x_adv[2]], markersize=10, color=:orange, label="")
+p12 = plot(xlabel = "SepalLength", ylabel = "SepalWidth", title = "Iris (features 1&2)", legend = false)
+scatter!(p12, X[idx_setosa, 1], X[idx_setosa, 2], color = :blue, markershape = :circle)
+scatter!(p12, X[idx_versicolor, 1], X[idx_versicolor, 2], color = :green, markershape = :utriangle)
+scatter!(p12, X[idx_virginica, 1], X[idx_virginica, 2], color = :red, markershape = :square)
+scatter!(p12, [x0[1]], [x0[2]], markersize = 10, color = :black, label = "")
+scatter!(p12, [x_adv[1]], [x_adv[2]], markersize = 10, color = :orange, label = "")
 
 # Plot 2: features 3 & 4
 orig_pred_class = classes[argmax(orig_probs_vec)[2]]
 adv_pred_class = classes[argmax(adv_probs_vec)[2]]
-p34 = plot(xlabel="PetalLength", ylabel="PetalWidth", title="Iris (features 3&4)")
-scatter!(p34, X[idx_setosa, 3], X[idx_setosa, 4], color=:blue, markershape=:circle, label="setosa")
-scatter!(p34, X[idx_versicolor, 3], X[idx_versicolor, 4], color=:green, markershape=:utriangle, label="versicolor")
-scatter!(p34, X[idx_virginica, 3], X[idx_virginica, 4], color=:red, markershape=:square, label="virginica")
-scatter!(p34, [x0[3]], [x0[4]], markersize=10, color=:black, label="original")
-scatter!(p34, [x_adv[3]], [x_adv[4]], markersize=10, color=:orange, label="adversarial")
+p34 = plot(xlabel = "PetalLength", ylabel = "PetalWidth", title = "Iris (features 3&4)")
+scatter!(p34, X[idx_setosa, 3], X[idx_setosa, 4], color = :blue, markershape = :circle, label = "setosa")
+scatter!(p34, X[idx_versicolor, 3], X[idx_versicolor, 4], color = :green, markershape = :utriangle, label = "versicolor")
+scatter!(p34, X[idx_virginica, 3], X[idx_virginica, 4], color = :red, markershape = :square, label = "virginica")
+scatter!(p34, [x0[3]], [x0[4]], markersize = 10, color = :black, label = "original")
+scatter!(p34, [x_adv[3]], [x_adv[4]], markersize = 10, color = :orange, label = "adversarial")
 
 annot_str = "true: $label_str\norig: $orig_pred_class\nadv: $adv_pred_class"
 annotate!(p34, x0[3] + 0.2, x0[4], text(annot_str, 8, :left))
 
-fig = plot(p12, p34, layout=(1, 2))
+fig = plot(p12, p34, layout = (1, 2))
 display(fig)
 
 println("\nPress Enter to close plots...")

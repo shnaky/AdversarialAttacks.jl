@@ -17,14 +17,14 @@ struct DummyBlackBoxModel end
     @test attack.bounds === nothing
 
     # Test constructor with parameters
-    attack_with_params = BasicRandomSearch(epsilon=0.25)
+    attack_with_params = BasicRandomSearch(epsilon = 0.25)
     @test attack_with_params isa BasicRandomSearch
     @test attack_with_params.epsilon == 0.25
     @test attack_with_params.bounds === nothing
 
     # Test constructor with bounds
     bounds = [(0.0, 1.0), (0.0, 2.0)]
-    attack_with_bounds = BasicRandomSearch(epsilon=0.1, bounds=bounds)
+    attack_with_bounds = BasicRandomSearch(epsilon = 0.1, bounds = bounds)
     @test attack_with_bounds.epsilon == 0.1
     @test attack_with_bounds.bounds == bounds
 
@@ -33,7 +33,7 @@ struct DummyBlackBoxModel end
     @test BasicRandomSearch <: AbstractAttack
 
     # Test for Flux model
-    sample = (data=Float32[1.0, 2.0, 3.0, 7.0], label=Flux.onehot(1, 1:2))
+    sample = (data = Float32[1.0, 2.0, 3.0, 7.0], label = Flux.onehot(1, 1:2))
     Random.seed!(1234)
     model = Chain(Dense(4 => 2), softmax)
     x_copy = copy(sample.data)
@@ -52,7 +52,7 @@ end
     labels = vcat(fill(classes[1], 8), fill(classes[2], 8), fill(classes[3], 8))
     features = rand(24, 4) .* 4
 
-    dt_model = DecisionTreeClassifier(; classes=classes)
+    dt_model = DecisionTreeClassifier(; classes = classes)
     fit!(dt_model, features, labels)
 
     # Verify predict_proba returns 3 probs
@@ -62,8 +62,8 @@ end
     @test all(0 .<= probs .<= 1)
 
     # Test craft with typed API
-    sample = (data=Float32[0.5, 0.8, 1.2, 1.0], label=Flux.onehot(1, 1:3))
-    attack = BasicRandomSearch(epsilon=0.1f0)
+    sample = (data = Float32[0.5, 0.8, 1.2, 1.0], label = Flux.onehot(1, 1:3))
+    attack = BasicRandomSearch(epsilon = 0.1f0)
     x_copy = copy(sample.data)
 
     result = craft(sample, dt_model, attack)
@@ -76,14 +76,14 @@ end
     Random.seed!(1234)
 
     ε = 0.1f0
-    atk = BasicRandomSearch(epsilon=ε)
+    atk = BasicRandomSearch(epsilon = ε)
 
     # Case 1: left move should be chosen at least once
     # Dummy Flux model 1: output = [sum(x), 0.0]
     # For label = 1, decreasing sum(x) decreases true-class "probability".
     model_left = Chain(x -> Float32[sum(x), 0.0f0])
 
-    sample_left = (data=Float32[0.5, 0.5, 0.5, 0.5], label=1)
+    sample_left = (data = Float32[0.5, 0.5, 0.5, 0.5], label = 1)
 
     adv_left = craft(sample_left, model_left, atk)
     @test size(adv_left) == size(sample_left.data)
@@ -96,7 +96,7 @@ end
     # For label = 1, increasing sum(x) decreases true-class "probability".
     model_right = Chain(x -> Float32[-sum(x), 0.0f0])
 
-    sample_right = (data=Float32[0.5, 0.5, 0.5, 0.5], label=1)
+    sample_right = (data = Float32[0.5, 0.5, 0.5, 0.5], label = 1)
 
     adv_right = craft(sample_right, model_right, atk)
     @test size(adv_right) == size(sample_right.data)
@@ -108,7 +108,7 @@ end
     # Dummy Flux model 3: output = [0.0, 0.0]
     model_const = Chain(x -> Float32[0.0f0, 0.0f0])
 
-    sample_const = (data=Float32[0.3, 0.7, 0.2, 0.9], label=1)
+    sample_const = (data = Float32[0.3, 0.7, 0.2, 0.9], label = 1)
 
     adv_const = craft(sample_const, model_const, atk)
     @test adv_const == sample_const.data      # no change if prob is constant
@@ -121,12 +121,12 @@ end
     iris_bounds = [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
 
     # Test 1: Bounds stored correctly in struct
-    attack_bounds = BasicRandomSearch(epsilon=0.1f0, bounds=iris_bounds)
+    attack_bounds = BasicRandomSearch(epsilon = 0.1f0, bounds = iris_bounds)
     @test attack_bounds.bounds == iris_bounds
     @test attack_bounds.epsilon == 0.1f0
 
     # Test 2: Default bounds is nothing
-    attack_default = BasicRandomSearch(epsilon=0.1f0)
+    attack_default = BasicRandomSearch(epsilon = 0.1f0)
     @test attack_default.bounds === nothing
 
     # Dummy Flux model with custom bounds: model(x) = [sum(x), 0.0]
@@ -134,8 +134,8 @@ end
     bounded_model = Chain(x -> Float32[sum(x), 0.0f0])
 
     # Sample near lower bound, expect clamping
-    sample_near_lb = (data=Float32[4.4, 2.1, 1.1, 0.2], label=1)  # just above iris_bounds lb
-    attack_near_lb = BasicRandomSearch(epsilon=0.2f0, bounds=iris_bounds)
+    sample_near_lb = (data = Float32[4.4, 2.1, 1.1, 0.2], label = 1)  # just above iris_bounds lb
+    attack_near_lb = BasicRandomSearch(epsilon = 0.2f0, bounds = iris_bounds)
     adv_near_lb = craft(sample_near_lb, bounded_model, attack_near_lb)
 
     @test all(adv_near_lb .>= [4.3, 2.0, 1.0, 0.1])     # >= lb
@@ -143,8 +143,8 @@ end
     @test any(adv_near_lb .< sample_near_lb.data)       # decreased (success)
 
     # Test 4: No bounds → [0,1] default (image compatibility)
-    attack_no_bounds = BasicRandomSearch(epsilon=0.1f0)
-    sample_image = (data=Float32[0.2, 0.8, 0.3, 0.9], label=1)
+    attack_no_bounds = BasicRandomSearch(epsilon = 0.1f0)
+    sample_image = (data = Float32[0.2, 0.8, 0.3, 0.9], label = 1)
     adv_image = craft(sample_image, bounded_model, attack_no_bounds)
     @test all(0 .<= adv_image .<= 1)                    # [0,1] respected
     @test any(adv_image .< sample_image.data)           # perturbation applied
@@ -154,6 +154,6 @@ end
     @test_throws DimensionMismatch craft(
         sample_near_lb,
         bounded_model,
-        BasicRandomSearch(epsilon=0.1f0, bounds=invalid_bounds),
+        BasicRandomSearch(epsilon = 0.1f0, bounds = invalid_bounds),
     )
 end
