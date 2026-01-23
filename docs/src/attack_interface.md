@@ -12,5 +12,5 @@ WhiteBoxAttack
 BlackBoxAttack
 AdversarialAttacks.name(::AbstractAttack)
 AdversarialAttacks.hyperparameters(::AbstractAttack)
-AdversarialAttacks.craft
+AdversarialAttacks.attack
 ```

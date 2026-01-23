@@ -11,10 +11,10 @@ struct DummyBlackBoxModel end
     Random.seed!(1234)  # Make tests deterministic
 
     # Test default constructor
-    attack = BasicRandomSearch()
-    @test attack isa BasicRandomSearch
-    @test attack.epsilon == 0.1
-    @test attack.bounds === nothing
+    atk = BasicRandomSearch()
+    @test atk isa BasicRandomSearch
+    @test atk.epsilon == 0.1
+    @test atk.bounds === nothing
 
     # Test constructor with parameters
     attack_with_params = BasicRandomSearch(epsilon = 0.25)
@@ -38,7 +38,7 @@ struct DummyBlackBoxModel end
     model = Chain(Dense(4 => 2), softmax)
     x_copy = copy(sample.data)
 
-    result = craft(sample, model, attack_with_params)
+    result = attack(attack_with_params, model, sample)
     @test result isa Vector
     @test size(result) == size(sample.data)
     @test eltype(result) == eltype(sample.data)
@@ -61,12 +61,12 @@ end
     @test length(probs) == 3
     @test all(0 .<= probs .<= 1)
 
-    # Test craft with typed API
+    # Test attack with typed API
     sample = (data = Float32[0.5, 0.8, 1.2, 1.0], label = Flux.onehot(1, 1:3))
-    attack = BasicRandomSearch(epsilon = 0.1f0)
+    atk = BasicRandomSearch(epsilon = 0.1f0)
     x_copy = copy(sample.data)
 
-    result = craft(sample, dt_model, attack)
+    result = attack(atk, dt_model, sample)
     @test result isa Vector{Float32}
     @test size(result) == size(sample.data)
     @test x_copy == sample.data  # Original unchanged
@@ -85,7 +85,7 @@ end
 
     sample_left = (data = Float32[0.5, 0.5, 0.5, 0.5], label = 1)
 
-    adv_left = craft(sample_left, model_left, atk)
+    adv_left = attack(atk, model_left, sample_left)
     @test size(adv_left) == size(sample_left.data)
     @test all(0 .<= adv_left .<= 1)
     @test any(adv_left .< sample_left.data)   # some coordinate decreased
@@ -98,7 +98,7 @@ end
 
     sample_right = (data = Float32[0.5, 0.5, 0.5, 0.5], label = 1)
 
-    adv_right = craft(sample_right, model_right, atk)
+    adv_right = attack(atk, model_right, sample_right)
     @test size(adv_right) == size(sample_right.data)
     @test all(0 .<= adv_right .<= 1)
     @test any(adv_right .> sample_right.data) # some coordinate increased
@@ -110,7 +110,7 @@ end
 
     sample_const = (data = Float32[0.3, 0.7, 0.2, 0.9], label = 1)
 
-    adv_const = craft(sample_const, model_const, atk)
+    adv_const = attack(atk, model_const, sample_const)
     @test adv_const == sample_const.data      # no change if prob is constant
 end
 
@@ -136,7 +136,7 @@ end
     # Sample near lower bound, expect clamping
     sample_near_lb = (data = Float32[4.4, 2.1, 1.1, 0.2], label = 1)  # just above iris_bounds lb
     attack_near_lb = BasicRandomSearch(epsilon = 0.2f0, bounds = iris_bounds)
-    adv_near_lb = craft(sample_near_lb, bounded_model, attack_near_lb)
+    adv_near_lb = attack(attack_near_lb, bounded_model, sample_near_lb)
 
     @test all(adv_near_lb .>= [4.3, 2.0, 1.0, 0.1])     # >= lb
     @test all(adv_near_lb .<= [7.9, 4.4, 6.9, 2.5])     # <= ub
@@ -145,15 +145,15 @@ end
     # Test 4: No bounds → [0,1] default (image compatibility)
     attack_no_bounds = BasicRandomSearch(epsilon = 0.1f0)
     sample_image = (data = Float32[0.2, 0.8, 0.3, 0.9], label = 1)
-    adv_image = craft(sample_image, bounded_model, attack_no_bounds)
+    adv_image = attack(attack_no_bounds, bounded_model, sample_image)
     @test all(0 .<= adv_image .<= 1)                    # [0,1] respected
     @test any(adv_image .< sample_image.data)           # perturbation applied
 
     # Test 5: Bounds length validation (should error on mismatch)
     invalid_bounds = [(0.0f0, 1.0f0), (0.0f0, 1.0f0), (0.0f0, 1.0f0)]  # 3 bounds for 4 features
-    @test_throws DimensionMismatch craft(
-        sample_near_lb,
-        bounded_model,
+    @test_throws DimensionMismatch attack(
         BasicRandomSearch(epsilon = 0.1f0, bounds = invalid_bounds),
+        bounded_model,
+        sample_near_lb,
     )
 end

@@ -103,13 +103,13 @@ function Base.show(io::IO, report::RobustnessReport)
 end
 
 """
-    evaluate_robustness(model, attack, test_data; num_samples=100)
+    evaluate_robustness(model, atk, test_data; num_samples=100)
 
 Evaluate model robustness by running attack on multiple samples.
 
 # Arguments
 - `model`: The model to evaluate.
-- `attack`: The attack to use.
+- `atk`: The attack to use.
 - `test_data`: Collection of test samples.
 - `num_samples::Int=100`: Number of samples to test. If more than available samples,
   uses all available samples.
@@ -125,7 +125,7 @@ println(report)
 """
 function evaluate_robustness(
         model,
-        attack,
+        atk,
         test_data;
         num_samples::Int = 100
     )
@@ -158,7 +158,7 @@ function evaluate_robustness(
             num_clean_correct += is_clean_correct
 
             # adverserial output
-            adv_data = craft(sample, model, attack)
+            adv_data = attack(atk, model, sample)
             adv_pred = model(adv_data)
             adv_label = argmax(adv_pred)
             is_adv_correct = (adv_label == true_label)

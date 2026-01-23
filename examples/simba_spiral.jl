@@ -91,11 +91,11 @@ function plot_decision_boundary!(plt, model; resolution = 100, alpha = 0.3)
     )
 end
 
-function plot_attack_results(X, y, model, attack; n_samples = 20)
+function plot_attack_results(X, y, model, atk; n_samples = 20)
     indices = randperm(size(X, 2))[1:n_samples]
 
     plt = plot(
-        size = (800, 700), title = "SimBA Attack (ε=$(attack.epsilon))",
+        size = (800, 700), title = "SimBA Attack (ε=$(atk.epsilon))",
         xlabel = "x₁", ylabel = "x₂", legend = :topright
     )
     plot_decision_boundary!(plt, model)
@@ -108,7 +108,7 @@ function plot_attack_results(X, y, model, attack; n_samples = 20)
         label_onehot = Flux.onehot(y[idx], 1:2)
         sample = (data = x_orig, label = label_onehot)
 
-        x_adv = craft(sample, model, attack)
+        x_adv = attack(atk, model, sample)
 
         pred_orig = argmax(model(x_orig))
         pred_adv = argmax(model(x_adv))
@@ -161,8 +161,8 @@ function compare_epsilons(X, y, model; epsilons = [0.1, 0.3, 0.5, 1.0], n_sample
     plots = []
 
     for ε in epsilons
-        attack = BasicRandomSearch(epsilon = Float32(ε))
-        plt = plot_attack_results(X, y, model, attack; n_samples = n_samples)
+        atk = BasicRandomSearch(epsilon = Float32(ε))
+        plt = plot_attack_results(X, y, model, atk; n_samples = n_samples)
         title!(plt, "ε = $ε")
         push!(plots, plt)
     end
@@ -175,8 +175,8 @@ end
 # 4. Run attack and visualize
 # ------------------------------------
 println("\nRunning SimBA attack visualization...")
-attack = BasicRandomSearch(epsilon = 0.5f0)
-p1 = plot_attack_results(X, y, model, attack; n_samples = 25)
+atk = BasicRandomSearch(epsilon = 0.5f0)
+p1 = plot_attack_results(X, y, model, atk; n_samples = 25)
 display(p1)
 
 println("\nComparing different epsilon values...")

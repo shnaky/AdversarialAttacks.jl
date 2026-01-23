@@ -10,6 +10,6 @@ This page documents the BasicRandomSearch algorithm (SimBA variant), a black-box
 
 ```@docs
 BasicRandomSearch
-AdversarialAttacks.craft(::Any, ::Chain, ::BasicRandomSearch)
-AdversarialAttacks.craft(::Any, ::DecisionTreeClassifier, ::BasicRandomSearch)
+AdversarialAttacks.attack(::BasicRandomSearch, ::Chain, ::Any)
+AdversarialAttacks.attack(::BasicRandomSearch, ::DecisionTreeClassifier, ::Any)
 ```

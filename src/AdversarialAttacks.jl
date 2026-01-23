@@ -17,7 +17,7 @@ export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
 export FGSM, BasicRandomSearch, SquareAttack
 
 # Export attack interface functions
-export craft, name, hyperparameters
+export name, hyperparameters
 
 # Export model interface functions
 export predict, loss, params

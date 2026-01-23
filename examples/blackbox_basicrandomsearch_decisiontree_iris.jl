@@ -75,14 +75,14 @@ println("Original predicted class index = ", argmax(orig_probs_vec))
 # 4. Run BasicRandomSearch
 # ------------------------------------
 ε = 0.3f0
-attack = BasicRandomSearch(
+atk = BasicRandomSearch(
     ε,
     [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
 )
 println("\nRunning BasicRandomSearch with epsilon = ", ε, " ...")
 Random.seed!(42)
 
-x_adv = craft(sample, dt_model, attack)
+x_adv = attack(atk, dt_model, sample)
 
 x_adv_mat = reshape(Float64.(x_adv), 1, :)
 adv_probs_vec = DecisionTree.predict_proba(dt_model, x_adv_mat)

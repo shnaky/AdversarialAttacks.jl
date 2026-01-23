@@ -36,25 +36,24 @@ using Flux
 
         AdversarialAttacks.name(::DummyAttack) = "DummyAttack"
         AdversarialAttacks.hyperparameters(d::DummyAttack) = d.params
-        AdversarialAttacks.craft(sample, model, ::DummyAttack; kwargs...) = (:adv, sample, model, kwargs)
+        AdversarialAttacks.attack(::DummyAttack, model, sample; kwargs...) = (:adv, model, sample, kwargs)
 
         dummy = DummyAttack(Dict("eps" => 0.1))
         @test name(dummy) == "DummyAttack"
         @test hyperparameters(dummy) == Dict("eps" => 0.1)
-        adv, sample, model, kwargs = craft(:x, :m, dummy; steps = 5)
+        adv, model, sample, kwargs = attack(dummy, :m, :x; steps = 5)
         @test adv == :adv
-        @test sample == :x
         @test model == :m
+        @test sample == :x
         @test (; kwargs...) == (; steps = 5)
     end
 
-    @testset "craft fallback MethodError" begin
+    @testset "attack fallback MethodError" begin
         sample = (data = [1.0], label = 1)
         struct MockModel end
         struct MockAttack <: AbstractAttack end
 
         # fallback dispatch hit
-        @test_throws MethodError craft(sample, MockModel(), MockAttack())
         @test_throws MethodError attack(MockAttack(), MockModel(), sample)
     end
 end
