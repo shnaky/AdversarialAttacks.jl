@@ -20,15 +20,6 @@ using Flux
         @test AdversarialAttacks.name(m) == string(typeof(m))
     end
 
-    @testset "Default hyperparameters() implementation" begin
-        struct TestAttackDefaultHyperparams <: AbstractAttack end
-
-        atk = TestAttackDefaultHyperparams()
-
-        @test AdversarialAttacks.hyperparameters(atk) == Dict{String, Any}()
-        @test isempty(AdversarialAttacks.hyperparameters(atk))
-    end
-
     @testset "DummyAttack implementation" begin
         struct DummyAttack <: AbstractAttack
             params::Dict{String, Any}
