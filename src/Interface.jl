@@ -1,6 +1,3 @@
-using DecisionTree: DecisionTreeClassifier
-using Flux
-
 """
     attack(atk, model, sample; kwargs...)
 
@@ -9,7 +6,7 @@ Apply an adversarial attack to a sample using the given model.
 # Arguments
 - `atk::AbstractAttack`: The attack object to apply.
 - `model`: The model to attack. Supports:
-    * `Flux.Chain` (for white-box and black-box attacks)
+    * `Chain` (for white-box and black-box attacks)
     * `DecisionTreeClassifier` (for black-box attacks)
 - `sample::AbstractArray{<:Number}` or `NamedTuple`:
     * Raw input array, or
@@ -20,23 +17,23 @@ Apply an adversarial attack to a sample using the given model.
 - Adversarial sample produced by the attack.
 
 # Notes
-- `WhiteBoxAttack` is supported for `Flux.Chain`.
-- `BlackBoxAttack` is supported for both `Flux.Chain` and `DecisionTreeClassifier`
+- `WhiteBoxAttack` is supported for `Chain`.
+- `BlackBoxAttack` is supported for both `Chain` and `DecisionTreeClassifier`
   (treated as black-box models, using only model outputs).
 """
-function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
+function attack(atk::WhiteBoxAttack, model::Chain, sample::NamedTuple; kwargs...)
     return craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::AbstractArray{<:Number}; kwargs...)
+function attack(atk::WhiteBoxAttack, model::Chain, sample::AbstractArray{<:Number}; kwargs...)
     return craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::BlackBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
+function attack(atk::BlackBoxAttack, model::Chain, sample::NamedTuple; kwargs...)
     return craft(sample, model, atk; kwargs...)
 end
 
-function attack(atk::BlackBoxAttack, model::Flux.Chain, sample::AbstractArray{<:Number}; kwargs...)
+function attack(atk::BlackBoxAttack, model::Chain, sample::AbstractArray{<:Number}; kwargs...)
     return craft(sample, model, atk; kwargs...)
 end
 

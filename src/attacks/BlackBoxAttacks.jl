@@ -1,8 +1,5 @@
-using DecisionTree: DecisionTreeClassifier, predict_proba
-using Flux
-
 """
-    BasicRandomSearch(; epsilon=0.1, bounds=nothing)
+    BasicRandomSearch(; epsilon=0.1, bounds=nothing, rng=Random.default_rng())
 
 Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random search algorithm.
 
@@ -12,21 +9,23 @@ Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random s
             If `nothing`, defaults to [0, 1] for all features (suitable for normalized images).
             For tabular data, provide bounds matching feature ranges, e.g.,
             `[(4.3, 7.9), (2.0, 4.4), ...]` for Iris-like data.
+- `rng`: Random number generator for reproducibility (default: `Random.default_rng()`)
 """
-struct BasicRandomSearch{T <: Real, B <: Union{Nothing, Vector{<:Tuple{Real, Real}}}} <: BlackBoxAttack
+struct BasicRandomSearch{T <: Real, B <: Union{Nothing, Vector{<:Tuple{Real, Real}}}, R <: AbstractRNG} <: BlackBoxAttack
     epsilon::T
     bounds::B
+    rng::R
 end
 
-function BasicRandomSearch(; epsilon::Real = 0.1, bounds = nothing)
-    return BasicRandomSearch(epsilon, bounds)
+function BasicRandomSearch(; epsilon::Real = 0.1, bounds = nothing, rng::AbstractRNG = Random.default_rng())
+    return BasicRandomSearch(epsilon, bounds, rng)
 end
 
-function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε; bounds = nothing)
+function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε, rng::AbstractRNG; bounds = nothing)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
-    perm = randperm(ndims)
+    perm = randperm(rng, ndims)
 
     if bounds === nothing
         lb, ub = zeros(eltype(x_flat), ndims), ones(eltype(x_flat), ndims)
@@ -73,25 +72,25 @@ end
 
 
 """
-    craft(sample, model::Flux.Chain, attack::BasicRandomSearch)
+    craft(sample, model::Chain, attack::BasicRandomSearch)
 
-Performs a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
+Perform a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
 # Arguments
 - sample: The input sample to be changed.
-- model::Flux.Chain: The machine learning (deep learning, classical machine learning) model to be attacked.
+- model::Chain: The machine learning (deep learning, classical machine learning) model to be attacked.
 - attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
 
 # Returns
 - Adversarial example (same type and shape as `sample.data`).
 """
-function craft(sample, model::Flux.Chain, attack::BasicRandomSearch)
+function craft(sample, model::Chain, attack::BasicRandomSearch)
     x = sample.data
     y = sample.label
 
     ε = convert(eltype(x), attack.epsilon)
 
-    true_label = isa(y, Flux.OneHotVector) ? Flux.onecold(y) : Int(y)
+    true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
 
     # Define a closure that matches the shared interface: x_flat → prob vector
     predict_proba_fn = function (x_flat)
@@ -101,13 +100,13 @@ function craft(sample, model::Flux.Chain, attack::BasicRandomSearch)
         return probs
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε; bounds = attack.bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, attack.rng; bounds = attack.bounds)
 end
 
 """
     craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
 
-Performs a black-box adversarial attack on a DecisionTreeClassifier using BasicRandomSearch (SimBA).
+Perform a black-box adversarial attack on a DecisionTreeClassifier using BasicRandomSearch (SimBA).
 
 # Arguments
 - `sample`: NamedTuple with `data` and `label` fields.
@@ -124,7 +123,7 @@ function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
     ε = convert(eltype(x), attack.epsilon)
 
     # Convert one-hot label to integer if needed (1-based)
-    true_label = isa(y, Flux.OneHotVector) ? Flux.onecold(y) : Int(y)
+    true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
 
     # Closure: x_flat → prob vector
     predict_proba_fn = function (x_flat)
@@ -132,5 +131,5 @@ function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
         return predict_proba(model, x_row)
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds = attack.bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, attack.rng; bounds = attack.bounds)
 end

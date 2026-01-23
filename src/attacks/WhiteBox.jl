@@ -1,5 +1,3 @@
-using Flux: gradient
-
 """
     FGSM(; epsilon=0.1)
 
@@ -25,12 +23,12 @@ Return hyperparameters for an FGSM attack.
 """
 hyperparameters(atk::FGSM)::Dict{String, Any} = Dict("epsilon" => atk.epsilon)
 
-default_loss(m, x, y) = Flux.crossentropy(m(x), y)
+default_loss(m, x, y) = crossentropy(m(x), y)
 
 """
     craft(sample, model, attack::FGSM)
 
-Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the given `model` using the provided `sample`.
+Perform a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the given `model` using the provided `sample`.
 
 # Arguments
 - `sample`: Input sample as a named tuple with `data` and `label`.
@@ -40,11 +38,13 @@ Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the 
 # Returns
 - Adversarial example (same type and shape as `sample.data`).
 """
-function craft(sample, model::Flux.Chain, attack::FGSM; loss = default_loss)
+function craft(sample, model::Chain, attack::FGSM; loss = default_loss)
     x = sample.data
     y = sample.label
     ε = convert(eltype(x), attack.epsilon)
+    # Compute gradient of loss w.r.t. input x
     grads = gradient(xx -> loss(model, xx, y), x)[1]
+    # FGSM perturbation: ε · sign(∇_x L(x, y))
     perturbation = ε .* sign.(grads)
     adversarial_example = x .+ perturbation
     return adversarial_example
