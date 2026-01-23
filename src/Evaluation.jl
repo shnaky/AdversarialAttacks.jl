@@ -86,10 +86,14 @@ function Base.show(io::IO, report::RobustnessReport)
     )
 
     println(io, "\nPerturbation Analysis (L_inf norm)")
-    println(io, "  Maximum perturbation           : ",
-        round(report.linf_norm_max, digits=2))
-    println(io, "  Mean perturbation              : ",
-        round(report.linf_norm_mean, digits=2))
+    println(
+        io, "  Maximum perturbation           : ",
+        round(report.linf_norm_max, digits = 2)
+    )
+    println(
+        io, "  Mean perturbation              : ",
+        round(report.linf_norm_mean, digits = 2)
+    )
 
     println(io, "\nNotes")
     println(io, "  • Attack success is counted only when:")
@@ -201,6 +205,3 @@ function evaluate_robustness(
     )
 
 end
-
-
-
