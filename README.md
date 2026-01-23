@@ -137,3 +137,12 @@ Notes
 
 ## License
 This package is licensed under the MIT License. See [LICENSE](https://github.com/shnaky/AdversarialAttacks.jl/blob/main/LICENSE) for details.
+
+## AI Assistance
+
+This project uses AI coding assistants for routine maintenance tasks such as:
+- Code style fixes and documentation improvements
+- Consolidating imports and minor refactoring
+- Addressing code review feedback
+
+All AI-generated changes are reviewed before merging.

@@ -2,6 +2,10 @@ module AdversarialAttacks
 
 using Random
 
+# External dependencies
+using DecisionTree: DecisionTreeClassifier, predict_proba
+using Flux: Chain, gradient, OneHotVector, onecold, softmax, crossentropy
+
 include("attacks/Attack.jl")
 include("attacks/BlackBoxAttacks.jl")
 include("attacks/WhiteBox.jl")
