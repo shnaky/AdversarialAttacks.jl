@@ -1,5 +1,6 @@
 using AdversarialAttacks
 using Documenter
+using Flux
 
 # Create index.md from README
 cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"); force = true)
