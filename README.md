@@ -117,12 +117,16 @@ Clean Performance
   Clean accuracy                 : 40.0%
 
 Adversarial Performance
-  Adversarial accuracy           : 30.0%
+  Adversarial accuracy           : 0.0%
 
 Attack Effectiveness
-  Successful attacks             : 1 / 4
-  Attack success rate (ASR)      : 25.0%
-  Robustness score (1 - ASR)     : 75.0%
+  Successful attacks             : 4 / 4
+  Attack success rate (ASR)      : 100.0%
+  Robustness score (1 - ASR)     : 0.0%
+
+Perturbation Analysis (L_inf norm)
+  Maximum perturbation           : 0.5
+  Mean perturbation              : 0.5
 
 Notes
   • Attack success is counted only when:
