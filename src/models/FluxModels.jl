@@ -99,7 +99,13 @@ Loads the FluxModel state of a model trained on CIFAR-10 from Github and initial
 """
 function load_pretrained_c10_model()
 
-    url = "https://raw.githubusercontent.com/shnaky/AdversarialAttacks.jl/46-find-a-pretrained-model-for-cifar10-or-build-one/model_cifar10.bson"
+    #url = "https://raw.githubusercontent.com/shnaky/AdversarialAttacks.jl/46-find-a-pretrained-model-for-cifar10-or-build-one/model_cifar10.bson"
+    #MODEL_PATH = joinpath(@__DIR__, "..", "models", "model_cifar10.bson")
+    #print(MODEL_PATH)
+
+    artifact_dir = artifact"cifar10_model"
+    model_path = joinpath(artifact_dir, "model_cifar10.bson")
+    
 
     model = Chain(
 
@@ -142,7 +148,8 @@ function load_pretrained_c10_model()
         GlobalMeanPool(),
         Flux.flatten
     )
-    @load download(url, "model_cifar10_downloaded.bson") model_state
+    #@load download(url, "model_cifar10_downloaded.bson") model_state
+    @load MODEL_PATH model_state
     Flux.loadmodel!(model, model_state)
     return FluxModel(model)
 end

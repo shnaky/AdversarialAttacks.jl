@@ -11,6 +11,7 @@ include("attacks/BlackBoxAttacks.jl")
 include("attacks/WhiteBox.jl")
 include("Interface.jl")
 include("Evaluation.jl")
+include("examples/cifar10.jl")
 
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
@@ -18,7 +19,8 @@ export FGSM, BasicRandomSearch, SquareAttack
 
 # Export model types
 export AbstractModel, DifferentiableModel, NonDifferentiableModel
-export FluxModel, load_pretrained_c10_model
+export FluxModel
+export load_pretrained_c10_model, plot_adversarial_example 
 
 # Export attack interface functions
 export craft, name, hyperparameters
