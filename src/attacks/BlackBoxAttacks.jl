@@ -13,16 +13,16 @@ Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random s
             For tabular data, provide bounds matching feature ranges, e.g.,
             `[(4.3, 7.9), (2.0, 4.4), ...]` for Iris-like data.
 """
-struct BasicRandomSearch{T<:Real,B<:Union{Nothing,Vector{<:Tuple{Real,Real}}}} <: BlackBoxAttack
+struct BasicRandomSearch{T <: Real, B <: Union{Nothing, Vector{<:Tuple{Real, Real}}}} <: BlackBoxAttack
     epsilon::T
     bounds::B
 end
 
-function BasicRandomSearch(; epsilon::Real=0.1, bounds=nothing)
-    BasicRandomSearch(epsilon, bounds)
+function BasicRandomSearch(; epsilon::Real = 0.1, bounds = nothing)
+    return BasicRandomSearch(epsilon, bounds)
 end
 
-function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε; bounds=nothing)
+function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε; bounds = nothing)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
@@ -101,7 +101,7 @@ function craft(sample, model::Flux.Chain, attack::BasicRandomSearch)
         return probs
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε; bounds=attack.bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε; bounds = attack.bounds)
 end
 
 """
@@ -132,5 +132,5 @@ function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
         return predict_proba(model, x_row)
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds=attack.bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, bounds = attack.bounds)
 end

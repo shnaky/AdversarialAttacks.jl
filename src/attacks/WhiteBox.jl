@@ -9,11 +9,11 @@ Subtype of `WhiteBoxAttack`.
 # Arguments
 - `epsilon`: Step size used to scale the sign of the gradient. Defaults to `0.1`.
 """
-struct FGSM{T<:Real} <: WhiteBoxAttack
+struct FGSM{T <: Real} <: WhiteBoxAttack
     epsilon::T
 end
 
-FGSM(; epsilon::Real=0.1) = FGSM(epsilon)
+FGSM(; epsilon::Real = 0.1) = FGSM(epsilon)
 
 """
     hyperparameters(atk::FGSM) -> Dict{String,Any}
@@ -23,7 +23,7 @@ Return hyperparameters for an FGSM attack.
 # Returns
 - `Dict{String,Any}`: Dictionary containing attack hyperparameters (e.g., epsilon).
 """
-hyperparameters(atk::FGSM)::Dict{String,Any} = Dict("epsilon" => atk.epsilon)
+hyperparameters(atk::FGSM)::Dict{String, Any} = Dict("epsilon" => atk.epsilon)
 
 default_loss(m, x, y) = Flux.crossentropy(m(x), y)
 
@@ -40,7 +40,7 @@ Performs a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the 
 # Returns
 - Adversarial example (same type and shape as `sample.data`).
 """
-function craft(sample, model::Flux.Chain, attack::FGSM; loss=default_loss)
+function craft(sample, model::Flux.Chain, attack::FGSM; loss = default_loss)
     x = sample.data
     y = sample.label
     ε = convert(eltype(x), attack.epsilon)

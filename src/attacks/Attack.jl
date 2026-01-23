@@ -50,7 +50,7 @@ Return hyperparameters for an attack.
 # Returns
 - `Dict{String,Any}`: Dictionary of attack hyperparameters.
 """
-hyperparameters(::AbstractAttack)::Dict{String,Any} = Dict{String,Any}()
+hyperparameters(::AbstractAttack)::Dict{String, Any} = Dict{String, Any}()
 
 """
     craft(sample, model, attack::AbstractAttack; kwargs...) -> adversarial_sample

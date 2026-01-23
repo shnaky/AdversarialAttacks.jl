@@ -49,30 +49,42 @@ function Base.show(io::IO, report::RobustnessReport)
 
     println(io, "\nDataset")
     println(io, "  Total samples evaluated        : ", report.num_samples)
-    println(io, "  Clean-correct samples          : ",
-        report.num_clean_correct, " / ", report.num_samples)
+    println(
+        io, "  Clean-correct samples          : ",
+        report.num_clean_correct, " / ", report.num_samples
+    )
 
     println(io, "\nClean Performance")
-    println(io, "  Clean accuracy                 : ",
-        round(report.clean_accuracy * 100, digits=2), "%")
+    println(
+        io, "  Clean accuracy                 : ",
+        round(report.clean_accuracy * 100, digits = 2), "%"
+    )
 
     println(io, "\nAdversarial Performance")
-    println(io, "  Adversarial accuracy           : ",
-        round(report.adv_accuracy * 100, digits=2), "%")
+    println(
+        io, "  Adversarial accuracy           : ",
+        round(report.adv_accuracy * 100, digits = 2), "%"
+    )
 
     println(io, "\nAttack Effectiveness")
-    println(io, "  Successful attacks             : ",
-        report.num_successful_attacks, " / ", report.num_clean_correct)
-    println(io, "  Attack success rate (ASR)      : ",
-        round(report.attack_success_rate * 100, digits=2), "%")
-    println(io, "  Robustness score (1 - ASR)     : ",
-        round(report.robustness_score * 100, digits=2), "%")
+    println(
+        io, "  Successful attacks             : ",
+        report.num_successful_attacks, " / ", report.num_clean_correct
+    )
+    println(
+        io, "  Attack success rate (ASR)      : ",
+        round(report.attack_success_rate * 100, digits = 2), "%"
+    )
+    println(
+        io, "  Robustness score (1 - ASR)     : ",
+        round(report.robustness_score * 100, digits = 2), "%"
+    )
 
     println(io, "\nNotes")
     println(io, "  • Attack success is counted only when:")
     println(io, "    - the clean prediction is correct")
     println(io, "    - the adversarial prediction is incorrect")
-    println(io, "===================================")
+    return println(io, "===================================")
 end
 
 """
@@ -97,11 +109,11 @@ println(report)
 ```
 """
 function evaluate_robustness(
-    model,
-    attack,
-    test_data;
-    num_samples::Int=100
-)
+        model,
+        attack,
+        test_data;
+        num_samples::Int = 100
+    )
     if num_samples <= 0
         throw(ArgumentError("num_samples must be positive"))
     end

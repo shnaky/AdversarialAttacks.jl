@@ -6,13 +6,13 @@ using Flux
     model = Chain(Dense(4, 3), softmax)
 
     test_data = [
-        (data=randn(Float32, 4), label=Flux.onehot(rand(1:3), 1:3))
-        for _ in 1:10
+        (data = randn(Float32, 4), label = Flux.onehot(rand(1:3), 1:3))
+            for _ in 1:10
     ]
-    attack = FGSM(epsilon=0.1)
+    attack = FGSM(epsilon = 0.1)
 
     @testset "evaluate_robustness - basic functionality" begin
-        result = evaluate_robustness(model, attack, test_data; num_samples=5)
+        result = evaluate_robustness(model, attack, test_data; num_samples = 5)
 
         @test hasfield(RobustnessReport, :num_samples)
         @test hasfield(RobustnessReport, :clean_accuracy)
@@ -43,28 +43,28 @@ using Flux
 
     @testset "evaluate_robustness - num_samples handling" begin
         # Should use all available samples (10) instead of requested (20)
-        result = evaluate_robustness(model, attack, test_data; num_samples=20)
+        result = evaluate_robustness(model, attack, test_data; num_samples = 20)
         @test result.num_samples == 10
 
         # Should only process the requested number of samples
-        result = evaluate_robustness(model, attack, test_data; num_samples=3)
+        result = evaluate_robustness(model, attack, test_data; num_samples = 3)
         @test result.num_samples == 3
     end
 
     @testset "evaluate_robustness - edge cases" begin
         @test_throws ArgumentError evaluate_robustness(
-            nothing, nothing, test_data; num_samples=0
+            nothing, nothing, test_data; num_samples = 0
         )
 
         @test_throws ArgumentError evaluate_robustness(
-            nothing, nothing, test_data; num_samples=-1
+            nothing, nothing, test_data; num_samples = -1
         )
 
         @test_warn "Failed to evaluate sample 1" evaluate_robustness(
-            nothing, nothing, test_data; num_samples=1
+            nothing, nothing, test_data; num_samples = 1
         )
 
-        result = evaluate_robustness(nothing, nothing, test_data; num_samples=1)
+        result = evaluate_robustness(nothing, nothing, test_data; num_samples = 1)
         @test result.num_clean_correct == 0
         @test result.attack_success_rate == 0.0
     end

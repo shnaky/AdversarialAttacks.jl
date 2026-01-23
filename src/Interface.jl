@@ -25,32 +25,32 @@ Apply an adversarial attack to a sample using the given model.
   (treated as black-box models, using only model outputs).
 """
 function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
-    craft(sample, model, atk; kwargs...)
+    return craft(sample, model, atk; kwargs...)
 end
 
 function attack(atk::WhiteBoxAttack, model::Flux.Chain, sample::AbstractArray{<:Number}; kwargs...)
-    craft(sample, model, atk; kwargs...)
+    return craft(sample, model, atk; kwargs...)
 end
 
 function attack(atk::BlackBoxAttack, model::Flux.Chain, sample::NamedTuple; kwargs...)
-    craft(sample, model, atk; kwargs...)
+    return craft(sample, model, atk; kwargs...)
 end
 
 function attack(atk::BlackBoxAttack, model::Flux.Chain, sample::AbstractArray{<:Number}; kwargs...)
-    craft(sample, model, atk; kwargs...)
+    return craft(sample, model, atk; kwargs...)
 end
 
 # for custom attacks that don't subtype WhiteBox/BlackBox
 function attack(atk::AbstractAttack, model, sample::AbstractArray{<:Number}; kwargs...)
-    craft(sample, model, atk; kwargs...)
+    return craft(sample, model, atk; kwargs...)
 end
 
 function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::NamedTuple; kwargs...)
-    craft(sample, model, atk; kwargs...)
+    return craft(sample, model, atk; kwargs...)
 end
 
 function attack(atk::BlackBoxAttack, model::DecisionTreeClassifier, sample::AbstractArray{<:Number}; kwargs...)
-    craft(sample, model, atk; kwargs...)
+    return craft(sample, model, atk; kwargs...)
 end
 
 """

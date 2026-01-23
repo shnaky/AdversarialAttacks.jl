@@ -25,13 +25,13 @@ using Flux
 
         atk = TestAttackDefaultHyperparams()
 
-        @test AdversarialAttacks.hyperparameters(atk) == Dict{String,Any}()
+        @test AdversarialAttacks.hyperparameters(atk) == Dict{String, Any}()
         @test isempty(AdversarialAttacks.hyperparameters(atk))
     end
 
     @testset "DummyAttack implementation" begin
         struct DummyAttack <: AbstractAttack
-            params::Dict{String,Any}
+            params::Dict{String, Any}
         end
 
         AdversarialAttacks.name(::DummyAttack) = "DummyAttack"
@@ -41,15 +41,15 @@ using Flux
         dummy = DummyAttack(Dict("eps" => 0.1))
         @test name(dummy) == "DummyAttack"
         @test hyperparameters(dummy) == Dict("eps" => 0.1)
-        adv, sample, model, kwargs = craft(:x, :m, dummy; steps=5)
+        adv, sample, model, kwargs = craft(:x, :m, dummy; steps = 5)
         @test adv == :adv
         @test sample == :x
         @test model == :m
-        @test (; kwargs...) == (; steps=5)
+        @test (; kwargs...) == (; steps = 5)
     end
 
     @testset "craft fallback MethodError" begin
-        sample = (data=[1.0], label=1)
+        sample = (data = [1.0], label = 1)
         struct MockModel end
         struct MockAttack <: AbstractAttack end
 

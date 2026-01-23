@@ -2,25 +2,25 @@ using AdversarialAttacks
 using Documenter
 
 # Create index.md from README
-cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"); force=true)
+cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"); force = true)
 
 DocMeta.setdocmeta!(
     AdversarialAttacks,
     :DocTestSetup,
     :(using AdversarialAttacks);
-    recursive=true,
+    recursive = true,
 )
 
 makedocs(;
-    modules=[AdversarialAttacks],
-    authors="FirstName LastName <orestis.papandreou@campus.tu-berlin.de>",
-    sitename="AdversarialAttacks.jl",
-    format=Documenter.HTML(;
-        canonical="https://shnaky.github.io/AdversarialAttacks.jl",
-        edit_link="main",
-        assets=String[],
+    modules = [AdversarialAttacks],
+    authors = "FirstName LastName <orestis.papandreou@campus.tu-berlin.de>",
+    sitename = "AdversarialAttacks.jl",
+    format = Documenter.HTML(;
+        canonical = "https://shnaky.github.io/AdversarialAttacks.jl",
+        edit_link = "main",
+        assets = String[],
     ),
-    pages=[
+    pages = [
         "Getting Started" => "index.md",
         "Tutorials & Examples" => [
             "Overview" => "examples/index.md",
@@ -39,6 +39,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/shnaky/AdversarialAttacks.jl",
-    devbranch="main",
+    repo = "github.com/shnaky/AdversarialAttacks.jl",
+    devbranch = "main",
 )
