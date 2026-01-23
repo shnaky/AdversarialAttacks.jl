@@ -21,17 +21,14 @@ using Flux
     end
 
     @testset "DummyAttack implementation" begin
-        struct DummyAttack <: AbstractAttack
-            params::Dict{String, Any}
-        end
+        struct DummyAttack <: AbstractAttack end
 
         AdversarialAttacks.name(::DummyAttack) = "DummyAttack"
         AdversarialAttacks.hyperparameters(d::DummyAttack) = d.params
         AdversarialAttacks.attack(::DummyAttack, model, sample; kwargs...) = (:adv, model, sample, kwargs)
 
-        dummy = DummyAttack(Dict("eps" => 0.1))
+        dummy = DummyAttack()
         @test name(dummy) == "DummyAttack"
-        @test hyperparameters(dummy) == Dict("eps" => 0.1)
         adv, model, sample, kwargs = attack(dummy, :m, :x; steps = 5)
         @test adv == :adv
         @test model == :m

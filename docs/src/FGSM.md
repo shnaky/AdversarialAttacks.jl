@@ -11,5 +11,4 @@ This page documents the Fast Gradient Sign Method (FGSM), a white-box adversaria
 ```@docs
 FGSM
 AdversarialAttacks.attack(::FGSM, ::Chain, ::Any)
-AdversarialAttacks.hyperparameters(::FGSM)
 ```

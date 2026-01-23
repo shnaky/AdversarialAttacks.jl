@@ -13,7 +13,6 @@ using Flux
     atk_with_epsilon = FGSM(epsilon = 0.25)
     @test atk_with_epsilon isa FGSM
     @test atk_with_epsilon.epsilon == 0.25
-    @test hyperparameters(atk_with_epsilon) == Dict("epsilon" => 0.25)
 
     # Test type hierarchy
     @test FGSM <: WhiteBoxAttack

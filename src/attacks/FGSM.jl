@@ -13,16 +13,6 @@ end
 
 FGSM(; epsilon::Real = 0.1) = FGSM(epsilon)
 
-"""
-    hyperparameters(atk::FGSM) -> Dict{String,Any}
-
-Return hyperparameters for an FGSM attack.
-
-# Returns
-- `Dict{String,Any}`: Dictionary containing attack hyperparameters (e.g., epsilon).
-"""
-hyperparameters(atk::FGSM)::Dict{String, Any} = Dict("epsilon" => atk.epsilon)
-
 default_loss(m, x, y) = crossentropy(m(x), y)
 
 """
