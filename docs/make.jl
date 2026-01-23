@@ -28,10 +28,9 @@ makedocs(;
             "Black-Box – Basic Random Search (DecisionTree, Iris)" => "examples/blackbox_basicrandomsearch_decisiontree_iris.md",
         ],
         "Developer Documentation" => [
-            "Home" => "index.md",
             "Attack Interface" => "attack_interface.md",
-            "Fast Gradient Sign Method Attack" => "fgsm.md",
-            "Black Box Attacks" => "blackbox_subtypes.md",
+            "FGSM (White-Box)" => "FGSM.md",
+            "BasicRandomSearch (Black-Box)" => "BasicRandomSearch.md",
             "Robustness Evaluation Suite" => "evaluation.md",
             "Interface" => "interface.md",
         ],
