@@ -39,7 +39,7 @@ end
 # ------------------------------------
 demo_idx = findfirst(==("versicolor"), y_str)
 
-for i = 1:size(X, 1)
+for i in 1:size(X, 1)
     xi = X[i, :]
     yi_str = y_str[i]
     true_idx_i = findfirst(==(yi_str), classes)
