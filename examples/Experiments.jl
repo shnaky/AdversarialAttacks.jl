@@ -2,11 +2,21 @@ module Experiments
 
 using MLJ
 using MLJ: partition, accuracy
+using MLJFlux
+using Flux
+using Optimisers
+
 using MLDatasets
 using StatsBase: mode
 using DataFrames
 
 export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
+export make_mnist_cnn
+
+using ColorTypes: Gray
+using Images
+
+const ImageClassifier = MLJFlux.ImageClassifier
 
 # =========================
 # Config
@@ -48,9 +58,9 @@ end
     load_mnist_for_mlj(; n_train=60000)
 
 Load the MNIST dataset and return `(X, y)` in a form that is
-compatible with MLJ models.
+compatible with MLJFlux.ImageClassifier.
 
-- X: Vector of 28×28×1 Float32 arrays (one per image)
+- X: Vector of 28×28 `Gray` images (one per sample)
 - y: CategoricalVector of digit labels 0–9
 """
 function load_mnist_for_mlj(; n_train::Int = 60000)
@@ -60,12 +70,8 @@ function load_mnist_for_mlj(; n_train::Int = 60000)
     images = images[:, :, 1:n_train]
     labels = labels[1:n_train]
 
-    # convert to Float32 in [0, 1]
-    X = Float32.(images) ./ 255
-
-    # reshape to (H, W, C, N) if you later want MLJFlux.ImageClassifier
-    # For now we just keep as a vector of (28,28,1) arrays:
-    X_vec = [reshape(x, 28, 28, 1) for x in eachslice(X, dims = 3)]
+    # convert to Gray images in [0, 1]
+    X_vec = [Gray.(images[:, :, i] ./ 255) for i in 1:n_train]
 
     # labels must be categorical for MLJ
     y = coerce(labels, Multiclass)
