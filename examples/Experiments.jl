@@ -14,6 +14,10 @@ using ColorTypes: Gray
 using Images
 
 export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
+export make_mnist_cnn
+
+using ColorTypes: Gray
+using Images
 export make_mnist_forest, make_mnist_tree
 export blackbox_predict
 export make_mnist_cnn
@@ -181,6 +185,87 @@ function blackbox_predict(mach, X)
     return predict(mach, X)
 end
 
+
+"""
+    SimpleConvBuilder
+
+Minimal convolutional network builder for grayscale images such as MNIST.
+This is intended as a white-box baseline for gradient-based attacks.
+"""
+struct SimpleConvBuilder
+    filter_size::Int
+    channels1::Int
+    channels2::Int
+end
+
+# Helper for flattening to 2D inside the network
+make2d(x::AbstractArray) = reshape(x, :, size(x)[end])
+
+"""
+    MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
+
+Construct a small ConvNet for image classification.
+"""
+function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
+    k, c1, c2 = b.filter_size, b.channels1, b.channels2
+    @assert isodd(k) "filter_size must be odd."
+
+    p = div(k - 1, 2)
+    init = Flux.glorot_uniform(rng)
+
+    # assuming 28x28 input
+    h, w = 28, 28
+    h, w = div(h, 2), div(w, 2)   # after first MaxPool
+    h, w = div(h, 2), div(w, 2)   # after second MaxPool
+    flat_dim = h * w * c2
+
+    model = Chain(
+        Conv((k, k), n_channels => c1, pad = (p, p), relu, init = init),
+        MaxPool((2, 2)),
+        Conv((k, k), c1 => c2, pad = (p, p), relu, init = init),
+        MaxPool((2, 2)),
+        x -> reshape(x, flat_dim, size(x, 4)),   # flatten to (flat_dim, batch)
+        Dense(flat_dim, 128, relu),
+        Dense(128, n_out),
+        Flux.softmax,
+    )
+
+    return model
+end
+
+"""
+    make_mnist_cnn(; rng=42, epochs=5, batch_size=64)
+
+Create an `ImageClassifier` model suitable for MNIST-style
+grayscale image classification.
+"""
+function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64)
+    builder = SimpleConvBuilder(3, 16, 32)
+
+    model = ImageClassifier(
+        builder = builder,
+        loss = Flux.Losses.crossentropy,
+        optimiser = Optimisers.Adam(0.001),
+        epochs = epochs,
+        batch_size = batch_size,
+        rng = rng,
+    )
+
+    return model
+end
+
+"""
+    extract_flux_model(mach)
+
+Return the underlying `Flux.Chain` from an MLJFlux `ImageClassifier`
+machine, via MLJ's `fitted_params` API.
+"""
+function extract_flux_model(mach)
+    fp = fitted_params(mach)
+    # For MLJFlux ImageClassifier models, `fitted_params(mach)` exposes
+    # the trained Flux network in the `chain` field.
+    return fp.chain
+end
 
 """
     SimpleConvBuilder
