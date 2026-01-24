@@ -64,7 +64,7 @@ julia> fit!(tree, X, y)
 
 julia> sample = (data = X[:, 1], label = y[1])
 
-julia> atk = BasicRandomSearch(epsilon = 0.1f0)
+julia> atk = BasicRandomSearch(epsilon = 0.1f0, max_iter = 50)
 
 julia> x_adv = attack(atk, tree, sample)
 ```

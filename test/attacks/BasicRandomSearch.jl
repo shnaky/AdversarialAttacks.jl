@@ -28,6 +28,10 @@ struct DummyBlackBoxModel end
     @test attack_with_bounds.epsilon == 0.1
     @test attack_with_bounds.bounds == bounds
 
+    # Test constructor with epsilon, bounds, and max_iter
+    attack_full = BasicRandomSearch(epsilon = 0.2, bounds = bounds, max_iter = 50)
+    @test attack_full.max_iter == 50
+
     # Test type hierarchy
     @test BasicRandomSearch <: BlackBoxAttack
     @test BasicRandomSearch <: AbstractAttack
@@ -112,6 +116,20 @@ end
 
     adv_const = attack(atk, model_const, sample_const)
     @test adv_const == sample_const.data      # no change if prob is constant
+
+    # Case 4: verify early stopping works with a simple model
+    # Model where class 1 prob decreases with each perturbation
+    model_early_stop = Chain(x -> Float32[sum(x), 10.0f0 - sum(x)])
+    
+    sample_early = (data = Float32[2.0, 2.0, 1.0, 1.0], label = 1)  # sum = 6.0, class 1 initially predicted
+
+    # Run with sufficient iterations to guarantee misclassification
+    atk_early = BasicRandomSearch(epsilon = 0.3f0, max_iter = 100)
+    adv_early = attack(atk_early, model_early_stop, sample_early)
+    
+    # Verify that misclassification was achieved
+    # If early stopping works correctly, it stops at the first misclassification, should happen before 100 iterations
+    @test argmax(model_early_stop(adv_early)) != 1  
 end
 
 @testset "Custom Bounds Support" begin
@@ -156,4 +174,28 @@ end
         bounded_model,
         sample_near_lb,
     )
+end
+
+@testset "Custom Max Iterations" begin
+    Random.seed!(1234)
+
+    # Dummy Flux model: output = [sum(x), 0.0]
+    model = Chain(x -> Float32[sum(x), 0.0f0])
+
+    sample = (data = Float32[0.5, 0.5, 0.5, 0.5], label = 1)
+
+    # Test with max_iter = 5
+    atk_low_iter = BasicRandomSearch(epsilon = 0.1f0, max_iter = 5)
+    adv_low_iter = attack(atk_low_iter, model, sample)
+    @test size(adv_low_iter) == size(sample.data)
+
+    # Test with max_iter = 50
+    atk_high_iter = BasicRandomSearch(epsilon = 0.1f0, max_iter = 50)
+    adv_high_iter = attack(atk_high_iter, model, sample)
+    @test size(adv_high_iter) == size(sample.data)
+
+    # Check that higher max_iter can lead to larger perturbations
+    perturb_low = sum(abs.(adv_low_iter .- sample.data))
+    perturb_high = sum(abs.(adv_high_iter .- sample.data))
+    @test perturb_high >= perturb_low
 end

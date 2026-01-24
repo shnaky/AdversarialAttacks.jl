@@ -45,7 +45,7 @@ for i in 1:size(X, 1)
     true_idx_i = findfirst(==(yi_str), classes)
     pred_idx_i = predict_class_index(dt_model, xi)
     if pred_idx_i == true_idx_i
-        demo_idx = i
+        global demo_idx = i
         break
     end
 end
@@ -78,8 +78,9 @@ println("Original predicted class index = ", argmax(orig_probs_vec))
 atk = BasicRandomSearch(
     epsilon = ε,
     bounds = [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)],
+    max_iter = 100,
 )
-println("\nRunning BasicRandomSearch with epsilon = ", ε, " ...")
+println("\nRunning BasicRandomSearch with epsilon = ", ε, " and max_iter = ", atk.max_iter, " ...")
 Random.seed!(42)
 
 x_adv = attack(atk, dt_model, sample)
