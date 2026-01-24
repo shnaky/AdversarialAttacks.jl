@@ -209,16 +209,33 @@ function evaluate_robustness(
     return report
 end
 
-    return RobustnessReport(
-        n_test,
-        num_clean_correct,
-        clean_accuracy,
-        adv_accuracy,
-        attack_success_rate,
-        robustness_score,
-        num_successful_attacks,
-        linf_norm_max,
-        linf_norm_mean,
+
+function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vector{Float64}, test_data; num_samples::Int = 100)
+    results = Dict(
+        :epsilons => Float64[],
+        :clean_accuracy => Float64[],
+        :adv_accuracy => Float64[],
+        :attack_success_rate => Float64[],
+        :linf_norm_mean =>Float64[]
     )
 
+    for epsilon in epsilons
+        # TODO: there shoudl be a set rng parameter for BSR so it's ther results can be compared
+        atk = atk_type(epsilon)
+
+        report = evaluate_robustness(
+            model,
+            atk,
+            test_data;
+            num_samples = num_samples
+        )
+
+        push!(results[:epsilons], epsilon)
+        push!(results[:clean_accuracy], report.clean_accuracy)
+        push!(results[:adv_accuracy], report.adv_accuracy)
+        push!(results[:attack_success_rate], report.attack_success_rate)
+        push!(results[:linf_norm_mean], report.linf_norm_mean)
+    end
+
+    return results
 end

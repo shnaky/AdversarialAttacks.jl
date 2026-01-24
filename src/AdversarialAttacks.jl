@@ -24,7 +24,7 @@ export predict, loss, params
 
 # Export evaluation functions
 export RobustnessReport
-export evaluate_robustness
+export evaluate_robustness, evaluation_curve
 
 # Export high-level interface
 export attack, benchmark
