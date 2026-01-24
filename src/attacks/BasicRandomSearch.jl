@@ -66,12 +66,10 @@ function _basic_random_search_core(
     last_prob = probs[true_label]
 
     # Iterate through permuted coordinates, repeat when max_iter exceeds ndims
-    idx = 1
-    for _ in 1:max_iter
+    for i in 1:max_iter
         diff = zeros(eltype(x_flat), ndims)
+        idx = mod1(i, ndims) # 1-based circular indexing
         diff[perm[idx]] = ε
-        # Update index for next iteration
-        idx = idx % ndims + 1
 
         # Left direction
         x_left = clamp.(x_flat .- diff, lb, ub)
