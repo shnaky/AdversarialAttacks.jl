@@ -72,23 +72,23 @@ end
 
 
 """
-    craft(sample, model::Chain, attack::BasicRandomSearch)
+    attack(atk::BasicRandomSearch, model::Chain, sample)
 
 Perform a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
 # Arguments
-- sample: The input sample to be changed.
+- atk::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
 - model::Chain: The machine learning (deep learning, classical machine learning) model to be attacked.
-- attack::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
+- sample: The input sample to be changed.
 
 # Returns
 - Adversarial example (same type and shape as `sample.data`).
 """
-function craft(sample, model::Chain, attack::BasicRandomSearch)
+function attack(atk::BasicRandomSearch, model::Chain, sample)
     x = sample.data
     y = sample.label
 
-    ε = convert(eltype(x), attack.epsilon)
+    ε = convert(eltype(x), atk.epsilon)
 
     true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
 
@@ -100,27 +100,27 @@ function craft(sample, model::Chain, attack::BasicRandomSearch)
         return probs
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, attack.rng; bounds = attack.bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, atk.rng; bounds = atk.bounds)
 end
 
 """
-    craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
+    attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
 
 Perform a black-box adversarial attack on a DecisionTreeClassifier using BasicRandomSearch (SimBA).
 
 # Arguments
-- `sample`: NamedTuple with `data` and `label` fields.
+- `atk::BasicRandomSearch`: Attack instance with `epsilon` and optional `bounds`.
 - `model::DecisionTreeClassifier`: DecisionTree.jl classifier to attack.
-- `attack::BasicRandomSearch`: Attack instance with `epsilon` and optional `bounds`.
+- `sample`: NamedTuple with `data` and `label` fields.
 
 # Returns
 - Adversarial example (same shape as `sample.data`).
 """
-function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
+function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
     x = sample.data
     y = sample.label
 
-    ε = convert(eltype(x), attack.epsilon)
+    ε = convert(eltype(x), atk.epsilon)
 
     # Convert one-hot label to integer if needed (1-based)
     true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
@@ -131,5 +131,5 @@ function craft(sample, model::DecisionTreeClassifier, attack::BasicRandomSearch)
         return predict_proba(model, x_row)
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, attack.rng; bounds = attack.bounds)
+    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, atk.rng; bounds = atk.bounds)
 end

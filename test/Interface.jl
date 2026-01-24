@@ -8,8 +8,8 @@ using DecisionTree
 @testset "Interface module" begin
 
     struct DummyAttack <: AbstractAttack end
-    # dummy craft dispatch
-    AdversarialAttacks.craft(sample, model, ::DummyAttack; kwargs...) = sample .+ 1.0
+    # dummy attack dispatch
+    AdversarialAttacks.attack(::DummyAttack, model, sample; kwargs...) = sample .+ 1.0
 
     @testset "Invalid inputs" begin
         struct NotAnAttack end
@@ -38,9 +38,9 @@ using DecisionTree
         struct DummyModel end
         (m::DummyModel)(x) = x
 
-        # minimal dummy craft methods to test Interface.attack dispatch behavior
-        AdversarialAttacks.craft(sample, ::DummyModel, ::DummyWB; kwargs...) = sample .* 2
-        AdversarialAttacks.craft(sample, ::DummyModel, ::DummyBB; kwargs...) = sample .* 3
+        # minimal dummy attack methods to test attack dispatch behavior
+        AdversarialAttacks.attack(::DummyWB, ::DummyModel, sample; kwargs...) = sample .* 2
+        AdversarialAttacks.attack(::DummyBB, ::DummyModel, sample; kwargs...) = sample .* 3
 
         @test attack(DummyWB(), DummyModel(), [1.0, 2.0]) == [2.0, 4.0]
         @test attack(DummyBB(), DummyModel(), [1.0, 2.0]) == [3.0, 6.0]
@@ -53,13 +53,13 @@ using DecisionTree
         model = Chain(Dense(2 => 2), softmax)
 
         # WhiteBox + Flux.Chain + NamedTuple
-        AdversarialAttacks.craft(sample::NamedTuple, m::Flux.Chain, ::MockWB) = sample.data .* 2.0
+        AdversarialAttacks.attack(::MockWB, m::Flux.Chain, sample::NamedTuple) = sample.data .* 2.0
 
         sample_wb = (data = [1.0, 2.0], label = 1)
         @test attack(MockWB(), model, sample_wb) == [2.0, 4.0]
 
         # BlackBox + Flux.Chain + NamedTuple
-        AdversarialAttacks.craft(sample::NamedTuple, m::Flux.Chain, ::MockBB) = sample.data .* 1.5
+        AdversarialAttacks.attack(::MockBB, m::Flux.Chain, sample::NamedTuple) = sample.data .* 1.5
 
         sample_bb = (data = [1.0, 2.0], label = 1)
         @test attack(MockBB(), model, sample_bb) == [1.5, 3.0]
@@ -72,10 +72,10 @@ using DecisionTree
         # identity-like model
         model = Chain(x -> x)
 
-        # craft for array samples
-        AdversarialAttacks.craft(sample::AbstractArray, ::Flux.Chain, ::WBArrayAttack; kwargs...) =
+        # attack for array samples
+        AdversarialAttacks.attack(::WBArrayAttack, ::Flux.Chain, sample::AbstractArray; kwargs...) =
             sample .+ 10.0
-        AdversarialAttacks.craft(sample::AbstractArray, ::Flux.Chain, ::BBArrayAttack; kwargs...) =
+        AdversarialAttacks.attack(::BBArrayAttack, ::Flux.Chain, sample::AbstractArray; kwargs...) =
             sample .* 2.0
 
         vec = [1.0, 2.0]
@@ -93,9 +93,9 @@ using DecisionTree
     @testset "DecisionTree dispatch" begin
         struct DummyBBTree <: BlackBoxAttack end
 
-        # Define craft for DecisionTreeClassifier with the dummy attack
-        AdversarialAttacks.craft(sample, ::DecisionTreeClassifier, ::DummyBBTree) = sample .+ 5.0
-        AdversarialAttacks.craft(sample::NamedTuple, ::DecisionTreeClassifier, ::DummyBBTree) = sample.data .+ 5.0
+        # Define attack for DecisionTreeClassifier with the dummy attack
+        AdversarialAttacks.attack(::DummyBBTree, ::DecisionTreeClassifier, sample) = sample .+ 5.0
+        AdversarialAttacks.attack(::DummyBBTree, ::DecisionTreeClassifier, sample::NamedTuple) = sample.data .+ 5.0
 
         # Create a minimal DecisionTreeClassifier
         X = [0.0 1.0; 1.0 0.0]  # 2 samples, 2 features
@@ -123,8 +123,8 @@ using DecisionTree
         tree = DecisionTreeClassifier(; max_depth = 2)
         fit!(tree, X, y)
 
-        AdversarialAttacks.craft(sample::AbstractArray, ::DecisionTreeClassifier, ::DummyBB2) = sample .* 1.1
-        AdversarialAttacks.craft(sample::NamedTuple, ::DecisionTreeClassifier, ::DummyBB2) = sample.data .* 1.1
+        AdversarialAttacks.attack(::DummyBB2, ::DecisionTreeClassifier, sample::AbstractArray) = sample .* 1.1
+        AdversarialAttacks.attack(::DummyBB2, ::DecisionTreeClassifier, sample::NamedTuple) = sample.data .* 1.1
 
         sample_vec = [1.0, 2.0]
 

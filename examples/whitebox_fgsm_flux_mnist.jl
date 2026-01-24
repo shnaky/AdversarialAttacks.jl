@@ -101,7 +101,7 @@ println("Clean true prob: ", round(orig_true_prob, digits = 3))
 fgsm_attack = FGSM(epsilon = ε)
 println("\nRunning FGSM with ε = $ε ...")
 
-x_adv = craft(sample, model, fgsm_attack)
+x_adv = attack(fgsm_attack, model, sample)
 x_adv = clamp.(x_adv, 0.0f0, 1.0f0)  # keep pixels in [0,1]
 
 adv_pred = model(x_adv)

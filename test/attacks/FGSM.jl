@@ -5,15 +5,14 @@ using Flux
 @testset "FGSM Struct" begin
 
     # Test default constructor
-    attack = FGSM()
-    @test attack isa FGSM
-    @test attack.epsilon == 0.1
+    atk = FGSM()
+    @test atk isa FGSM
+    @test atk.epsilon == 0.1
 
     # Test constructor with keyword argument
-    attack_with_epsilon = FGSM(epsilon = 0.25)
-    @test attack_with_epsilon isa FGSM
-    @test attack_with_epsilon.epsilon == 0.25
-    @test hyperparameters(attack_with_epsilon) == Dict("epsilon" => 0.25)
+    atk_with_epsilon = FGSM(epsilon = 0.25)
+    @test atk_with_epsilon isa FGSM
+    @test atk_with_epsilon.epsilon == 0.25
 
     # Test type hierarchy
     @test FGSM <: WhiteBoxAttack
@@ -25,7 +24,7 @@ using Flux
         softmax,
     )
 
-    result = craft(sample, model, attack_with_epsilon)
+    result = attack(atk_with_epsilon, model, sample)
     @test result isa Vector
     @test size(result) == size(sample.data)
     @test eltype(result) == eltype(sample.data)

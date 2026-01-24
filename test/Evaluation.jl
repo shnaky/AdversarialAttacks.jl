@@ -95,7 +95,7 @@ using Flux
     @testset "evaluate_robustness - L_inf norm correctness" begin
         # simple attack that adds a fixed perturbation
         struct TestLinfAttack end
-        AdversarialAttacks.craft(sample, model, ::TestLinfAttack) = sample.data .+ Float32[0.1, 0.5, 0.2, 0.3]
+        AdversarialAttacks.attack(::TestLinfAttack, model, sample) = sample.data .+ Float32[0.1, 0.5, 0.2, 0.3]
 
         # single test sample with an anonymous dummy function as model
         test_data = [(data = Float32[1, 2, 3, 4], label = Flux.onehot(1, 1:3))]
