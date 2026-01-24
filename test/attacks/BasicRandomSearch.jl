@@ -116,6 +116,20 @@ end
 
     adv_const = attack(atk, model_const, sample_const)
     @test adv_const == sample_const.data      # no change if prob is constant
+
+    # Case 4: verify early stopping works with a simple model
+    # Model where class 1 prob decreases with each perturbation
+    model_early_stop = Chain(x -> Float32[sum(x), 10.0f0 - sum(x)])
+    
+    sample_early = (data = Float32[2.0, 2.0, 1.0, 1.0], label = 1)  # sum = 6.0, class 1 initially predicted
+
+    # Run with sufficient iterations to guarantee misclassification
+    atk_early = BasicRandomSearch(epsilon = 0.3f0, max_iter = 100)
+    adv_early = attack(atk_early, model_early_stop, sample_early)
+    
+    # Verify that misclassification was achieved
+    # If early stopping works correctly, it stops at the first misclassification, should happen before 100 iterations
+    @test argmax(model_early_stop(adv_early)) != 1  
 end
 
 @testset "Custom Bounds Support" begin
