@@ -14,10 +14,10 @@ Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random s
 - `rng`: Random number generator for reproducibility (default: `Random.default_rng()`)
 """
 struct BasicRandomSearch{
-        T <: Real,
-        B <: Union{Nothing, Vector{<:Tuple{Real, Real}}},
-        R <: AbstractRNG,
-    } <: BlackBoxAttack
+    T<:Real,
+    B<:Union{Nothing,Vector{<:Tuple{Real,Real}}},
+    R<:AbstractRNG,
+} <: BlackBoxAttack
     epsilon::T
     max_iter::Int
     bounds::B
@@ -25,23 +25,23 @@ struct BasicRandomSearch{
 end
 
 function BasicRandomSearch(;
-        epsilon::Real = 0.1,
-        max_iter::Int = 50,
-        bounds = nothing,
-        rng::AbstractRNG = Random.default_rng(),
-    )
+    epsilon::Real = 0.1,
+    max_iter::Int = 50,
+    bounds = nothing,
+    rng::AbstractRNG = Random.default_rng(),
+)
     return BasicRandomSearch(epsilon, max_iter, bounds, rng)
 end
 
 function _basic_random_search_core(
-        x0,
-        true_label::Int,
-        predict_proba_fn::Function,
-        ε,
-        max_iter::Int,
-        rng::AbstractRNG;
-        bounds = nothing,
-    )
+    x0,
+    true_label::Int,
+    predict_proba_fn::Function,
+    ε,
+    max_iter::Int,
+    rng::AbstractRNG;
+    bounds = nothing,
+)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
@@ -171,6 +171,45 @@ function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
     predict_proba_fn = function (x_flat)
         x_row = reshape(Float64.(x_flat), 1, :)
         return predict_proba(model, x_row)
+    end
+
+    return _basic_random_search_core(
+        x,
+        true_label,
+        predict_proba_fn,
+        ε,
+        atk.max_iter,
+        atk.rng;
+        bounds = atk.bounds,
+    )
+end
+
+"""
+    attack(atk::BasicRandomSearch, mach::Machine, sample)
+
+Black-box adversarial attack on an MLJ `Machine` (e.g. a `RandomForestClassifier`)
+using BasicRandomSearch (SimBA), via `blackbox_predict`/`predict`.
+
+- `atk::BasicRandomSearch`: Attack instance with `epsilon` and `max_iter`.
+- `mach::Machine`: Trained MLJ machine with probabilistic predictions.
+- `sample`: NamedTuple with `data` (feature vector) and `label` (true class index, 1-based).
+
+Returns an adversarial example with the same shape as `sample.data`.
+"""
+function attack(atk::BasicRandomSearch, mach::Machine, sample)
+    x = sample.data
+    y = sample.label
+    ε = convert(eltype(x), atk.epsilon)
+
+    # y is already an index into the probability vector (1-based)
+    true_label = Int(y)
+
+    predict_proba_fn = function (x_flat)
+        # Treat x_flat as a single-row table for MLJ
+        x_row = permutedims(x_flat)      # 1×d Matrix
+        X_tbl = table(x_row)             # 1-row MLJ table
+        probs = predict(mach, X_tbl)[1]  # UnivariateFinite
+        return collect(pdf.(probs, levels(probs)))
     end
 
     return _basic_random_search_core(
