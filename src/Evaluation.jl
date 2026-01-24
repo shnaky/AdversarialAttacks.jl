@@ -102,6 +102,28 @@ function Base.show(io::IO, report::RobustnessReport)
     return println(io, "===================================")
 end
 
+function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, linf_norms)
+
+    clean_accuracy = num_clean_correct / n_test
+    adv_accuracy = num_adv_correct / n_test
+    attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
+    robustness_score = 1.0 - attack_success_rate
+    linf_norm_max = length(linf_norms) > 0 ? maximum(linf_norms) : 0.0
+    linf_norm_mean = length(linf_norms) > 0 ? sum(linf_norms) / length(linf_norms) : 0.0
+
+    return RobustnessReport(
+        n_test,
+        num_clean_correct,
+        clean_accuracy,
+        adv_accuracy,
+        attack_success_rate,
+        robustness_score,
+        num_successful_attacks,
+        linf_norm_max,
+        linf_norm_mean,
+    )
+end
+
 """
     evaluate_robustness(model, atk, test_data; num_samples=100)
 
@@ -182,15 +204,10 @@ function evaluate_robustness(
         end
     end
 
-    # Metrics
-    clean_accuracy = num_clean_correct / n_test
-    adv_accuracy = num_adv_correct / n_test
-    attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
-    robustness_score = 1.0 - attack_success_rate
-    linf_norm_max = length(linf_norms) > 0 ? maximum(linf_norms) : 0.0
-    linf_norm_mean = length(linf_norms) > 0 ? sum(linf_norms) / length(linf_norms) : 0.0
-
+    report = calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, linf_norms)
     println("Evaluation complete!")
+    return report
+end
 
     return RobustnessReport(
         n_test,
