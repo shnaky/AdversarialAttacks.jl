@@ -210,17 +210,14 @@ end
 """
     extract_flux_model(mach)
 
-Extract the underlying Flux model from an `ImageClassifier`
-machine, for use in gradient-based attacks.
+Return the underlying `Flux.Chain` from an MLJFlux `ImageClassifier`
+machine, via MLJ's `fitted_params` API.
 """
 function extract_flux_model(mach)
-    # For MLJFlux ImageClassifier, the trained Flux model
-    # is typically stored in `fitresult(mach).fitresult`, but
-    # we encapsulate this here so we can change it later if needed.
-    fr = MLJ.fitresult(mach)
-    return fr.fitresult
+    fp = fitted_params(mach)
+    # For MLJFlux ImageClassifier models, `fitted_params(mach)` exposes
+    # the trained Flux network in the `chain` field.
+    return fp.chain
 end
-
-
 
 end
