@@ -124,6 +124,21 @@ function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_succe
     )
 end
 
+function compute_norm(sample_data, adv_data, p::Real)
+    # source: https://en.wikipedia.org/wiki/Lp_space
+
+    perturbation = adv_data .- sample_data
+
+    if p == Inf
+        return maximum(abs.(perturbation))
+    elseif p > 0
+        return sum(abs.(perturbation).^p)^(1/p)
+    else
+        error("Unsupported norm p=$p; must be positive or Inf")
+    end
+end
+
+
 """
     evaluate_robustness(model, atk, test_data; num_samples=100)
 
