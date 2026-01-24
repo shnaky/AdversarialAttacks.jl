@@ -13,18 +13,35 @@ Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random s
             `[(4.3, 7.9), (2.0, 4.4), ...]` for Iris-like data.
 - `rng`: Random number generator for reproducibility (default: `Random.default_rng()`)
 """
-struct BasicRandomSearch{T <: Real, I <: Int, B <: Union{Nothing, Vector{<:Tuple{Real, Real}}}, R <: AbstractRNG} <: BlackBoxAttack
+struct BasicRandomSearch{
+    T<:Real,
+    B<:Union{Nothing,Vector{<:Tuple{Real,Real}}},
+    R<:AbstractRNG,
+} <: BlackBoxAttack
     epsilon::T
-    max_iter::I
+    max_iter::Int
     bounds::B
     rng::R
 end
 
-function BasicRandomSearch(; epsilon::Real = 0.1, max_iter::Int = 50, bounds = nothing, rng::AbstractRNG = Random.default_rng())
+function BasicRandomSearch(;
+    epsilon::Real = 0.1,
+    max_iter::Int = 50,
+    bounds = nothing,
+    rng::AbstractRNG = Random.default_rng(),
+)
     return BasicRandomSearch(epsilon, max_iter, bounds, rng)
 end
 
-function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Function, ε, max_iter::Int, rng::AbstractRNG; bounds = nothing)
+function _basic_random_search_core(
+    x0,
+    true_label::Int,
+    predict_proba_fn::Function,
+    ε,
+    max_iter::Int,
+    rng::AbstractRNG;
+    bounds = nothing,
+)
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
@@ -34,7 +51,11 @@ function _basic_random_search_core(x0, true_label::Int, predict_proba_fn::Functi
         lb, ub = zeros(eltype(x_flat), ndims), ones(eltype(x_flat), ndims)
     else
         if length(bounds) != ndims
-            throw(DimensionMismatch("bounds length ($(length(bounds))) must match input dimensions ($ndims)"))
+            throw(
+                DimensionMismatch(
+                    "bounds length ($(length(bounds))) must match input dimensions ($ndims)",
+                ),
+            )
         end
         lb = eltype(x_flat)[b[1] for b in bounds]
         ub = eltype(x_flat)[b[2] for b in bounds]
@@ -115,7 +136,15 @@ function attack(atk::BasicRandomSearch, model::Chain, sample)
         return probs
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, atk.max_iter, atk.rng; bounds = atk.bounds)
+    return _basic_random_search_core(
+        x,
+        true_label,
+        predict_proba_fn,
+        ε,
+        atk.max_iter,
+        atk.rng;
+        bounds = atk.bounds,
+    )
 end
 
 """
@@ -146,5 +175,13 @@ function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
         return predict_proba(model, x_row)
     end
 
-    return _basic_random_search_core(x, true_label, predict_proba_fn, ε, atk.max_iter, atk.rng; bounds = atk.bounds)
+    return _basic_random_search_core(
+        x,
+        true_label,
+        predict_proba_fn,
+        ε,
+        atk.max_iter,
+        atk.rng;
+        bounds = atk.bounds,
+    )
 end
