@@ -2,11 +2,18 @@ module Experiments
 
 using MLJ
 using MLJ: partition, accuracy
+using MLJFlux
+using Flux
 using MLDatasets
 using StatsBase: mode
 using DataFrames
 
 export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
+export make_mnist_forest, make_mnist_tree
+export blackbox_predict
+
+const DecisionTreeClassifier = @load DecisionTreeClassifier pkg = DecisionTree
+const RandomForestClassifier = @load RandomForestClassifier pkg = DecisionTree
 
 # =========================
 # Config
@@ -106,10 +113,8 @@ attack/evaluation code.
 """
 function run_experiment(model, X, y; config::ExperimentConfig = DEFAULT_CONFIG)
     n = length(y)
-    train, test = train_test_split(
-        n; fraction_train = config.train_fraction,
-        rng = config.rng
-    )
+    train, test =
+        train_test_split(n; fraction_train = config.train_fraction, rng = config.rng)
 
     # For DataFrame inputs we must use two-dimensional indexing
     Xtrain = X isa DataFrame ? X[train, :] : X[train]
@@ -119,7 +124,7 @@ function run_experiment(model, X, y; config::ExperimentConfig = DEFAULT_CONFIG)
     fit!(mach, verbosity = 1)
 
     ŷ_test = predict(mach, Xtest)
-    acc = MLJ.accuracy(mode.(ŷ_test), y[test])
+    acc = accuracy(mode.(ŷ_test), y[test])
 
     report = (accuracy = acc,)
 
@@ -132,6 +137,44 @@ function run_experiment(model, X, y; config::ExperimentConfig = DEFAULT_CONFIG)
         config = config,
         report = report,
     )
+end
+
+"""
+    make_mnist_forest(; rng=42, n_trees=100, max_depth=-1)
+
+Construct a `RandomForestClassifier` suitable as a black-box
+baseline on flattened MNIST features.
+
+- `n_trees`: number of trees in the ensemble.
+- `max_depth`: maximum depth of each tree (-1 means unlimited).
+"""
+function make_mnist_forest(; rng::Int = 42, n_trees::Int = 100, max_depth::Int = -1)
+    model = RandomForestClassifier(n_trees = n_trees, max_depth = max_depth, rng = rng)
+    return model
+end
+
+"""
+    make_mnist_tree(; rng=42, max_depth=5)
+
+Construct a single `DecisionTreeClassifier` for MNIST features.
+Useful as a simpler black-box baseline.
+"""
+function make_mnist_tree(; rng::Int = 42, max_depth::Int = 5)
+    model = DecisionTreeClassifier(max_depth = max_depth, rng = rng)
+    return model
+end
+
+"""
+    blackbox_predict(mach, X)
+
+Pure prediction API for black-box attacks. Given an MLJ machine
+and new features `X`, return probabilistic predictions.
+
+This intentionally hides all training details and gradients.
+"""
+function blackbox_predict(mach, X)
+    # For tree/forest models, `predict` already returns probabilistic predictions.
+    return predict(mach, X)
 end
 
 
