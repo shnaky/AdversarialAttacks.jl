@@ -80,7 +80,7 @@ function plot_decision_boundary!(plt, model; resolution = 100, alpha = 0.3)
 
     Z = zeros(resolution, resolution)
     for (i, x) in enumerate(xs), (j, y) in enumerate(ys)
-        pred = model(Float32[x, y]) 
+        pred = model(Float32[x, y])
         Z[j, i] = pred[1] - pred[2]
     end
 
@@ -112,7 +112,7 @@ function plot_attack_results(X, y, model, atk; n_samples = 20)
         sample = (data = x_orig, label = label_onehot)
 
         x_adv = attack(atk, model, sample)
-        
+
         # Skip if attack produced NaN or Inf values
         if any(isnan.(x_adv)) || any(isinf.(x_adv))
             continue
@@ -167,8 +167,8 @@ end
 
 function compare_epsilons(X, y, model; epsilons = [0.1, 0.3, 0.5, 1.0], n_samples = 30)
     plots = []
-    
-    bounds = [(-3.5, 3.5), (-3.5, 3.5)]  
+
+    bounds = [(-3.5, 3.5), (-3.5, 3.5)]
 
     for ε in epsilons
         atk = BasicRandomSearch(epsilon = Float32(ε), max_iter = 100, bounds = bounds)
