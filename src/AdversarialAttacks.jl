@@ -7,8 +7,8 @@ using DecisionTree: DecisionTreeClassifier, predict_proba
 using Flux: Chain, gradient, OneHotVector, onecold, softmax, crossentropy
 
 include("attacks/Attack.jl")
-include("attacks/BlackBoxAttacks.jl")
-include("attacks/WhiteBox.jl")
+include("attacks/BasicRandomSearch.jl")
+include("attacks/FGSM.jl")
 include("Interface.jl")
 include("Evaluation.jl")
 
