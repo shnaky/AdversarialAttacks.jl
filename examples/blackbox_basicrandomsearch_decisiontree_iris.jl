@@ -39,7 +39,7 @@ end
 # ------------------------------------
 demo_idx = findfirst(==("versicolor"), y_str)
 
-for i in 1:size(X, 1)
+for i = 1:size(X, 1)
     xi = X[i, :]
     yi_str = y_str[i]
     true_idx_i = findfirst(==(yi_str), classes)
@@ -76,8 +76,8 @@ println("Original predicted class index = ", argmax(orig_probs_vec))
 # ------------------------------------
 ε = 0.3f0
 atk = BasicRandomSearch(
-    ε,
-    [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
+    epsilon = ε,
+    bounds = [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)],
 )
 println("\nRunning BasicRandomSearch with epsilon = ", ε, " ...")
 Random.seed!(42)
@@ -111,9 +111,20 @@ idx_versicolor = findall(==("versicolor"), y_str)
 idx_virginica = findall(==("virginica"), y_str)
 
 # Plot 1: features 1 & 2
-p12 = plot(xlabel = "SepalLength", ylabel = "SepalWidth", title = "Iris (features 1&2)", legend = false)
+p12 = plot(
+    xlabel = "SepalLength",
+    ylabel = "SepalWidth",
+    title = "Iris (features 1&2)",
+    legend = false,
+)
 scatter!(p12, X[idx_setosa, 1], X[idx_setosa, 2], color = :blue, markershape = :circle)
-scatter!(p12, X[idx_versicolor, 1], X[idx_versicolor, 2], color = :green, markershape = :utriangle)
+scatter!(
+    p12,
+    X[idx_versicolor, 1],
+    X[idx_versicolor, 2],
+    color = :green,
+    markershape = :utriangle,
+)
 scatter!(p12, X[idx_virginica, 1], X[idx_virginica, 2], color = :red, markershape = :square)
 scatter!(p12, [x0[1]], [x0[2]], markersize = 10, color = :black, label = "")
 scatter!(p12, [x_adv[1]], [x_adv[2]], markersize = 10, color = :orange, label = "")
@@ -122,11 +133,39 @@ scatter!(p12, [x_adv[1]], [x_adv[2]], markersize = 10, color = :orange, label = 
 orig_pred_class = classes[argmax(orig_probs_vec)[2]]
 adv_pred_class = classes[argmax(adv_probs_vec)[2]]
 p34 = plot(xlabel = "PetalLength", ylabel = "PetalWidth", title = "Iris (features 3&4)")
-scatter!(p34, X[idx_setosa, 3], X[idx_setosa, 4], color = :blue, markershape = :circle, label = "setosa")
-scatter!(p34, X[idx_versicolor, 3], X[idx_versicolor, 4], color = :green, markershape = :utriangle, label = "versicolor")
-scatter!(p34, X[idx_virginica, 3], X[idx_virginica, 4], color = :red, markershape = :square, label = "virginica")
+scatter!(
+    p34,
+    X[idx_setosa, 3],
+    X[idx_setosa, 4],
+    color = :blue,
+    markershape = :circle,
+    label = "setosa",
+)
+scatter!(
+    p34,
+    X[idx_versicolor, 3],
+    X[idx_versicolor, 4],
+    color = :green,
+    markershape = :utriangle,
+    label = "versicolor",
+)
+scatter!(
+    p34,
+    X[idx_virginica, 3],
+    X[idx_virginica, 4],
+    color = :red,
+    markershape = :square,
+    label = "virginica",
+)
 scatter!(p34, [x0[3]], [x0[4]], markersize = 10, color = :black, label = "original")
-scatter!(p34, [x_adv[3]], [x_adv[4]], markersize = 10, color = :orange, label = "adversarial")
+scatter!(
+    p34,
+    [x_adv[3]],
+    [x_adv[4]],
+    markersize = 10,
+    color = :orange,
+    label = "adversarial",
+)
 
 annot_str = "true: $label_str\norig: $orig_pred_class\nadv: $adv_pred_class"
 annotate!(p34, x0[3] + 0.2, x0[4], text(annot_str, 8, :left))
