@@ -126,7 +126,7 @@ end
 
     # Case 4: verify early stopping works with a simple model
     # Model where class 1 prob decreases with each perturbation
-    model_early_stop = Chain(x -> Float32[sum(x), 10.0f0-sum(x)])
+    model_early_stop = Chain(x -> Float32[sum(x), 10.0f0 - sum(x)])
 
     sample_early = (data = Float32[2.0, 2.0, 1.0, 1.0], label = 1)  # sum = 6.0, class 1 initially predicted
 

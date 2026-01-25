@@ -14,10 +14,10 @@ Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random s
 - `rng`: Random number generator for reproducibility (default: `Random.default_rng()`)
 """
 struct BasicRandomSearch{
-    T<:Real,
-    B<:Union{Nothing,Vector{<:Tuple{Real,Real}}},
-    R<:AbstractRNG,
-} <: BlackBoxAttack
+        T <: Real,
+        B <: Union{Nothing, Vector{<:Tuple{Real, Real}}},
+        R <: AbstractRNG,
+    } <: BlackBoxAttack
     epsilon::T
     max_iter::Int
     bounds::B
@@ -25,23 +25,23 @@ struct BasicRandomSearch{
 end
 
 function BasicRandomSearch(;
-    epsilon::Real = 0.1,
-    max_iter::Int = 50,
-    bounds = nothing,
-    rng::AbstractRNG = Random.default_rng(),
-)
+        epsilon::Real = 0.1,
+        max_iter::Int = 50,
+        bounds = nothing,
+        rng::AbstractRNG = Random.default_rng(),
+    )
     return BasicRandomSearch(epsilon, max_iter, bounds, rng)
 end
 
 function _basic_random_search_core(
-    x0,
-    true_label::Int,
-    predict_proba_fn::Function,
-    ε,
-    max_iter::Int,
-    rng::AbstractRNG;
-    bounds = nothing,
-)
+        x0,
+        true_label::Int,
+        predict_proba_fn::Function,
+        ε,
+        max_iter::Int,
+        rng::AbstractRNG;
+        bounds = nothing,
+    )
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
