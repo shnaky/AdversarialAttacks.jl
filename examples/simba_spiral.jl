@@ -80,9 +80,12 @@ function plot_decision_boundary!(plt, model; resolution = 100, alpha = 0.3)
 
     Z = zeros(resolution, resolution)
     for (i, x) in enumerate(xs), (j, y) in enumerate(ys)
-        pred = model([x, y])
+        pred = model(Float32[x, y])
         Z[j, i] = pred[1] - pred[2]
     end
+
+    # Replace NaN/Inf values to prevent plotting errors
+    Z = replace(Z, NaN => 0.0, Inf => 10.0, -Inf => -10.0)
 
     return contourf!(
         plt, xs, ys, Z, levels = [-10, 0, 10],
@@ -109,6 +112,11 @@ function plot_attack_results(X, y, model, atk; n_samples = 20)
         sample = (data = x_orig, label = label_onehot)
 
         x_adv = attack(atk, model, sample)
+
+        # Skip if attack produced NaN or Inf values
+        if any(isnan.(x_adv)) || any(isinf.(x_adv))
+            continue
+        end
 
         pred_orig = argmax(model(x_orig))
         pred_adv = argmax(model(x_adv))
@@ -160,8 +168,10 @@ end
 function compare_epsilons(X, y, model; epsilons = [0.1, 0.3, 0.5, 1.0], n_samples = 30)
     plots = []
 
+    bounds = [(-3.5, 3.5), (-3.5, 3.5)]
+
     for ε in epsilons
-        atk = BasicRandomSearch(epsilon = Float32(ε))
+        atk = BasicRandomSearch(epsilon = Float32(ε), max_iter = 100, bounds = bounds)
         plt = plot_attack_results(X, y, model, atk; n_samples = n_samples)
         title!(plt, "ε = $ε")
         push!(plots, plt)
@@ -175,13 +185,17 @@ end
 # 4. Run attack and visualize
 # ------------------------------------
 println("\nRunning SimBA attack visualization...")
-atk = BasicRandomSearch(epsilon = 0.5f0)
+bounds = [(-3.5, 3.5), (-3.5, 3.5)]  # Set bounds for normalized data
+atk = BasicRandomSearch(epsilon = 0.5f0, max_iter = 100, bounds = bounds)
 p1 = plot_attack_results(X, y, model, atk; n_samples = 25)
-display(p1)
+gui(p1)  # Use gui() instead of display()
 
 println("\nComparing different epsilon values...")
 p2 = compare_epsilons(X, y, model; epsilons = [0.1, 0.3, 0.5, 1.0], n_samples = 25)
-display(p2)
+gui(p2)  # Use gui() instead of display()
 
-println("\nPress Enter to exit...")
+println("\nPlots displayed. Press Enter to exit...")
 readline()
+
+# Close plots gracefully
+closeall()

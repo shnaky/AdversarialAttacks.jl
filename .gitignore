@@ -6,5 +6,7 @@
 /docs/build/
 /docs/src/index.md
 /.vscode
+/examples/Manifest*.toml
+.JuliaFormatter.toml
 *.bson
 trained_model.bson

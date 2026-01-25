@@ -1,5 +1,9 @@
 [deps]
+AdversarialAttacks = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
