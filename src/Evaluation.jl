@@ -242,14 +242,14 @@ function evaluate_robustness(
         try
             # clean output
             clean_pred = model(sample.data)
-            clean_label = argmax(clean_pred)
+            clean_label = argmax(vec(clean_pred))
             is_clean_correct = (clean_label == true_label)
             num_clean_correct += is_clean_correct
 
             # adverserial output
             adv_data = attack(atk, model, sample)
             adv_pred = model(adv_data)
-            adv_label = argmax(adv_pred)
+            adv_label = argmax(vec(adv_pred))
             is_adv_correct = (adv_label == true_label)
             num_adv_correct += is_adv_correct
 
