@@ -1,10 +1,11 @@
 module AdversarialAttacks
-
 using Random
 
 # External dependencies
 using DecisionTree: DecisionTreeClassifier, predict_proba
 using Flux: Chain, gradient, OneHotVector, onecold, softmax, crossentropy
+using MLJ: predict, levels, Machine, table
+using Distributions: pdf
 
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")

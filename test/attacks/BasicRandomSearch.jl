@@ -1,8 +1,15 @@
 using Test
-using AdversarialAttacks
 using Random
 using Flux
 using DecisionTree
+using MLJ
+using MLJ: machine, table, predict
+using MLJDecisionTreeInterface: RandomForestClassifier
+using CategoricalArrays: levelcode, CategoricalArray
+using AdversarialAttacks
+
+const dt_fit! = DecisionTree.fit!
+const mlj_fit! = MLJ.fit!
 
 # Shared dummy model for black-box attack tests
 struct DummyBlackBoxModel end
@@ -57,7 +64,7 @@ end
     features = rand(24, 4) .* 4
 
     dt_model = DecisionTreeClassifier(; classes = classes)
-    fit!(dt_model, features, labels)
+    dt_fit!(dt_model, features, labels)
 
     # Verify predict_proba returns 3 probs
     test_x = reshape(Float64[1.0, 1.5, 2.0, 2.5], 1, 4)
@@ -198,4 +205,51 @@ end
     perturb_low = sum(abs.(adv_low_iter .- sample.data))
     perturb_high = sum(abs.(adv_high_iter .- sample.data))
     @test perturb_high >= perturb_low
+end
+
+@testset "BasicRandomSearch with MLJ Machine (RandomForest)" begin
+    Random.seed!(1234)
+
+    # Simple toy tabular data: 2 features, 2 classes
+    X_mat = Float32[
+        0.1 0.2
+        0.9 0.8
+        0.2 0.1
+        0.8 0.9
+    ]
+    # Binary labels: -1 and 1 as an example
+    y_raw = [-1, 1, -1, 1]
+    y_cat = CategoricalArray(y_raw)
+
+    # Wrap features as a table for MLJ
+    X = table(X_mat)
+
+    # Define and train an MLJ RandomForestClassifier via MLJDecisionTreeInterface
+    forest = RandomForestClassifier(n_trees = 10, max_depth = -1)
+    mach = machine(forest, X, y_cat)
+    mlj_fit!(mach, verbosity = 0)
+
+    # Pick a single sample and construct BasicRandomSearch sample tuple
+    x_vec = X_mat[1, :]                       # 1st row as Vector{Float32}
+    x_vec_f = Float32.(collect(x_vec))
+    true_label_idx = levelcode(y_cat[1])      # 1-based index into class probs
+
+    sample = (data = x_vec_f, label = true_label_idx)
+
+    # Configure attack
+    atk = BasicRandomSearch(epsilon = 0.05f0, max_iter = 10)
+    x_copy = copy(sample.data)
+
+    # Run MLJ Machine-based attack
+    adv = attack(atk, mach, sample)
+
+    # Basic shape and type checks
+    @test adv isa Vector{Float32}
+    @test size(adv) == size(sample.data)
+
+    # Original input must remain unchanged
+    @test x_copy == sample.data
+
+    # Optional sanity: adversarial example stays within default [0,1] bounds
+    @test all(0 .<= adv .<= 1)
 end

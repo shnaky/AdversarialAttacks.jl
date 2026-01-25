@@ -183,3 +183,42 @@ function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
         bounds = atk.bounds,
     )
 end
+
+"""
+    attack(atk::BasicRandomSearch, mach::Machine, sample)
+
+Black-box adversarial attack on an MLJ `Machine` (e.g. a `RandomForestClassifier`)
+using BasicRandomSearch (SimBA), via `blackbox_predict`/`predict`.
+
+- `atk::BasicRandomSearch`: Attack instance with `epsilon` and `max_iter`.
+- `mach::Machine`: Trained MLJ machine with probabilistic predictions.
+- `sample`: NamedTuple with `data` (feature vector) and `label` (true class index, 1-based).
+
+Returns an adversarial example with the same shape as `sample.data`.
+"""
+function attack(atk::BasicRandomSearch, mach::Machine, sample)
+    x = sample.data
+    y = sample.label
+    ε = convert(eltype(x), atk.epsilon)
+
+    # y is already an index into the probability vector (1-based)
+    true_label = Int(y)
+
+    predict_proba_fn = function (x_flat)
+        # Treat x_flat as a single-row table for MLJ
+        x_row = permutedims(x_flat)      # 1×d Matrix
+        X_tbl = table(x_row)             # 1-row MLJ table
+        probs = predict(mach, X_tbl)[1]  # UnivariateFinite
+        return collect(pdf.(probs, levels(probs)))
+    end
+
+    return _basic_random_search_core(
+        x,
+        true_label,
+        predict_proba_fn,
+        ε,
+        atk.max_iter,
+        atk.rng;
+        bounds = atk.bounds,
+    )
+end
