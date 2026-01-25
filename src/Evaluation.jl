@@ -112,6 +112,24 @@ function Base.show(io::IO, report::RobustnessReport)
     return println(io, "===================================")
 end
 
+
+"""
+    calculate_metrics(n_test, num_clean_correct, num_adv_correct,
+                      num_successful_attacks, l_norms)
+
+Compute accuracy, attack success, robustness, and perturbation norm statistics
+for adversarial evaluation.
+
+# Arguments
+- `n_test`: Number of test samples.
+- `num_clean_correct`: Number of correctly classified clean samples.
+- `num_adv_correct`: Number of correctly classified adversarial samples.
+- `num_successful_attacks`: Number of successful adversarial attacks.
+- `l_norms`: Dictionary containing perturbation norms (e.g. `:linf`, `:l2`).
+
+# Returns
+- A `RobustnessReport` containing accuracy, robustness, and norm summary metrics.
+"""
 function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
 
     clean_accuracy = num_clean_correct / n_test
@@ -142,6 +160,19 @@ function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_succe
     )
 end
 
+"""
+    compute_norm(sample_data, adv_data, p::Real)
+
+Compute the Lp norm of the perturbation between original data and adversarial data.
+
+# Arguments
+- `sample_data`: Original sample data.
+- `adv_data`: Adversarially perturbed version of `sample_data`.
+- `p::Real`: Order of the norm (`p > 0` or `Inf`).
+
+# Returns
+- The Lp norm between the two input data arrays.
+"""
 function compute_norm(sample_data, adv_data, p::Real)
     # source: https://en.wikipedia.org/wiki/Lp_space
 
@@ -243,7 +274,27 @@ function evaluate_robustness(
     return report
 end
 
+"""
+    evaluation_curve(model, atk_type, epsilons, test_data; num_samples=100)
 
+Evaluate model robustness across a range of attack strengths.
+
+For each value in `epsilons`, an attack of type `atk_type` is instantiated and
+used to compute clean accuracy, adversarial accuracy, attack success rate, and
+perturbation norms.
+
+# Arguments
+- `model`: Model to be evaluated.
+- `atk_type`: Adversarial attack type.
+- `epsilons`: Vector of attack strengths.
+- `test_data`: Test dataset.
+
+# Keyword Arguments
+- `num_samples`: Number of samples used for each evaluation.
+
+# Returns
+- A dictionary containing evaluation metrics indexed by `epsilons`.
+"""
 function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vector{Float64}, test_data; num_samples::Int = 100)
     results = Dict(
         :epsilons => Float64[],
