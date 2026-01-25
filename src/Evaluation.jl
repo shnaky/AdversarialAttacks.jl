@@ -37,6 +37,8 @@ struct RobustnessReport
     num_successful_attacks::Int
     linf_norm_max::Float64
     linf_norm_mean::Float64
+    l2_norm_max::Float64
+    l2_norm_mean::Float64
 end
 
 """
@@ -85,14 +87,22 @@ function Base.show(io::IO, report::RobustnessReport)
         round(report.robustness_score * 100, digits = 2), "%"
     )
 
-    println(io, "\nPerturbation Analysis (L_inf norm)")
+    println(io, "\nPerturbation Analysis (Norms)")
     println(
-        io, "  Maximum perturbation           : ",
+        io, "  L_inf Maximum perturbation           : ",
         round(report.linf_norm_max, digits = 2)
     )
     println(
-        io, "  Mean perturbation              : ",
+        io, "  L_inf Mean perturbation              : ",
         round(report.linf_norm_mean, digits = 2)
+    )
+    println(
+        io, "  L_2 Max perturbation                 : ",
+        round(report.l2_norm_max, digits = 2)
+    )
+    println(
+        io, "  L_2 Mean perturbation                : ",
+        round(report.l2_norm_max, digits = 2)
     )
 
     println(io, "\nNotes")
@@ -102,14 +112,20 @@ function Base.show(io::IO, report::RobustnessReport)
     return println(io, "===================================")
 end
 
-function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, linf_norms)
+function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
 
     clean_accuracy = num_clean_correct / n_test
     adv_accuracy = num_adv_correct / n_test
     attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
     robustness_score = 1.0 - attack_success_rate
+    # norms
+    linf_norms = l_norms[:linf]
     linf_norm_max = length(linf_norms) > 0 ? maximum(linf_norms) : 0.0
     linf_norm_mean = length(linf_norms) > 0 ? sum(linf_norms) / length(linf_norms) : 0.0
+
+    l2_norms = l_norms[:l2]
+    l2_norm_max = !isempty(l2_norms) ? maximum(l2_norms) : 0.0
+    l2_norm_mean = !isempty(l2_norms) ? sum(l2_norms) / length(l2_norms) : 0.0
 
     return RobustnessReport(
         n_test,
@@ -121,6 +137,8 @@ function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_succe
         num_successful_attacks,
         linf_norm_max,
         linf_norm_mean,
+        l2_norm_max,
+        l2_norm_mean,
     )
 end
 
@@ -132,7 +150,7 @@ function compute_norm(sample_data, adv_data, p::Real)
     if p == Inf
         return maximum(abs.(perturbation))
     elseif p > 0
-        return sum(abs.(perturbation).^p)^(1/p)
+        return sum(abs.(perturbation) .^ p)^(1 / p)
     else
         error("Unsupported norm p=$p; must be positive or Inf")
     end
@@ -179,7 +197,10 @@ function evaluate_robustness(
     num_clean_correct = 0
     num_adv_correct = 0
     num_successful_attacks = 0
-    linf_norms = Float64[]
+    l_norms = Dict(
+        :linf => Float64[],
+        :l2 => Float64[]
+    )
 
     for i in 1:n_test
         sample = test_data[i]
@@ -201,10 +222,8 @@ function evaluate_robustness(
             is_adv_correct = (adv_label == true_label)
             num_adv_correct += is_adv_correct
 
-            # compute L_inf norm of perturbation
-            perturbation = abs.(adv_data .- sample.data)
-            linf_norm = maximum(perturbation)
-            push!(linf_norms, linf_norm)
+            push!(l_norms[:linf], compute_norm(sample.data, adv_data, Inf))
+            push!(l_norms[:l2], compute_norm(sample.data, adv_data, 2))
 
             # successful attack condition (a flip happened in prediction)
             if is_clean_correct && !is_adv_correct
@@ -219,7 +238,7 @@ function evaluate_robustness(
         end
     end
 
-    report = calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, linf_norms)
+    report = calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
     println("Evaluation complete!")
     return report
 end
@@ -231,11 +250,11 @@ function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vec
         :clean_accuracy => Float64[],
         :adv_accuracy => Float64[],
         :attack_success_rate => Float64[],
-        :linf_norm_mean =>Float64[]
+        :linf_norm_mean => Float64[]
     )
 
     for epsilon in epsilons
-        # TODO: there shoudl be a set rng parameter for BSR so it's ther results can be compared
+        # TODO: there should be a set rng parameter for BSR so it's ther results can be compared
         atk = atk_type(epsilon)
 
         report = evaluate_robustness(
