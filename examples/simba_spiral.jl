@@ -202,4 +202,3 @@ gui()
 println("\nPress Enter to close the second plot...")
 readline()
 closeall()
-
