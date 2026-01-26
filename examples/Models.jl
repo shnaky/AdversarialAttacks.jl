@@ -3,12 +3,17 @@ module Models
 using MLJFlux, Flux, Optimisers
 
 using MLJ
+using NearestNeighborModels
 
-export make_mnist_cnn, make_mnist_forest, make_mnist_tree
+export make_mnist_cnn, make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export extract_flux_model
 
 const DecisionTreeClassifier = @load DecisionTreeClassifier pkg = DecisionTree
 const RandomForestClassifier = @load RandomForestClassifier pkg = DecisionTree
+const KNNClassifier = @load KNNClassifier pkg = NearestNeighborModels
+const LogisticClassifier = @load LogisticClassifier pkg = MLJLinearModels
+const XGBoostClassifier = @load XGBoostClassifier pkg = XGBoost
+
 const ImageClassifier = MLJFlux.ImageClassifier
 
 # =========================
@@ -104,6 +109,42 @@ Useful as a simpler black-box baseline.
 """
 function make_mnist_tree(; rng::Int = 42, max_depth::Int = 5)
     model = DecisionTreeClassifier(max_depth = max_depth, rng = rng)
+    return model
+end
+
+"""
+    make_mnist_knn(; K::Int = 5, weights = :uniform)
+
+K-Nearest Neighbors classifier for MNIST.
+"""
+function make_mnist_knn(; K::Int = 5, weights::KNNKernel = Uniform())
+    model = KNNClassifier(K = K, weights = weights)
+    return model
+end
+
+function make_mnist_logistic(; lambda::Float64 = 1.0e-4, penalty = :l2)
+    model = LogisticClassifier(lambda = lambda, penalty = penalty)
+    return model
+end
+
+"""
+    make_mnist_xgboost(; num_round::Int = 100, max_depth::Int = 6, eta::Float64 = 0.3)
+
+XGBoost classifier for MNIST.
+"""
+function make_mnist_xgboost(;
+        num_round::Int = 100,
+        max_depth::Int = 6,
+        eta::Float64 = 0.3,
+        rng::Int = 42
+    )
+
+    model = XGBoostClassifier(
+        num_round = num_round,
+        max_depth = max_depth,
+        eta = eta,
+        seed = rng
+    )
     return model
 end
 

@@ -48,6 +48,32 @@ function main()
         use_flatten = true,
     )
 
+    # mach, meta = get_or_train(
+    #     make_mnist_knn,
+    #     "simple_knn",
+    #     config = config,
+    #     force_retrain = false,
+    #     K = 7,
+    #     use_flatten = true,
+    # )
+
+    # mach, meta = get_or_train(
+    #     make_mnist_xgboost,
+    #     "simple_xgboost",
+    #     config = config,
+    #     force_retrain = false,
+    #     num_round = 50,
+    #     use_flatten = true,
+    # )
+
+    # mach, meta = get_or_train(
+    #     make_mnist_logistic,
+    #     "simple_nlogistic",
+    #     config = config,
+    #     force_retrain = false,
+    #     use_flatten = true,
+    # )
+
     accuracy = meta["accuracy"]
     test_idx = meta["test_idx"]
     y_test = meta["y_test"]
