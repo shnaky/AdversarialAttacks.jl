@@ -36,13 +36,24 @@ function main()
     # =========================================================================
     println("\n[Step 2] Training Decision Tree Classifier...")
 
-    tree_model = make_mnist_tree(rng = 42, max_depth = 10)
-
     config = ExperimentConfig("mnist_tree_blackbox", 0.8, 42)
-    result = run_experiment(tree_model, X_flat, y; config = config)
+
+    mach, meta = get_or_train(
+        make_mnist_tree,
+        "simple_tree",
+        config = config,
+        force_retrain = false,
+        rng = 42,
+        max_depth = 10,
+        use_flatten = true,
+    )
+
+    accuracy = meta["accuracy"]
+    test_idx = meta["test_idx"]
+    y_test = meta["y_test"]
 
     println("  • Experiment: ", config.name)
-    println("  • Clean accuracy: ", round(result.report.accuracy * 100, digits = 2), "%")
+    println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
     println("  • Tree depth: 10 levels")
 
     # =========================================================================
@@ -53,17 +64,17 @@ function main()
     N_SAMPLES = 100
     test_data = []
 
-    for i in 1:min(N_SAMPLES, length(result.test_idx))
-        idx = result.test_idx[i]
+    for i in 1:min(N_SAMPLES, length(test_idx))
+        idx = test_idx[i]
         x_flat = Float32.(Vector(X_flat[idx, :]))
 
-        true_label = result.y_test[i]
+        true_label = y_test[i]
         true_label_idx = levelcode(true_label)
 
         # Check if correctly classified
         x_row = reshape(x_flat, 1, :)
         X_tbl = table(x_row)
-        pred_prob = predict(result.mach, X_tbl)[1]
+        pred_prob = predict(mach, X_tbl)[1]
         pred_label = mode(pred_prob)
 
         if pred_label == true_label
@@ -89,7 +100,7 @@ function main()
     attack_config = BasicRandomSearch(epsilon = 0.1f0, max_iter = 200)
 
     bb_report = evaluate_robustness(
-        result.mach,
+        mach,
         attack_config,
         test_data,
         num_samples = length(test_data)
@@ -168,7 +179,7 @@ function main()
         through iterative querying. Single trees are typically less robust than
         ensemble methods like RandomForest.
         """,
-        result.report.accuracy * 100,
+        accuracy * 100,
         bb_asr,
         bb_report.num_successful_attacks,
         bb_report.num_clean_correct,

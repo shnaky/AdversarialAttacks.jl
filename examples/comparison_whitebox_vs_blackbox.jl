@@ -8,7 +8,7 @@ Demonstrates the efficiency and effectiveness differences between gradient-based
 """
 
 include("Experiments.jl")
-using .Experiments: load_mnist_for_mlj, extract_flux_model, get_or_train_cnn
+using .Experiments
 using AdversarialAttacks
 using Flux
 using CategoricalArrays: levelcode
@@ -26,11 +26,16 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 1] Loading/Training MLJFlux CNN on MNIST...")
 
-    mach, meta = get_or_train_cnn(
+    config = ExperimentConfig("comparison_wb_bb", 0.8, 42)
+
+    mach, meta = get_or_train(
+        make_mnist_cnn,
         "comparison_wb_bb_final",
+        config = config,
         force_retrain = false,
         epochs = 10,
         batch_size = 64,
+        use_flatten = false,
     )
 
     raw_model = extract_flux_model(mach)
