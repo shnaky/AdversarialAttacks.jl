@@ -130,7 +130,7 @@ for adversarial evaluation.
 # Returns
 - A `RobustnessReport` containing accuracy, robustness, and norm summary metrics.
 """
-function calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
+function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
 
     clean_accuracy = num_clean_correct / n_test
     adv_accuracy = num_adv_correct / n_test
@@ -271,7 +271,7 @@ function evaluate_robustness(
         end
     end
 
-    report = calcualte_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
+    report = calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
     println("Evaluation complete!")
     return report
 end

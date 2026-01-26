@@ -52,7 +52,7 @@ using CategoricalArrays: levels
         @test result.attack_success_rate + result.robustness_score ≈ 1.0
     end
 
-    @testset "evaluate_robustness - calcualte_metrics" begin
+    @testset "evaluate_robustness - calculate_metrics" begin
         n_test = 10
         num_clean_correct = 0
         num_adv_correct = 5
@@ -61,7 +61,7 @@ using CategoricalArrays: levels
             :linf => Float64[],
             :l2 => Float64[]
         )
-        metrics = AdversarialAttacks.calcualte_metrics(
+        metrics = AdversarialAttacks.calculate_metrics(
             n_test,
             num_clean_correct,
             num_adv_correct,
@@ -76,7 +76,7 @@ using CategoricalArrays: levels
         # if cases
         num_clean_correct = 5
         l_norms[:linf] = l_norms[:l2] = [0.5]
-        metrics = AdversarialAttacks.calcualte_metrics(
+        metrics = AdversarialAttacks.calculate_metrics(
             n_test,
             num_clean_correct,
             num_adv_correct,
