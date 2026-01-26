@@ -214,6 +214,7 @@ end
 Create a unified prediction function for evaluation only.
 This is NOT passed to attack() - only used for getting predictions.
 """
+
 function make_prediction_function(model)
     if model isa Machine
         return function (x_data)
