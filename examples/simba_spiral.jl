@@ -188,14 +188,17 @@ println("\nRunning SimBA attack visualization...")
 bounds = [(-3.5, 3.5), (-3.5, 3.5)]  # Set bounds for normalized data
 atk = BasicRandomSearch(epsilon = 0.5f0, max_iter = 100, bounds = bounds)
 p1 = plot_attack_results(X, y, model, atk; n_samples = 25)
-gui(p1)  # Use gui() instead of display()
+
+display(p1)
+gui()
+println("\nPress Enter to close the first plot...")
+readline()
+closeall()
 
 println("\nComparing different epsilon values...")
 p2 = compare_epsilons(X, y, model; epsilons = [0.1, 0.3, 0.5, 1.0], n_samples = 25)
-gui(p2)  # Use gui() instead of display()
-
-println("\nPlots displayed. Press Enter to exit...")
+display(p2)
+gui()
+println("\nPress Enter to close the second plot...")
 readline()
-
-# Close plots gracefully
 closeall()
