@@ -6,6 +6,7 @@ using DecisionTree: DecisionTreeClassifier, predict_proba
 using Flux: Chain, gradient, OneHotVector, onecold, softmax, crossentropy
 using MLJ: predict, levels, Machine, machine, table
 using Distributions: pdf
+using LinearAlgebra: norm
 
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")

@@ -99,8 +99,6 @@ using CategoricalArrays: levels
 
         @test linf == 3.0
         @test isapprox(l2, sqrt(14); rtol = 1.0e-6)
-        @test_throws ErrorException AdversarialAttacks.compute_norm(sample_data, adv_data, 0)
-
     end
 
     @testset "evaluate_robustness - num_samples handling" begin

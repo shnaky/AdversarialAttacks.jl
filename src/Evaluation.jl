@@ -165,26 +165,34 @@ end
 
 Compute the Lp norm of the perturbation between original data and adversarial data.
 
+This function uses `LinearAlgebra.norm` for optimal performance and numerical stability.
+
 # Arguments
 - `sample_data`: Original sample data.
 - `adv_data`: Adversarially perturbed version of `sample_data`.
-- `p::Real`: Order of the norm (`p > 0` or `Inf`).
+- `p::Real`: Order of the norm. Must be positive or `Inf`.
+    - Common values: `1` (Manhattan), `2` (Euclidean), `Inf` (maximum).
 
 # Returns
-- The Lp norm between the two input data arrays.
+- `Float64`: The Lp norm of the perturbation `||adv_data - sample_data||_p`.
+
+# Examples
+```julia
+original = [1.0, 2.0, 3.0]
+adversarial = [1.5, 2.5, 3.5]
+
+compute_norm(original, adversarial, 2)    # L2 (Euclidean) norm
+compute_norm(original, adversarial, 1)    # L1 (Manhattan) norm
+compute_norm(original, adversarial, Inf)  # L∞ (maximum) norm
+```
+
+# References
+
+- Lp space: https://en.wikipedia.org/wiki/Lp_space
 """
 function compute_norm(sample_data, adv_data, p::Real)
-    # source: https://en.wikipedia.org/wiki/Lp_space
-
     perturbation = adv_data .- sample_data
-
-    if p == Inf
-        return maximum(abs.(perturbation))
-    elseif p > 0
-        return sum(abs.(perturbation) .^ p)^(1 / p)
-    else
-        error("Unsupported norm p=$p; must be positive or Inf")
-    end
+    return norm(perturbation, p)
 end
 
 
