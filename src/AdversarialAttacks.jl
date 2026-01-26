@@ -3,6 +3,7 @@ module AdversarialAttacks
 using Random: randperm
 using Downloads: download
 using BSON: @load
+using Artifacts
 
 include("attacks/Attack.jl")
 include("models/Model.jl")
@@ -11,7 +12,6 @@ include("attacks/BlackBoxAttacks.jl")
 include("attacks/WhiteBox.jl")
 include("Interface.jl")
 include("Evaluation.jl")
-include("examples/cifar10.jl")
 
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack

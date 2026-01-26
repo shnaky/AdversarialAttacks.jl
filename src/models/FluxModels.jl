@@ -149,7 +149,7 @@ function load_pretrained_c10_model()
         Flux.flatten
     )
     #@load download(url, "model_cifar10_downloaded.bson") model_state
-    @load MODEL_PATH model_state
+    @load model_path model_state
     Flux.loadmodel!(model, model_state)
     return FluxModel(model)
 end

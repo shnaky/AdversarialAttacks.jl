@@ -69,3 +69,4 @@ Craft an adversarial example by applying the attack to a sample.
 function craft(sample, model, attack::AbstractAttack; kwargs...)
     throw(MethodError(craft, (sample, model, attack)))
 end
+
