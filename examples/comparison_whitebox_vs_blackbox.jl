@@ -49,7 +49,11 @@ function run_comparison()
         println("  ✓ Model already has softmax")
     end
 
-    println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
+    accuracy = meta["accuracy"]
+    test_idx = meta["test_idx"]
+    y_test = meta["y_test"]
+
+    println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 
     # ==========================================================================
     # [Step 2] Prepare Test Samples
@@ -61,14 +65,14 @@ function run_comparison()
 
     test_data = []
 
-    for i in 1:length(meta["test_idx"])
+    for i in 1:length(test_idx)
         if length(test_data) >= N_SAMPLES
             break
         end
 
-        idx = meta["test_idx"][i]
+        idx = test_idx[i]
         x_img = X_img[idx]
-        true_label_idx = levelcode(meta["y_test"][i])
+        true_label_idx = levelcode(y_test[i])
 
         # Convert to Flux format (28×28×1×1)
         x_array = Float32.(channelview(x_img))

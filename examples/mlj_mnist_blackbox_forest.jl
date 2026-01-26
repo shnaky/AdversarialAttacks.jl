@@ -52,7 +52,7 @@ test_idx = meta["test_idx"]
 y_test = meta["y_test"]
 
 println("  • Experiment: ", config.name)
-println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
+println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 
 # =============================================================================
 # [Step 3] Prepare Test Samples
