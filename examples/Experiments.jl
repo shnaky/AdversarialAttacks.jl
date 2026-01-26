@@ -19,7 +19,7 @@ using BSON
 using Dates
 
 export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
-export make_mnist_cnn, make_mnist_forest, make_mnist_tree
+export make_mnist_cnn, make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export blackbox_predict, extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
 
@@ -237,7 +237,7 @@ end
 Generic trainer for ANY MLJ model.
 
 - `model_factory`: make_mnist_* function
-- `use_flatten`: image → DataFrame (Tree/SVM=yes, CNN=no)
+- `use_flatten`: image → DataFrame (Tree/KNN/..etc=yes, CNN=no)
 - `kwargs...`: Additional arguments for training (e.g., epochs, batch_size)
 
 # Example
