@@ -62,7 +62,7 @@ weakdeps = ["SparseArrays", "StaticArrays"]
     AdaptStaticArraysExt = "StaticArrays"
 
 [[deps.AdversarialAttacks]]
-deps = ["DecisionTree", "Distributions", "Flux", "MLJ", "Random"]
+deps = ["DecisionTree", "Distributions", "Flux", "LinearAlgebra", "MLJ", "Random"]
 path = ".."
 uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
 version = "1.0.0-DEV"

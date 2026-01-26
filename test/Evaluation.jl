@@ -28,11 +28,28 @@ using CategoricalArrays: levels
         # L_inf norm fields
         @test hasfield(RobustnessReport, :linf_norm_max)
         @test hasfield(RobustnessReport, :linf_norm_mean)
+        @test hasfield(RobustnessReport, :l2_norm_max)
+        @test hasfield(RobustnessReport, :l2_norm_mean)
+        @test hasfield(RobustnessReport, :l1_norm_max)
+        @test hasfield(RobustnessReport, :l1_norm_mean)
+
         @test result.linf_norm_max isa Float64
         @test result.linf_norm_mean isa Float64
         @test result.linf_norm_max >= 0.0
         @test result.linf_norm_mean >= 0.0
         @test result.linf_norm_max >= result.linf_norm_mean
+
+        @test result.l2_norm_max isa Float64
+        @test result.l2_norm_mean isa Float64
+        @test result.l2_norm_max >= 0.0
+        @test result.l2_norm_mean >= 0.0
+        @test result.l2_norm_max >= result.l2_norm_mean
+
+        @test result.l1_norm_max isa Float64
+        @test result.l1_norm_mean isa Float64
+        @test result.l1_norm_max >= 0.0
+        @test result.l1_norm_mean >= 0.0
+        @test result.l1_norm_max >= result.l1_norm_mean
 
         @test result.num_samples isa Int
         @test result.num_clean_correct isa Int
@@ -59,7 +76,8 @@ using CategoricalArrays: levels
         num_successful_attacks = 5
         l_norms = Dict(
             :linf => Float64[],
-            :l2 => Float64[]
+            :l2 => Float64[],
+            :l1 => Float64[]
         )
         metrics = AdversarialAttacks.calculate_metrics(
             n_test,
@@ -69,13 +87,19 @@ using CategoricalArrays: levels
             l_norms
         )
         @test metrics isa RobustnessReport
+
         # else cases
         @test metrics.attack_success_rate == 0.0
         @test metrics.linf_norm_max == metrics.linf_norm_mean == 0.0
         @test metrics.l2_norm_max == metrics.l2_norm_mean == 0.0
+        @test metrics.l1_norm_max == metrics.l1_norm_mean == 0.0
+
         # if cases
         num_clean_correct = 5
-        l_norms[:linf] = l_norms[:l2] = [0.5]
+        l_norms[:linf] = [0.5]
+        l_norms[:l2] = [0.5]
+        l_norms[:l1] = [0.5]
+
         metrics = AdversarialAttacks.calculate_metrics(
             n_test,
             num_clean_correct,
@@ -89,6 +113,7 @@ using CategoricalArrays: levels
         @test metrics.robustness_score == 1.0 - metrics.attack_success_rate
         @test metrics.linf_norm_max > 0.0 && metrics.linf_norm_mean > 0.0
         @test metrics.l2_norm_max > 0.0 && metrics.l2_norm_mean > 0.0
+        @test metrics.l1_norm_max > 0.0 && metrics.l1_norm_mean > 0.0
     end
 
     @testset "evaluate_robustness - compute_norm" begin
@@ -96,9 +121,10 @@ using CategoricalArrays: levels
         adv_data = sample_data .* 2.0
         linf = AdversarialAttacks.compute_norm(sample_data, adv_data, Inf)
         l2 = AdversarialAttacks.compute_norm(sample_data, adv_data, 2)
-
+        l1 = AdversarialAttacks.compute_norm(sample_data, adv_data, 1)
         @test linf == 3.0
         @test isapprox(l2, sqrt(14); rtol = 1.0e-6)
+        @test l1 == 6.0
     end
 
     @testset "evaluate_robustness - num_samples handling" begin
@@ -131,16 +157,39 @@ using CategoricalArrays: levels
 
     @testset "evaluate_robustness - RobustnessReport show" begin
         # dummy report
-        report = RobustnessReport(1, 0, 0.0, 0.0, 0.0, 1.0, 0, 0.0, 0.0, 0.0, 0.0)
+        report = RobustnessReport(
+            1,      # n_test
+            0,      # num_clean_correct
+            0.0,    # clean_accuracy
+            0.0,    # adv_accuracy
+            0.0,    # attack_success_rate
+            1.0,    # robustness_score
+            0,      # num_successful_attacks
+            0.0,    # linf_norm_max
+            0.0,    # linf_norm_mean
+            0.0,    # l2_norm_max
+            0.0,    # l2_norm_mean
+            0.0,    # l1_norm_max
+            0.0     # l1_norm_mean
+        )
 
-        # get output
+        # Capture output from Base.show
         io = IOBuffer()
         show(io, report)
         output = String(take!(io))
 
-        # check if key phrases appear in the output
+        # Verify key sections appear in output
         @test occursin("Robustness Evaluation Report", output)
         @test occursin("Total samples evaluated", output)
+        @test occursin("Perturbation Analysis (Norms)", output)
+
+        # Verify all norm types are displayed
+        @test occursin("L_inf Maximum perturbation", output)
+        @test occursin("L_inf Mean perturbation", output)
+        @test occursin("L_2 Maximum perturbation", output)
+        @test occursin("L_2 Mean perturbation", output)
+        @test occursin("L_1 Maximum perturbation", output)
+        @test occursin("L_1 Mean perturbation", output)
     end
 
     @testset "evaluate_robustness - L_inf norm correctness" begin

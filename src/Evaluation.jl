@@ -20,12 +20,18 @@ including clean/adversarial accuracy, attack success rate, and robustness score.
 - `attack_success_rate::Float64`: (ASR) Fraction of successful attacks (on correctly classified samples)
 - `robustness_score::Float64`: 1.0 - attack_success_rate (ASR)
 - `num_successful_attacks::Int`: Number of successful attacks
-- `linf_norm_max::Float64`: Maximum L_inf norm of perturbations across all samples
-- `linf_norm_mean::Float64`: Mean L_inf norm of perturbations across all samples
+- `linf_norm_max::Float64`: Maximum L∞ norm of perturbations across all samples
+- `linf_norm_mean::Float64`: Mean L∞ norm of perturbations across all samples
+- `l2_norm_max::Float64`: Maximum L2 norm of perturbations across all samples
+- `l2_norm_mean::Float64`: Mean L2 norm of perturbations across all samples
+- `l1_norm_max::Float64`: Maximum L1 norm of perturbations across all samples
+- `l1_norm_mean::Float64`: Mean L1 norm of perturbations across all samples
 
 # Note
 An attack succeeds when the clean prediction is correct but the adversarial prediction is incorrect.
-The L_inf norm measures the maximum absolute change in any feature of the input.
+- The L∞ norm measures the maximum absolute change in any feature of the input.
+- The L2 norm measures the Euclidean distance between original and adversarial samples.
+- The L1 norm measures the Manhattan distance (sum of absolute differences).
 """
 struct RobustnessReport
     num_samples::Int
@@ -39,6 +45,8 @@ struct RobustnessReport
     linf_norm_mean::Float64
     l2_norm_max::Float64
     l2_norm_mean::Float64
+    l1_norm_max::Float64
+    l1_norm_mean::Float64
 end
 
 """
@@ -46,7 +54,8 @@ end
 
 Internal method that defines how a `RobustnessReport` is displayed
 when printed. Shows dataset statistics, clean and adversarial accuracy,
-attack success rate, and robustness score in a formatted report.
+attack success rate, robustness score, and perturbation analysis for
+L∞, L2, and L1 norms in a formatted report.
 
 Typically called automatically by `println(report)`.
 """
@@ -89,20 +98,28 @@ function Base.show(io::IO, report::RobustnessReport)
 
     println(io, "\nPerturbation Analysis (Norms)")
     println(
-        io, "  L_inf Maximum perturbation           : ",
+        io, "  L_inf Maximum perturbation     : ",
         round(report.linf_norm_max, digits = 2)
     )
     println(
-        io, "  L_inf Mean perturbation              : ",
+        io, "  L_inf Mean perturbation        : ",
         round(report.linf_norm_mean, digits = 2)
     )
     println(
-        io, "  L_2 Max perturbation                 : ",
+        io, "  L_2 Maximum perturbation       : ",
         round(report.l2_norm_max, digits = 2)
     )
     println(
-        io, "  L_2 Mean perturbation                : ",
+        io, "  L_2 Mean perturbation          : ",
         round(report.l2_norm_mean, digits = 2)
+    )
+    println(
+        io, "  L_1 Maximum perturbation       : ",
+        round(report.l1_norm_max, digits = 2)
+    )
+    println(
+        io, "  L_1 Mean perturbation          : ",
+        round(report.l1_norm_mean, digits = 2)
     )
 
     println(io, "\nNotes")
@@ -125,10 +142,11 @@ for adversarial evaluation.
 - `num_clean_correct`: Number of correctly classified clean samples.
 - `num_adv_correct`: Number of correctly classified adversarial samples.
 - `num_successful_attacks`: Number of successful adversarial attacks.
-- `l_norms`: Dictionary containing perturbation norms (e.g. `:linf`, `:l2`).
+- `l_norms`: Dictionary containing perturbation norm arrays with keys `:linf`, `:l2`, and `:l1`.
 
 # Returns
-- A `RobustnessReport` containing accuracy, robustness, and norm summary metrics.
+- A `RobustnessReport` containing accuracy, robustness, and norm summary metrics
+  (maximum and mean) for all three norm types.
 """
 function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
 
@@ -136,14 +154,21 @@ function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_succe
     adv_accuracy = num_adv_correct / n_test
     attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
     robustness_score = 1.0 - attack_success_rate
-    # norms
+
+    # L∞ norms
     linf_norms = l_norms[:linf]
     linf_norm_max = length(linf_norms) > 0 ? maximum(linf_norms) : 0.0
     linf_norm_mean = length(linf_norms) > 0 ? sum(linf_norms) / length(linf_norms) : 0.0
 
+    # L2 norms
     l2_norms = l_norms[:l2]
     l2_norm_max = !isempty(l2_norms) ? maximum(l2_norms) : 0.0
     l2_norm_mean = !isempty(l2_norms) ? sum(l2_norms) / length(l2_norms) : 0.0
+
+    # L1 norms
+    l1_norms = l_norms[:l1]
+    l1_norm_max = !isempty(l1_norms) ? maximum(l1_norms) : 0.0
+    l1_norm_mean = !isempty(l1_norms) ? sum(l1_norms) / length(l1_norms) : 0.0
 
     return RobustnessReport(
         n_test,
@@ -157,6 +182,8 @@ function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_succe
         linf_norm_mean,
         l2_norm_max,
         l2_norm_mean,
+        l1_norm_max,
+        l1_norm_mean,
     )
 end
 
@@ -171,7 +198,7 @@ This function uses `LinearAlgebra.norm` for optimal performance and numerical st
 - `sample_data`: Original sample data.
 - `adv_data`: Adversarially perturbed version of `sample_data`.
 - `p::Real`: Order of the norm. Must be positive or `Inf`.
-    - Common values: `1` (Manhattan), `2` (Euclidean), `Inf` (maximum).
+    - Common values: `1` (Manhattan/L1), `2` (Euclidean/L2), `Inf` (maximum/L∞).
 
 # Returns
 - `Float64`: The Lp norm of the perturbation `||adv_data - sample_data||_p`.
@@ -195,11 +222,13 @@ function compute_norm(sample_data, adv_data, p::Real)
     return norm(perturbation, p)
 end
 
-
 """
     evaluate_robustness(model, atk, test_data; num_samples=100)
 
 Evaluate model robustness by running attack on multiple samples.
+
+For each sample, computes clean and adversarial predictions, tracks attack success,
+and calculates perturbation norms (L∞, L2, and L1).
 
 # Arguments
 - `model`: The model to evaluate.
@@ -209,7 +238,10 @@ Evaluate model robustness by running attack on multiple samples.
   uses all available samples.
 
 # Returns
-- `RobustnessReport`: Report containing accuracy, attack success rate, and robustness metrics
+
+- `RobustnessReport`: Report containing accuracy, attack success rate, robustness metrics,
+and perturbation statistics for L∞, L2, and L1 norms.
+
 
 # Example
 ```julia
@@ -238,7 +270,8 @@ function evaluate_robustness(
     num_successful_attacks = 0
     l_norms = Dict(
         :linf => Float64[],
-        :l2 => Float64[]
+        :l2 => Float64[],
+        :l1 => Float64[]
     )
 
     predict_fn = make_prediction_function(model)
@@ -256,15 +289,17 @@ function evaluate_robustness(
             is_clean_correct = (clean_label == true_label)
             num_clean_correct += is_clean_correct
 
-            # adverserial output
+            # adversarial output
             adv_data = attack(atk, model, sample)
             adv_pred = predict_fn(adv_data)
             adv_label = argmax(vec(adv_pred))
             is_adv_correct = (adv_label == true_label)
             num_adv_correct += is_adv_correct
 
+            # Compute all three norm metrics
             push!(l_norms[:linf], compute_norm(sample.data, adv_data, Inf))
             push!(l_norms[:l2], compute_norm(sample.data, adv_data, 2))
+            push!(l_norms[:l1], compute_norm(sample.data, adv_data, 1))
 
             # successful attack condition (a flip happened in prediction)
             if is_clean_correct && !is_adv_correct
@@ -290,8 +325,8 @@ end
 Evaluate model robustness across a range of attack strengths.
 
 For each value in `epsilons`, an attack of type `atk_type` is instantiated and
-used to compute clean accuracy, adversarial accuracy, attack success rate, and
-perturbation norms.
+used to compute clean accuracy, adversarial accuracy, attack success rate,
+robustness score, and perturbation norms (L∞, L2, and L1).
 
 # Arguments
 - `model`: Model to be evaluated.
@@ -300,10 +335,29 @@ perturbation norms.
 - `test_data`: Test dataset.
 
 # Keyword Arguments
-- `num_samples`: Number of samples used for each evaluation.
+- `num_samples::Int=100`: Number of samples used for each epsilon evaluation.
+
 
 # Returns
-- A dictionary containing evaluation metrics indexed by `epsilons`.
+
+- A dictionary containing evaluation metrics for each epsilon value:
+    - `:epsilons`: Attack strength values
+    - `:clean_accuracy`: Clean accuracy for each epsilon
+    - `:adv_accuracy`: Adversarial accuracy for each epsilon
+    - `:attack_success_rate`: Attack success rate for each epsilon
+    - `:robustness_score`: Robustness score (1 - ASR) for each epsilon
+    - `:linf_norm_mean`, `:linf_norm_max`: L∞ norm statistics
+    - `:l2_norm_mean`, `:l2_norm_max`: L2 norm statistics
+    - `:l1_norm_mean`, `:l1_norm_max`: L1 norm statistics
+
+
+# Example
+
+```julia
+results = evaluation_curve(model, FGSM, [0.01, 0.05, 0.1], test_data, num_samples=100)
+println("Attack success rates: ", results[:attack_success_rate])
+```
+
 """
 function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vector{Float64}, test_data; num_samples::Int = 100)
     results = Dict(
@@ -311,7 +365,13 @@ function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vec
         :clean_accuracy => Float64[],
         :adv_accuracy => Float64[],
         :attack_success_rate => Float64[],
-        :linf_norm_mean => Float64[]
+        :robustness_score => Float64[],
+        :linf_norm_mean => Float64[],
+        :linf_norm_max => Float64[],
+        :l2_norm_mean => Float64[],
+        :l2_norm_max => Float64[],
+        :l1_norm_mean => Float64[],
+        :l1_norm_max => Float64[]
     )
 
     for epsilon in epsilons
@@ -329,7 +389,14 @@ function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vec
         push!(results[:clean_accuracy], report.clean_accuracy)
         push!(results[:adv_accuracy], report.adv_accuracy)
         push!(results[:attack_success_rate], report.attack_success_rate)
+        push!(results[:robustness_score], report.robustness_score)
+
         push!(results[:linf_norm_mean], report.linf_norm_mean)
+        push!(results[:linf_norm_max], report.linf_norm_max)
+        push!(results[:l2_norm_mean], report.l2_norm_mean)
+        push!(results[:l2_norm_max], report.l2_norm_max)
+        push!(results[:l1_norm_mean], report.l1_norm_mean)
+        push!(results[:l1_norm_max], report.l1_norm_max)
     end
 
     return results
@@ -340,8 +407,22 @@ end
 
 Create a unified prediction function for evaluation only.
 This is NOT passed to attack() - only used for getting predictions.
-"""
 
+# Arguments
+
+- `model`: Either a Flux-style model or an MLJ Machine.
+
+
+# Returns
+
+- A function that takes input data and returns prediction probabilities as a vector.
+
+
+# Note
+
+This function handles different model types (Flux neural networks vs MLJ models)
+and input shapes (vectors vs matrices) to provide a consistent prediction interface.
+"""
 function make_prediction_function(model)
     if model isa Machine
         return function (x_data)
