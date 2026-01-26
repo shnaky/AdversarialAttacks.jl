@@ -144,6 +144,8 @@ function evaluate_robustness(
     num_successful_attacks = 0
     linf_norms = Float64[]
 
+    predict_fn = make_prediction_function(model)
+
     for i in 1:n_test
         sample = test_data[i]
         true_label = argmax(sample.label)
@@ -152,14 +154,14 @@ function evaluate_robustness(
 
         try
             # clean output
-            clean_pred = model(sample.data)
+            clean_pred = predict_fn(sample.data)
             clean_label = argmax(vec(clean_pred))
             is_clean_correct = (clean_label == true_label)
             num_clean_correct += is_clean_correct
 
             # adverserial output
             adv_data = attack(atk, model, sample)
-            adv_pred = model(adv_data)
+            adv_pred = predict_fn(adv_data)
             adv_label = argmax(vec(adv_pred))
             is_adv_correct = (adv_label == true_label)
             num_adv_correct += is_adv_correct
@@ -204,4 +206,36 @@ function evaluate_robustness(
         linf_norm_mean,
     )
 
+end
+
+"""
+    make_prediction_function(model)
+
+Create a unified prediction function for evaluation only.
+This is NOT passed to attack() - only used for getting predictions.
+"""
+
+function make_prediction_function(model)
+    if model isa Machine
+        return function (x_data)
+            if x_data isa AbstractVector
+                x_row = reshape(x_data, 1, :)
+            else
+                x_row = reshape(vec(x_data), 1, :)
+            end
+
+            X_tbl = table(x_row)
+            pred_dist = predict(model, X_tbl)[1]
+
+            class_levels = levels(pred_dist)
+            probs = [pdf(pred_dist, level) for level in class_levels]
+
+            return probs
+        end
+    else
+        return function (x)
+            output = model(x)
+            return vec(output)
+        end
+    end
 end

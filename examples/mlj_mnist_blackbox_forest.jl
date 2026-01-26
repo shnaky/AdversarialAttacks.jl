@@ -1,90 +1,188 @@
+# examples/mlj_mnist_blackbox_forest.jl
+
+"""
+Black-Box Attack on MLJ RandomForest
+
+Demonstrates query-based adversarial attack on a traditional ML ensemble model.
+Unlike neural networks, tree-based models have no gradients, making only
+black-box attacks feasible.
+"""
+
 include("Experiments.jl")
 using .Experiments
 using AdversarialAttacks
-using MLJ: mode, fitted_params, table
-using CategoricalArrays: levelcode, levels
-using Distributions: pdf
+using MLJ: mode, predict, table
+using CategoricalArrays: levelcode
+using Flux  # For onehot encoding
+using Printf
 
-# 1. Load MNIST images and flatten for a tabular model
+println("="^70)
+println("Black-Box Attack on RandomForest Classifier (MNIST)")
+println("="^70)
+
+# =============================================================================
+# [Step 1] Load and Prepare Data
+# =============================================================================
+println("\n[Step 1] Loading MNIST dataset...")
+
 X_img, y = load_mnist_for_mlj()
-X_flat = flatten_images(X_img)
+X_flat = flatten_images(X_img)  # Flatten images for tabular model
 
-# 2. Build and train a RandomForestClassifier as black-box model
+println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features")
+
+# =============================================================================
+# [Step 2] Train RandomForest
+# =============================================================================
+println("\n[Step 2] Training RandomForest Classifier...")
+
 forest = make_mnist_forest(rng = 42, n_trees = 200, max_depth = -1)
 config = ExperimentConfig("mnist_forest_blackbox", 0.8, 42)
 result = run_experiment(forest, X_flat, y; config = config)
 
-println("Experiment: ", config.name)
-println("Accuracy on test set (RandomForest): ", result.report.accuracy)
+println("  • Experiment: ", config.name)
+println("  • Clean accuracy: ", round(result.report.accuracy * 100, digits = 2), "%")
 
-# 3. Sanity check: black-box prediction API on a few test samples
-y_test_subset = result.y_test[1:5]
-pred_probs = blackbox_predict(result.mach, X_flat[result.test_idx[1:5], :])
-pred_labels = mode.(pred_probs)
+# =============================================================================
+# [Step 3] Prepare Test Samples
+# =============================================================================
+println("\n[Step 3] Preparing test samples...")
 
-println("First 5 true labels      : ", y_test_subset)
-println("First 5 predicted labels : ", pred_labels)
+N_SAMPLES = 100
+test_data = []
 
-# 4. Configure a BasicRandomSearch black-box attack on the RandomForest model
+for i in 1:min(N_SAMPLES, length(result.test_idx))
+    idx = result.test_idx[i]
+    x_vec = Float32.(Vector(X_flat[idx, :]))
 
-# Pick one test sample (flattened feature vector) and its true label index
-idx = result.test_idx[1]
-x_vec = X_flat[idx, :]                 # 1×d row (tabular feature vector)
-x_vec_f = Float32.(collect(x_vec))     # Vector{Float32}
-true_label_idx = levelcode(result.y_test[1])
+    # Get true label
+    true_label = result.y_test[i]
+    true_label_idx = levelcode(true_label)
 
-# Build a sample tuple consistent with the BasicRandomSearch interface
-sample = (data = x_vec_f, label = true_label_idx)
-
-# Instantiate the BasicRandomSearch attack
-# max_iter acts as a query budget proxy
-brs = BasicRandomSearch(; epsilon = 0.05, max_iter = 200)
-
-# Run the black-box attack against the MLJ machine
-x_adv = attack(brs, result.mach, sample)
-
-# 5. Evaluate clean vs adversarial predictions using only the black-box API
-
-# Helper: query the black-box model and return class probabilities for a single vector
-predict_proba_fn = function (x_flat::AbstractVector)
-    # Wrap x_flat as a single-row table for MLJ
-    x_row = permutedims(x_flat)   # 1×d Matrix
+    # Check if correctly classified
+    x_row = reshape(x_vec, 1, :)
     X_tbl = table(x_row)
-    probs = blackbox_predict(result.mach, X_tbl)[1]   # UnivariateFinite
-    return collect(pdf.(probs, levels(probs)))        # Vector of probabilities
+    pred_prob = predict(result.mach, X_tbl)[1]
+    pred_label = mode(pred_prob)
+
+    if pred_label == true_label
+        y_onehot = Flux.onehot(true_label_idx, 1:10)
+        push!(
+            test_data, (
+                data = x_vec,
+                label = y_onehot,
+                true_idx = true_label_idx,
+                true_label_cat = true_label,
+            )
+        )
+    end
 end
 
-# Clean prediction
-probs_clean = predict_proba_fn(sample.data)
-clean_prob = probs_clean[true_label_idx]
-clean_pred = argmax(probs_clean)
+println("  • Selected $(length(test_data)) correctly classified samples")
 
-# Adversarial prediction
-probs_adv = predict_proba_fn(x_adv)
-adv_prob = probs_adv[true_label_idx]
-adv_pred = argmax(probs_adv)
+# =============================================================================
+# [Step 4] Black-Box Attack Evaluation
+# =============================================================================
+println("\n[Step 4] Running Black-Box Attack (BasicRandomSearch with ε=0.1, 200 iter)...")
 
-# Simple metrics: treat max_iter as query count
-query_count = brs.max_iter
-conf_drop = clean_prob - adv_prob
-flipped = clean_pred != adv_pred
+brs = BasicRandomSearch(epsilon = 0.1f0, max_iter = 200)
 
-println("\n=== BasicRandomSearch black-box attack on MLJ RandomForest ===")
-println("True label index        : ", true_label_idx)
-println(
-    "Clean prediction        : ",
-    clean_pred,
-    "  (p_true = ",
-    round(Float64(clean_prob), digits = 3),
-    ")",
+bb_report = evaluate_robustness(
+    result.mach,
+    brs,
+    test_data,
+    num_samples = length(test_data)
 )
-println(
-    "Adversarial prediction  : ",
-    adv_pred,
-    "  (p_true = ",
-    round(Float64(adv_prob), digits = 3),
-    ")",
+
+# =============================================================================
+# [Step 5] Results
+# =============================================================================
+println("\n" * "="^70)
+println("ROBUSTNESS EVALUATION RESULTS")
+println("="^70)
+
+n_samples = length(test_data)
+bb_asr = bb_report.attack_success_rate * 100
+
+println("\n╔═════════════════════════════╦═══════════════╗")
+println("║ Metric                      ║  Black-Box    ║")
+println("╠═════════════════════════════╬═══════════════╣")
+println("║ Model                       ║  RandomForest ║")
+println("║ Attack Method               ║  RandomSearch ║")
+@printf("║ Attack Success Rate (ASR)   ║   %5.1f%%      ║\n", bb_asr)
+@printf(
+    "║ Successful Attacks          ║   %3d/%3d      ║\n",
+    bb_report.num_successful_attacks, bb_report.num_clean_correct
 )
-println("Query count             : ", query_count)
-println("Prediction flip success : ", flipped)
-println("True-class prob drop    : ", round(Float64(conf_drop), digits = 3))
+println("╠═════════════════════════════╬═══════════════╣")
+@printf(
+    "║ Clean Accuracy              ║   %5.1f%%      ║\n",
+    bb_report.clean_accuracy * 100
+)
+@printf(
+    "║ Adversarial Accuracy        ║   %5.1f%%      ║\n",
+    bb_report.adv_accuracy * 100
+)
+@printf(
+    "║ Robustness Score (1-ASR)    ║   %5.1f%%      ║\n",
+    bb_report.robustness_score * 100
+)
+println("╠═════════════════════════════╬═══════════════╣")
+@printf(
+    "║ Avg L∞ Perturbation         ║   %.4f      ║\n",
+    bb_report.linf_norm_mean
+)
+@printf(
+    "║ Max L∞ Perturbation         ║   %.4f      ║\n",
+    bb_report.linf_norm_max
+)
+println("╠═════════════════════════════╬═══════════════╣")
+@printf("║ Queries per Sample          ║    200        ║\n")
+println("╚═════════════════════════════╩═══════════════╝")
+
+# =============================================================================
+# [Step 6] Key Insights
+# =============================================================================
+println("\n" * "="^70)
+println("KEY INSIGHTS")
+println("="^70)
+@printf(
+    """
+    **Model Characteristics**:
+      • RandomForest (200 trees, unlimited depth)
+      • No gradients available → only black-box attacks feasible
+      • Clean accuracy: %.1f%%
+
+    **Attack Performance**:
+      • Black-box ASR: %.1f%% (%d/%d successful)
+      • Average perturbation: %.4f L∞ norm
+      • Queries per sample: 200
+
+    **Robustness**:
+      • Model robustness: %.1f%% (1 - ASR)
+      • Adversarial accuracy: %.1f%%
+
+    **Conclusion**:
+    Tree-based ensembles are vulnerable to black-box attacks despite lacking
+    gradients. Random search can find adversarial examples through iterative
+    query-based exploration of the decision boundary.
+    """,
+    result.report.accuracy * 100,
+    bb_asr,
+    bb_report.num_successful_attacks,
+    bb_report.num_clean_correct,
+    bb_report.linf_norm_mean,
+    bb_report.robustness_score * 100,
+    bb_report.adv_accuracy * 100
+)
+
+# =============================================================================
+# [Step 7] Detailed Report
+# =============================================================================
+println("\n" * "="^70)
+println("DETAILED ROBUSTNESS REPORT")
+println("="^70)
+println(bb_report)
+
+println("\n" * "="^70)
+println("✓ Evaluation complete!")
+println("="^70)
