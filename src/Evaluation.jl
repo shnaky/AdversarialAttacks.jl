@@ -102,7 +102,7 @@ function Base.show(io::IO, report::RobustnessReport)
     )
     println(
         io, "  L_2 Mean perturbation                : ",
-        round(report.l2_norm_max, digits = 2)
+        round(report.l2_norm_mean, digits = 2)
     )
 
     println(io, "\nNotes")
