@@ -19,9 +19,9 @@ using BSON
 using Dates
 
 export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
-export make_mnist_cnn, make_mnist_forest, make_mnist_tree
+export make_mnist_cnn, make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export blackbox_predict, extract_flux_model
-export save_experiment_result, load_experiment_result, get_or_train_cnn
+export save_experiment_result, load_experiment_result, get_or_train
 
 const MODELS_DIR = joinpath(@__DIR__, ".", "models")
 
@@ -125,8 +125,10 @@ function run_experiment(model, X, y; config::ExperimentConfig = DEFAULT_CONFIG)
     # For DataFrame inputs we must use two-dimensional indexing
     Xtrain = X isa DataFrame ? X[train, :] : X[train]
     Xtest = X isa DataFrame ? X[test, :] : X[test]
+
     mach = machine(model, Xtrain, y[train])
     fit!(mach, verbosity = 1)
+
     ŷ_test = predict(mach, Xtest)
     acc = accuracy(mode.(ŷ_test), y[test])
 
@@ -229,16 +231,14 @@ function load_experiment_result(name::String)
 end
 
 """
-get_or_train_cnn(name::String="mnist_cnn"; force_retrain=false, kwargs...)
+    get_or_train(model_factory::Function, name::String; 
+                 force_retrain=false, use_flatten::Bool=true, kwargs...)
 
-Get trained CNN model. Uses cached version if available, otherwise trains new one.
+Generic trainer for ANY MLJ model.
 
-# Arguments
-
-- `name`: Model name for caching
-- `force_retrain`: Force retraining even if cached model exists
+- `model_factory`: make_mnist_* function
+- `use_flatten`: image → DataFrame (Tree/KNN/..etc=yes, CNN=no)
 - `kwargs...`: Additional arguments for training (e.g., epochs, batch_size)
-
 
 # Example
 
@@ -248,33 +248,37 @@ flux_model = extract_flux_model(mach)
 ```
 
 """
-function get_or_train_cnn(name::String = "mnist_cnn"; force_retrain = false, kwargs...)
-    # Check cache
+function get_or_train(
+        model_factory::Function, name::String;
+        config::ExperimentConfig = DEFAULT_CONFIG,
+        force_retrain = false, use_flatten = true, kwargs...
+    )
+
     if !force_retrain
         cached = load_experiment_result(name)
         if !isnothing(cached)
+            println("📦 Loaded cached $name (Acc: $(round(cached[2]["accuracy"] * 100, digits = 1))%)")
             return cached
         end
     end
 
-    # Train new model
-    println("🔨 Training new CNN model...")
+    println("🚀 Training $name...")
     X_img, y = load_mnist_for_mlj()
-    cnn_model = make_mnist_cnn(; kwargs...)
-    config = ExperimentConfig(name, 0.8, 42)
-    result = run_experiment(cnn_model, X_img, y; config = config)
+    X = use_flatten ? flatten_images(X_img) : X_img
 
-    # Save
+    model = model_factory(; kwargs...)
+    result = run_experiment(model, X, y; config = config)
+
     save_experiment_result(result, name)
-
-    # Return with metadata
     meta = Dict(
         "test_idx" => result.test_idx,
         "y_test" => result.y_test,
         "accuracy" => result.report.accuracy,
         "trained_at" => now(),
+        "model_type" => nameof(typeof(model))
     )
 
+    println("✅ $name complete: $(round(meta["accuracy"] * 100, digits = 1))%")
     return (result.mach, meta)
 end
 

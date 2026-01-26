@@ -8,7 +8,7 @@ Demonstrates the efficiency and effectiveness differences between gradient-based
 """
 
 include("Experiments.jl")
-using .Experiments: load_mnist_for_mlj, extract_flux_model, get_or_train_cnn
+using .Experiments
 using AdversarialAttacks
 using Flux
 using CategoricalArrays: levelcode
@@ -26,11 +26,16 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 1] Loading/Training MLJFlux CNN on MNIST...")
 
-    mach, meta = get_or_train_cnn(
+    config = ExperimentConfig("comparison_wb_bb", 0.8, 42)
+
+    mach, meta = get_or_train(
+        make_mnist_cnn,
         "comparison_wb_bb_final",
+        config = config,
         force_retrain = false,
         epochs = 10,
         batch_size = 64,
+        use_flatten = false,
     )
 
     raw_model = extract_flux_model(mach)
@@ -44,7 +49,11 @@ function run_comparison()
         println("  ✓ Model already has softmax")
     end
 
-    println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
+    accuracy = meta["accuracy"]
+    test_idx = meta["test_idx"]
+    y_test = meta["y_test"]
+
+    println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 
     # ==========================================================================
     # [Step 2] Prepare Test Samples
@@ -56,14 +65,14 @@ function run_comparison()
 
     test_data = []
 
-    for i in 1:length(meta["test_idx"])
+    for i in 1:length(test_idx)
         if length(test_data) >= N_SAMPLES
             break
         end
 
-        idx = meta["test_idx"][i]
+        idx = test_idx[i]
         x_img = X_img[idx]
-        true_label_idx = levelcode(meta["y_test"][i])
+        true_label_idx = levelcode(y_test[i])
 
         # Convert to Flux format (28×28×1×1)
         x_array = Float32.(channelview(x_img))
