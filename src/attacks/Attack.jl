@@ -3,8 +3,7 @@ Abstract supertype for all adversarial attacks.
 
 Expected interface (to be implemented per concrete attack):
 - `name(::AbstractAttack)::String`
-- `hyperparameters(::AbstractAttack)::Dict{String,Any}`
-- `craft(sample, model, atk::AbstractAttack; kwargs...)` returning an adversarial example
+- `attack(atk::AbstractAttack, model, sample; kwargs...)` returning an adversarial example
 """
 abstract type AbstractAttack end
 
@@ -43,30 +42,20 @@ Human-readable name for an attack.
 name(atk::AbstractAttack)::String = string(typeof(atk))
 
 """
-    hyperparameters(atk::AbstractAttack) -> Dict{String,Any}
+    attack(atk::AbstractAttack, model, sample; kwargs...) -> adversarial_sample
 
-Return hyperparameters for an attack.
-
-# Returns
-- `Dict{String,Any}`: Dictionary of attack hyperparameters.
-"""
-hyperparameters(::AbstractAttack)::Dict{String,Any} = Dict{String,Any}()
-
-"""
-    craft(sample, model, attack::AbstractAttack; kwargs...) -> adversarial_sample
-
-Craft an adversarial example by applying the attack to a sample.
+Generate an adversarial example by applying the attack to a sample.
 
 # Arguments
-- `sample`: Input sample to perturb (e.g., image, text)
+- `atk::AbstractAttack`: Attack configuration and algorithm
 - `model`: Target model to attack
-- `attack::AbstractAttack`: Attack configuration and algorithm
+- `sample`: Input sample to perturb (e.g., image, text)
 - `kwargs...`: Additional attack-specific parameters
 
 # Returns
 - Adversarial example with the same shape as the input sample
 """
-function craft(sample, model, attack::AbstractAttack; kwargs...)
-    throw(MethodError(craft, (sample, model, attack)))
+function attack(atk::AbstractAttack, model, sample; kwargs...)
+    throw(MethodError(attack, (atk, model, sample)))
 end
 

@@ -6,5 +6,9 @@
 /docs/build/
 /docs/src/index.md
 /.vscode
+/examples/Manifest*.toml
+.JuliaFormatter.toml
 .ipynb_checkpoints
 *.ipynb
+/examples/models/
+.DS_Store

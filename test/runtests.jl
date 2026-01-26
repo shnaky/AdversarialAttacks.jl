@@ -2,9 +2,7 @@ using AdversarialAttacks
 using Test
 
 include("attacks/Attack.jl")
-include("models/Model.jl")
-include("attacks/FgsmAttack.jl")
-include("attacks/BlackBoxAttacks.jl")
-include("models/FluxModels.jl")
+include("attacks/FGSM.jl")
+include("attacks/BasicRandomSearch.jl")
 include("Evaluation.jl")
 include("Interface.jl")
