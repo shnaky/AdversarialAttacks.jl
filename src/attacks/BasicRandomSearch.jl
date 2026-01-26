@@ -201,8 +201,8 @@ function attack(atk::BasicRandomSearch, mach::Machine, sample)
     y = sample.label
     ε = convert(eltype(x), atk.epsilon)
 
-    # y is already an index into the probability vector (1-based)
-    true_label = Int(y)
+    # Convert one-hot label to integer if needed (1-based)
+    true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
 
     predict_proba_fn = function (x_flat)
         # Treat x_flat as a single-row table for MLJ

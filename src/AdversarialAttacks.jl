@@ -4,7 +4,7 @@ using Random
 # External dependencies
 using DecisionTree: DecisionTreeClassifier, predict_proba
 using Flux: Chain, gradient, OneHotVector, onecold, softmax, crossentropy
-using MLJ: predict, levels, Machine, table
+using MLJ: predict, levels, Machine, machine, table
 using Distributions: pdf
 
 include("attacks/Attack.jl")
@@ -25,7 +25,7 @@ export predict, loss, params
 
 # Export evaluation functions
 export RobustnessReport
-export evaluate_robustness, evaluation_curve
+export evaluate_robustness, make_prediction_function, evaluation_curve
 
 # Export high-level interface
 export attack, benchmark
