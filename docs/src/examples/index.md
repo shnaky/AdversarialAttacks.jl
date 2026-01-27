@@ -28,12 +28,12 @@ julia --project=. blackbox_basicrandomsearch_decisiontree_iris.jl
 
 Notes and tips
 
-- Each example uses a small training setup so it runs quickly for demonstration purposes. For reproducibility, re-run with more epochs and save the trained model.
+- Each example uses a small training setup so it runs quickly for demonstration purposes. For a more applicable example, re-run with more epochs and save the trained model.
 - Scripts will print training and attack statistics and open Plots.jl visualizations to inspect original vs adversarial examples.
 - If you want to reproduce results exactly, set seeds as shown in the examples.
 
 Next steps
 
 - Follow the individual example pages for step‑by‑step code and explanations:
-	- `docs/src/examples/whitebox_fgsm_flux_mnist.md`
-	- `docs/src/examples/blackbox_basicrandomsearch_decisiontree_iris.md`
+	- [whitebox_fgsm_flux_mnist](whitebox_fgsm_flux_mnist.md)
+	- [blackbox_basicrandomsearch_decisiontree_iris](blackbox_basicrandomsearch_decisiontree_iris.md)
