@@ -2,12 +2,12 @@
 
 The **Tutorials & Examples** section provides end‑to‑end, runnable scripts that show how to use AdversarialAttacks.jl in realistic workflows. Each example pairs a dataset and model with a concrete attack method and includes a compact, reproducible script you can run locally.
 
-The current examples cover:
+## The current examples cover:
 
 - White-box FGSM attack against a small Flux CNN on MNIST (`whitebox_fgsm_flux_mnist`).
 - Black-box Basic Random Search (SimBA-style) attack against a DecisionTree classifier on the Iris dataset (`blackbox_basicrandomsearch_decisiontree_iris`).
 
-Quick start
+## Quick start
 
 From the repository root you can activate the `examples` environment and run the scripts in a Julia REPL:
 
@@ -26,14 +26,12 @@ julia --project=. whitebox_fgsm_flux_mnist.jl
 julia --project=. blackbox_basicrandomsearch_decisiontree_iris.jl
 ```
 
-Notes and tips
+## Notes and tips
 
 - Each example uses a small training setup so it runs quickly for demonstration purposes. For a more applicable example, re-run with more epochs and save the trained model.
 - Scripts will print training and attack statistics and open Plots.jl visualizations to inspect original vs adversarial examples.
 - If you want to reproduce results exactly, set seeds as shown in the examples.
 
-Next steps
+## Next steps
 
-- Follow the individual example pages for step‑by‑step code and explanations:
-	- [whitebox_fgsm_flux_mnist](whitebox_fgsm_flux_mnist.md)
-	- [blackbox_basicrandomsearch_decisiontree_iris](blackbox_basicrandomsearch_decisiontree_iris.md)
+- Follow the individual example pages for step‑by‑step code and explanations
