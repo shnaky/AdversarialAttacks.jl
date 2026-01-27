@@ -24,10 +24,13 @@ function main()
     # =========================================================================
     # [Step 1] Load and Prepare Data
     # =========================================================================
-    println("\n[Step 1] Loading MNIST dataset...")
+    println("\n[Step 1] Loading dataset...")
 
-    X_img, y = load_mnist_for_mlj()
-    X_flat = flatten_images(X_img)
+    # X_img, y = load_mnist_for_mlj()
+    # X_flat = flatten_images(X_img)
+
+    X_img, y = load_cifar10_for_mlj()
+    X_flat = flatten_images_cifar(X_img)
 
     println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features")
 
@@ -40,13 +43,24 @@ function main()
 
     mach, meta = get_or_train(
         make_mnist_tree,
-        "simple_tree",
+        "cifar_tree",
+        dataset = :cifar10,
         config = config,
         force_retrain = false,
         rng = 42,
         max_depth = 10,
         use_flatten = true,
     )
+
+    # mach, meta = get_or_train(
+    #     make_mnist_tree,
+    #     "simple_tree",
+    #     config = config,
+    #     force_retrain = false,
+    #     rng = 42,
+    #     max_depth = 10,
+    #     use_flatten = true,
+    # )
 
     # mach, meta = get_or_train(
     #     make_mnist_knn,
