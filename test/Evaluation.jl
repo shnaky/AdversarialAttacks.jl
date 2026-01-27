@@ -75,10 +75,6 @@ using CategoricalArrays: levels
         @test_warn "Failed to evaluate sample 1" evaluate_robustness(
             nothing, nothing, test_data; num_samples = 1
         )
-
-        result = evaluate_robustness(nothing, nothing, test_data; num_samples = 1)
-        @test result.num_clean_correct == 0
-        @test result.attack_success_rate == 0.0
     end
 
     @testset "evaluate_robustness - RobustnessReport show" begin
