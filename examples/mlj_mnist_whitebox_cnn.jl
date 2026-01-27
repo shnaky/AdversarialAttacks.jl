@@ -20,20 +20,44 @@ println("="^70)
 
 # 1. Load MNIST as images
 println("\n[1/4] Loading MNIST dataset...")
-X_img, y = load_mnist_for_mlj()
+# X_img, y = load_mnist_for_mlj()
+# H = 28
+# W = 28
+# C = 1
+# N = 1
+
+X_img, y = load_cifar10_for_mlj()
+H = 32
+W = 32
+C = 3
+N = 1
+
 
 # 2. Train MLJFlux ImageClassifier
 println("\n[2/4] Training MLJFlux CNN...")
 
-config = ExperimentConfig("mnist_cnn_whitebox", 0.8, 42)
+# config = ExperimentConfig("mnist_cnn_whitebox", 0.8, 42)
+
+# mach, meta = get_or_train(
+#     make_mnist_cnn,
+#     "mnist_cnn_whitebox",
+#     config = config,
+#     force_retrain = false,
+#     epochs = 10,
+#     batch_size = 64,
+#     use_flatten = false,
+# )
+
+config = ExperimentConfig("cifar10_cnn_whitebox", 0.8, 42)
 
 mach, meta = get_or_train(
-    make_mnist_cnn,
-    "mnist_cnn_whitebox",
+    make_cifar_cnn,
+    "cifar_cnn",
+    dataset = :cifar10,
     config = config,
     force_retrain = false,
-    epochs = 10,
-    batch_size = 64,
+    epochs = 1,
+    batch_size = 128,
     use_flatten = false,
 )
 
@@ -59,7 +83,7 @@ for i in 1:min(N_SAMPLES, length(test_idx))
     true_label_idx = levelcode(y_test[i])
 
     x_array = Float32.(channelview(x_img))
-    x_flux = reshape(x_array, 28, 28, 1, 1)
+    x_flux = reshape(x_array, H, W, C, N)
 
     # Verify correct classification
     pred = flux_model(x_flux)

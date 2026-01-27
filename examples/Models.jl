@@ -5,8 +5,10 @@ using MLJFlux, Flux, Optimisers
 using MLJ
 using NearestNeighborModels
 
-export make_mnist_cnn, make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
+export make_mnist_cnn, make_cifar_cnn
+export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export extract_flux_model
+export SimpleConvBuilder
 
 const DecisionTreeClassifier = @load DecisionTreeClassifier pkg = DecisionTree
 const RandomForestClassifier = @load RandomForestClassifier pkg = DecisionTree
@@ -23,18 +25,21 @@ struct SimpleConvBuilder
     filter_size::Int
     channels1::Int
     channels2::Int
+    h::Int
+    w::Int
 end
 
 """
-    FlattenLayer(flat_dim::Int)
+    FlattenLayer
 
 Named flatten layer for reliable serialization.
 Reshapes 4D image tensor (H, W, C, N) to 2D matrix (flat_dim, N).
 """
-struct FlattenLayer
-    flat_dim::Int
+struct FlattenLayer end
+
+function (f::FlattenLayer)(x)
+    return reshape(x, :, size(x, ndims(x)))
 end
-(f::FlattenLayer)(x) = reshape(x, f.flat_dim, size(x, 4))
 
 """
     MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
@@ -47,14 +52,14 @@ function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
     @assert isodd(k)
     p = div(k - 1, 2)
     init = Flux.glorot_uniform(rng)
-    h, w = 28, 28; h, w = div(h, 2), div(w, 2); h, w = div(h, 2), div(w, 2)
+    h = b.h; w = b.w; h, w = div(h, 2), div(w, 2); h, w = div(h, 2), div(w, 2)
     flat_dim = h * w * c2
     return Chain(
         Conv((k, k), n_channels => c1, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
         Conv((k, k), c1 => c2, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
-        FlattenLayer(flat_dim),
+        FlattenLayer(),
         Dense(flat_dim, 128, relu, init = init),
         Dense(128, n_out, init = init)
     )
@@ -66,7 +71,7 @@ end
 Create MLJFlux ImageClassifier for MNIST.
 """
 function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64)
-    builder = SimpleConvBuilder(3, 16, 32)
+    builder = SimpleConvBuilder(3, 16, 32, 28, 28)
 
     model = ImageClassifier(
         builder = builder,
@@ -89,6 +94,31 @@ function extract_flux_model(mach)
     fp = fitted_params(mach)
     return fp.chain
 end
+
+"""
+    make_cifar_cnn(; kwargs...)
+
+CNN builder for CIFAR10 (3channels, 32x32) 
+"""
+function make_cifar_cnn(;
+        epochs = 10,
+        batch_size = 64,
+        optimiser = Adam(),
+        loss = Flux.Losses.crossentropy,
+        kwargs...
+    )
+    builder = SimpleConvBuilder(3, 16, 32, 32, 32)
+
+    return ImageClassifier(
+        builder = builder,
+        epochs = epochs,
+        batch_size = batch_size,
+        optimiser = optimiser,
+        loss = loss,
+        kwargs...
+    )
+end
+
 
 # =========================
 # Traditional ML Models (Black-box)
