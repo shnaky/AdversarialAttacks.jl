@@ -13,15 +13,15 @@ using MLDatasets
 using StatsBase: mode
 using DataFrames
 
-using ColorTypes: Gray
-using Images
+using ColorTypes: Color, Gray, RGB
+using Images: channelview
 using ScientificTypes: ColorImage
 
 using BSON
 using Dates
 
 export ExperimentConfig, run_experiment
-export load_mnist_for_mlj, flatten_images, load_cifar10_for_mlj
+export load_mnist_for_mlj, flatten_images, load_cifar10_for_mlj, flatten_images_cifar
 export make_mnist_cnn, make_cifar_cnn
 export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export blackbox_predict, extract_flux_model
@@ -63,6 +63,16 @@ function flatten_images(X_img::Vector{<:AbstractArray})
     return df
 end
 
+function flatten_images_cifar(X_img::Vector{Matrix{RGB{Float32}}})
+    n = length(X_img)
+    d = 3 * 32 * 32  # 3072
+    Xmat = Array{Float32}(undef, n, d)
+
+    for i in 1:n
+        Xmat[i, :] .= vec(channelview(X_img[i]))
+    end
+    return DataFrame(Xmat, :auto)
+end
 
 """
     load_mnist_for_mlj(; n_train=60000)
@@ -288,12 +298,13 @@ function get_or_train(
     println("🚀 Training $name on $dataset...")
     if dataset == :mnist
         X_img, y = load_mnist_for_mlj()
+        X = use_flatten ? flatten_images(X_img) : X_img
     elseif dataset == :cifar10
         X_img, y = load_cifar10_for_mlj()
+        X = use_flatten ? flatten_images_cifar(X_img) : X_img
     else
         error("Unsupported dataset: $dataset. Use :mnist or :cifar10.")
     end
-    X = use_flatten ? flatten_images(X_img) : X_img
 
     model = model_factory(; kwargs...)
     result = run_experiment(model, X, y; config = config)
