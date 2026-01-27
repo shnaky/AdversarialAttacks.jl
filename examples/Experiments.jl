@@ -15,11 +15,15 @@ using DataFrames
 
 using ColorTypes: Gray
 using Images
+using ScientificTypes: ColorImage
+
 using BSON
 using Dates
 
-export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
-export make_mnist_cnn, make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
+export ExperimentConfig, run_experiment
+export load_mnist_for_mlj, flatten_images, load_cifar10_for_mlj
+export make_mnist_cnn, make_cifar_cnn
+export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export blackbox_predict, extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
 
@@ -84,6 +88,24 @@ function load_mnist_for_mlj(; n_train::Int = 60000)
     y = coerce(labels, Multiclass)
 
     return X_vec, y
+end
+
+"""
+    load_cifar10_for_mlj(; n_train::Int = 50000)
+
+MLJFlux ColorImage for CIFAR10. C×H×W, Float32 Array{3}.
+"""
+function load_cifar10_for_mlj(; n_train::Int = 50000)
+    dataset = MLDatasets.CIFAR10(split = :train)
+
+    # raw 4D array (32x32x3xN Float32 HWC)
+    images = dataset.features[:, :, :, 1:n_train]
+
+    images = coerce(images, ColorImage)
+
+    labels = coerce(dataset.targets[1:n_train], Multiclass{10})
+
+    return images, labels  # Array{ColorImage,4}
 end
 
 # =========================
@@ -251,6 +273,7 @@ flux_model = extract_flux_model(mach)
 function get_or_train(
         model_factory::Function, name::String;
         config::ExperimentConfig = DEFAULT_CONFIG,
+        dataset = :mnist,  # :mnist or :cifar10
         force_retrain = false, use_flatten = true, kwargs...
     )
 
@@ -262,8 +285,14 @@ function get_or_train(
         end
     end
 
-    println("🚀 Training $name...")
-    X_img, y = load_mnist_for_mlj()
+    println("🚀 Training $name on $dataset...")
+    if dataset == :mnist
+        X_img, y = load_mnist_for_mlj()
+    elseif dataset == :cifar10
+        X_img, y = load_cifar10_for_mlj()
+    else
+        error("Unsupported dataset: $dataset. Use :mnist or :cifar10.")
+    end
     X = use_flatten ? flatten_images(X_img) : X_img
 
     model = model_factory(; kwargs...)
