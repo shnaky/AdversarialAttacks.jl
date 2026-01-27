@@ -2,5 +2,5 @@
 git-tree-sha1 = "a242e206740c0836e5f81521128c10436e6cd674"
 
     [[cifar10_model.download]]
-    url = "https://raw.githubusercontent.com/shnaky/AdversarialAttacks.jl/46-find-a-pretrained-model-for-cifar10-or-build-one/cifar10_model.tar.gz"
+    url = "https://github.com/shnaky/AdversarialAttacks.jl/archive/refs/tags/0.0.1.tar.gz"
     sha256 = "24e962945321a997b8d4d6d1a56571cd22a6ec6dbc8fa672a1347c54538f3fa8"

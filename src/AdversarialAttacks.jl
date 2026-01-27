@@ -6,21 +6,17 @@ using Flux: Chain, gradient, OneHotVector, onecold, softmax, crossentropy
 using MLJ: predict, levels, Machine, machine, table
 using Distributions: pdf
 
-using Random: randperm
-using Downloads: download
-using BSON: @load
-using Artifacts
+using Random
 
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")
 include("attacks/FGSM.jl")
 include("Interface.jl")
 include("Evaluation.jl")
-
+#include("../examples/cifar10.jl")
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
 export FGSM, BasicRandomSearch, SquareAttack
-export load_pretrained_c10_model, plot_adversarial_example 
 
 # Export attack interface functions
 export name
