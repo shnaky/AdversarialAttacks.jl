@@ -18,7 +18,7 @@ julia> Pkg.develop(path=".")
 julia> Pkg.instantiate()
 ```
 
-This activates the local project and installs the exact dependencies pinned in the repo. Once done you can run the example directly:
+Once done you can run the example directly:
 
 ```
 julia> include("examples/whitebox_fgsm_flux_mnist.jl")
@@ -26,9 +26,9 @@ julia> include("examples/whitebox_fgsm_flux_mnist.jl")
 
 Running the script shows plots and waits for Enter before exiting.
 
-### What the script does
+## What the script does
 
-- **Load MNIST subset** — loads a subset of `MLDatasets.MNIST` and normalizes pixels to $[0,1]$`. The input tensor  `X`  has shape `(28,28,1,N)` and `y` is a one‑hot encoded label matrix.
+- **Load MNIST subset** — loads a subset of `MLDatasets.MNIST` and normalizes pixels to `$[0,1]$`. The input tensor  `X`  has shape `(28,28,1,N)` and `y` is a one‑hot encoded label matrix.
 - **Define and train CNN** — constructs a small Flux `Chain`, defines `loss` and `opt`, and runs a few epochs over mini‑batches. This trains a model on the small subset to make the demo deterministic and fast.
 - **Pick a demo sample** — selects a single correctly classified sample (`demo_idx`) to attack. The sample is put into the tuple `sample = (data = x0, label = label_onehot)` which is the expected input format for attacks in this package.
 - **Run FGSM attack** — constructs `FGSM(epsilon = ε)` and calls `attack(fgsm_attack, model, sample)`. The returned `x_adv` is clamped to `[0,1]`.
@@ -66,15 +66,15 @@ Press Enter to exit...
 
 
 
-- **Train-subset acc:** rough sanity check showing the model learned useful features.
-- **Clean probs / Adversarial probs:** the softmax output giving class probabilities.
+- **Clean prediction:** rough sanity check showing the model learned useful features.
+- **Clean probs / Adversarial probs:** the softmax output giving class probabilities before and after the attack.
 - **Perturbation L∞ norm:** the maximum absolute pixel change.
 - **True-class prob drop success:** `true` if the true label probability decreased.
 - **Prediction flip success:** `true` if the predicted label changed from the original to the adversarial example.
 
 These metrics let you judge whether the attack both reduced model confidence and changed the final decision.
 
-### Interpreting the plotted output
+## Interpreting the plotted output
 
 The effect of the attack is shown in the following figure, included in the documentation as:
 
