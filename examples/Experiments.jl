@@ -13,15 +13,19 @@ using MLDatasets
 using StatsBase: mode
 using DataFrames
 
-using ColorTypes: Gray
-using Images
+using ColorTypes: Color, Gray, RGB
+using Images: channelview
+using ScientificTypes: ColorImage
+
 using BSON
 using Dates
 
-export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
-export make_mnist_cnn, make_mnist_forest, make_mnist_tree
+export ExperimentConfig, run_experiment
+export load_mnist_for_mlj, flatten_images, load_cifar10_for_mlj, flatten_images_cifar
+export make_mnist_cnn, make_cifar_cnn
+export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export blackbox_predict, extract_flux_model
-export save_experiment_result, load_experiment_result, get_or_train_cnn
+export save_experiment_result, load_experiment_result, get_or_train
 
 using BSON: @load
 using Pkg.Artifacts
@@ -65,6 +69,16 @@ function flatten_images(X_img::Vector{<:AbstractArray})
     return df
 end
 
+function flatten_images_cifar(X_img::Vector{Matrix{RGB{Float32}}})
+    n = length(X_img)
+    d = 3 * 32 * 32  # 3072
+    Xmat = Array{Float32}(undef, n, d)
+
+    for i in 1:n
+        Xmat[i, :] .= vec(channelview(X_img[i]))
+    end
+    return DataFrame(Xmat, :auto)
+end
 
 """
     load_mnist_for_mlj(; n_train=60000)
@@ -90,6 +104,24 @@ function load_mnist_for_mlj(; n_train::Int = 60000)
     y = coerce(labels, Multiclass)
 
     return X_vec, y
+end
+
+"""
+    load_cifar10_for_mlj(; n_train::Int = 50000)
+
+MLJFlux ColorImage for CIFAR10. C×H×W, Float32 Array{3}.
+"""
+function load_cifar10_for_mlj(; n_train::Int = 50000)
+    dataset = MLDatasets.CIFAR10(split = :train)
+
+    # raw 4D array (32x32x3xN Float32 HWC)
+    images = dataset.features[:, :, :, 1:n_train]
+
+    images = coerce(images, ColorImage)
+
+    labels = coerce(dataset.targets[1:n_train], Multiclass{10})
+
+    return images, labels  # Array{ColorImage,4}
 end
 
 # =========================
@@ -131,8 +163,10 @@ function run_experiment(model, X, y; config::ExperimentConfig = DEFAULT_CONFIG)
     # For DataFrame inputs we must use two-dimensional indexing
     Xtrain = X isa DataFrame ? X[train, :] : X[train]
     Xtest = X isa DataFrame ? X[test, :] : X[test]
+
     mach = machine(model, Xtrain, y[train])
     fit!(mach, verbosity = 1)
+
     ŷ_test = predict(mach, Xtest)
     acc = accuracy(mode.(ŷ_test), y[test])
 
@@ -235,16 +269,14 @@ function load_experiment_result(name::String)
 end
 
 """
-get_or_train_cnn(name::String="mnist_cnn"; force_retrain=false, kwargs...)
+    get_or_train(model_factory::Function, name::String; 
+                 force_retrain=false, use_flatten::Bool=true, kwargs...)
 
-Get trained CNN model. Uses cached version if available, otherwise trains new one.
+Generic trainer for ANY MLJ model.
 
-# Arguments
-
-- `name`: Model name for caching
-- `force_retrain`: Force retraining even if cached model exists
+- `model_factory`: make_mnist_* function
+- `use_flatten`: image → DataFrame (Tree/KNN/..etc=yes, CNN=no)
 - `kwargs...`: Additional arguments for training (e.g., epochs, batch_size)
-
 
 # Example
 
@@ -254,33 +286,45 @@ flux_model = extract_flux_model(mach)
 ```
 
 """
-function get_or_train_cnn(name::String = "mnist_cnn"; force_retrain = false, kwargs...)
-    # Check cache
+function get_or_train(
+        model_factory::Function, name::String;
+        config::ExperimentConfig = DEFAULT_CONFIG,
+        dataset = :mnist,  # :mnist or :cifar10
+        force_retrain = false, use_flatten = true, kwargs...
+    )
+
     if !force_retrain
         cached = load_experiment_result(name)
         if !isnothing(cached)
+            println("📦 Loaded cached $name (Acc: $(round(cached[2]["accuracy"] * 100, digits = 1))%)")
             return cached
         end
     end
 
-    # Train new model
-    println("🔨 Training new CNN model...")
-    X_img, y = load_mnist_for_mlj()
-    cnn_model = make_mnist_cnn(; kwargs...)
-    config = ExperimentConfig(name, 0.8, 42)
-    result = run_experiment(cnn_model, X_img, y; config = config)
+    println("🚀 Training $name on $dataset...")
+    if dataset == :mnist
+        X_img, y = load_mnist_for_mlj()
+        X = use_flatten ? flatten_images(X_img) : X_img
+    elseif dataset == :cifar10
+        X_img, y = load_cifar10_for_mlj()
+        X = use_flatten ? flatten_images_cifar(X_img) : X_img
+    else
+        error("Unsupported dataset: $dataset. Use :mnist or :cifar10.")
+    end
 
-    # Save
+    model = model_factory(; kwargs...)
+    result = run_experiment(model, X, y; config = config)
+
     save_experiment_result(result, name)
-
-    # Return with metadata
     meta = Dict(
         "test_idx" => result.test_idx,
         "y_test" => result.y_test,
         "accuracy" => result.report.accuracy,
         "trained_at" => now(),
+        "model_type" => nameof(typeof(model))
     )
 
+    println("✅ $name complete: $(round(meta["accuracy"] * 100, digits = 1))%")
     return (result.mach, meta)
 end
 

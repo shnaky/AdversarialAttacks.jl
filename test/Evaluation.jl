@@ -28,11 +28,28 @@ using CategoricalArrays: levels
         # L_inf norm fields
         @test hasfield(RobustnessReport, :linf_norm_max)
         @test hasfield(RobustnessReport, :linf_norm_mean)
+        @test hasfield(RobustnessReport, :l2_norm_max)
+        @test hasfield(RobustnessReport, :l2_norm_mean)
+        @test hasfield(RobustnessReport, :l1_norm_max)
+        @test hasfield(RobustnessReport, :l1_norm_mean)
+
         @test result.linf_norm_max isa Float64
         @test result.linf_norm_mean isa Float64
         @test result.linf_norm_max >= 0.0
         @test result.linf_norm_mean >= 0.0
         @test result.linf_norm_max >= result.linf_norm_mean
+
+        @test result.l2_norm_max isa Float64
+        @test result.l2_norm_mean isa Float64
+        @test result.l2_norm_max >= 0.0
+        @test result.l2_norm_mean >= 0.0
+        @test result.l2_norm_max >= result.l2_norm_mean
+
+        @test result.l1_norm_max isa Float64
+        @test result.l1_norm_mean isa Float64
+        @test result.l1_norm_max >= 0.0
+        @test result.l1_norm_mean >= 0.0
+        @test result.l1_norm_max >= result.l1_norm_mean
 
         @test result.num_samples isa Int
         @test result.num_clean_correct isa Int
@@ -52,6 +69,63 @@ using CategoricalArrays: levels
         @test result.attack_success_rate + result.robustness_score ≈ 1.0
     end
 
+    @testset "evaluate_robustness - calculate_metrics" begin
+        n_test = 10
+        num_clean_correct = 0
+        num_adv_correct = 5
+        num_successful_attacks = 5
+        l_norms = Dict(
+            :linf => Float64[],
+            :l2 => Float64[],
+            :l1 => Float64[]
+        )
+        metrics = AdversarialAttacks.calculate_metrics(
+            n_test,
+            num_clean_correct,
+            num_adv_correct,
+            num_successful_attacks,
+            l_norms
+        )
+        @test metrics isa RobustnessReport
+
+        # else cases
+        @test metrics.attack_success_rate == 0.0
+        @test metrics.linf_norm_max == metrics.linf_norm_mean == 0.0
+        @test metrics.l2_norm_max == metrics.l2_norm_mean == 0.0
+        @test metrics.l1_norm_max == metrics.l1_norm_mean == 0.0
+
+        # if cases
+        num_clean_correct = 5
+        l_norms[:linf] = [0.5]
+        l_norms[:l2] = [0.5]
+        l_norms[:l1] = [0.5]
+
+        metrics = AdversarialAttacks.calculate_metrics(
+            n_test,
+            num_clean_correct,
+            num_adv_correct,
+            num_successful_attacks,
+            l_norms
+        )
+        @test metrics.clean_accuracy == num_clean_correct / n_test
+        @test metrics.adv_accuracy == num_adv_correct / n_test
+        @test metrics.attack_success_rate == num_successful_attacks / num_clean_correct
+        @test metrics.robustness_score == 1.0 - metrics.attack_success_rate
+        @test metrics.linf_norm_max > 0.0 && metrics.linf_norm_mean > 0.0
+        @test metrics.l2_norm_max > 0.0 && metrics.l2_norm_mean > 0.0
+        @test metrics.l1_norm_max > 0.0 && metrics.l1_norm_mean > 0.0
+    end
+
+    @testset "evaluate_robustness - compute_norm" begin
+        sample_data = [1.0, 2.0, 3.0]
+        adv_data = sample_data .* 2.0
+        linf = AdversarialAttacks.compute_norm(sample_data, adv_data, Inf)
+        l2 = AdversarialAttacks.compute_norm(sample_data, adv_data, 2)
+        l1 = AdversarialAttacks.compute_norm(sample_data, adv_data, 1)
+        @test linf == 3.0
+        @test isapprox(l2, sqrt(14); rtol = 1.0e-6)
+        @test l1 == 6.0
+    end
 
     @testset "evaluate_robustness - num_samples handling" begin
         # Should use all available samples (10) instead of requested (20)
@@ -75,24 +149,43 @@ using CategoricalArrays: levels
         @test_warn "Failed to evaluate sample 1" evaluate_robustness(
             nothing, nothing, test_data; num_samples = 1
         )
-
-        result = evaluate_robustness(nothing, nothing, test_data; num_samples = 1)
-        @test result.num_clean_correct == 0
-        @test result.attack_success_rate == 0.0
     end
 
     @testset "evaluate_robustness - RobustnessReport show" begin
         # dummy report
-        report = RobustnessReport(1, 0, 0.0, 0.0, 0.0, 1.0, 0, 0.0, 0.0)
+        report = RobustnessReport(
+            1,      # n_test
+            0,      # num_clean_correct
+            0.0,    # clean_accuracy
+            0.0,    # adv_accuracy
+            0.0,    # attack_success_rate
+            1.0,    # robustness_score
+            0,      # num_successful_attacks
+            0.0,    # linf_norm_max
+            0.0,    # linf_norm_mean
+            0.0,    # l2_norm_max
+            0.0,    # l2_norm_mean
+            0.0,    # l1_norm_max
+            0.0     # l1_norm_mean
+        )
 
-        # get output
+        # Capture output from Base.show
         io = IOBuffer()
         show(io, report)
         output = String(take!(io))
 
-        # check if key phrases appear in the output
+        # Verify key sections appear in output
         @test occursin("Robustness Evaluation Report", output)
         @test occursin("Total samples evaluated", output)
+        @test occursin("Perturbation Analysis (Norms)", output)
+
+        # Verify all norm types are displayed
+        @test occursin("L_inf Maximum perturbation", output)
+        @test occursin("L_inf Mean perturbation", output)
+        @test occursin("L_2 Maximum perturbation", output)
+        @test occursin("L_2 Mean perturbation", output)
+        @test occursin("L_1 Maximum perturbation", output)
+        @test occursin("L_1 Mean perturbation", output)
     end
 
     @testset "evaluate_robustness - L_inf norm correctness" begin
@@ -107,6 +200,19 @@ using CategoricalArrays: levels
         # check L_inf norms
         @test result.linf_norm_max == 0.5
         @test result.linf_norm_mean == 0.5
+    end
+
+    @testset "evaluate_robustness - evaluation_curve" begin
+        attack_type = FGSM
+
+        epsilons = [0.05, 0.1]
+
+        results = evaluation_curve(model, attack_type, epsilons, test_data; num_samples = 5)
+
+        @test results isa Dict
+        @test results[:epsilons] == epsilons
+        @test length(results[:clean_accuracy]) == 2
+        @test length(results[:linf_norm_mean]) == 2
     end
 
     @testset "make_prediction_function" begin
