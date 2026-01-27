@@ -23,6 +23,12 @@ export make_mnist_cnn, make_mnist_forest, make_mnist_tree
 export blackbox_predict, extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train_cnn
 
+using BSON: @load
+using Pkg.Artifacts
+using LazyArtifacts
+
+include("cifar10.jl")
+
 const MODELS_DIR = joinpath(@__DIR__, ".", "models")
 
 # =========================
@@ -277,5 +283,7 @@ function get_or_train_cnn(name::String = "mnist_cnn"; force_retrain = false, kwa
 
     return (result.mach, meta)
 end
+
+export load_pretrained_c10_model
 
 end

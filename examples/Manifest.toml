@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.8"
+julia_version = "1.11.7"
 manifest_format = "2.0"
-project_hash = "20c435eb8a4ef30eb4a03afc48dffba1ac9a745b"
+project_hash = "6d88e1a797ab06ed51c8f99c8c6ca13e9ea617d3"
 
 [[deps.ARFFFiles]]
 deps = ["CategoricalArrays", "Dates", "Parsers", "Tables"]
@@ -62,7 +62,7 @@ weakdeps = ["SparseArrays", "StaticArrays"]
     AdaptStaticArraysExt = "StaticArrays"
 
 [[deps.AdversarialAttacks]]
-deps = ["DecisionTree", "Distributions", "Flux", "MLJ", "Random"]
+deps = ["Artifacts", "BSON", "DecisionTree", "Distributions", "Downloads", "Flux", "LazyArtifacts", "MLJ", "Pkg", "Random"]
 path = ".."
 uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
 version = "1.0.0-DEV"
