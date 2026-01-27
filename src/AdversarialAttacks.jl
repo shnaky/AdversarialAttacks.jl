@@ -6,6 +6,7 @@ using DecisionTree: DecisionTreeClassifier, predict_proba
 using Flux: Chain, gradient, OneHotVector, onecold, softmax, crossentropy
 using MLJ: predict, levels, Machine, machine, table
 using Distributions: pdf
+using LinearAlgebra: norm
 
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")
@@ -25,7 +26,7 @@ export predict, loss, params
 
 # Export evaluation functions
 export RobustnessReport
-export evaluate_robustness, make_prediction_function
+export evaluate_robustness, make_prediction_function, evaluation_curve
 
 # Export high-level interface
 export attack, benchmark
