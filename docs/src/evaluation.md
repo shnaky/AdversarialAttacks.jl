@@ -5,6 +5,11 @@
 ```
 This page documents Robustness Evaluation Suite.
 
+```@example evalex
+using AdversarialAttacks
+println("RobustnessReport fields: ", fieldnames(RobustnessReport))
+```
+
 ```@docs
 RobustnessReport
 AdversarialAttacks.calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)

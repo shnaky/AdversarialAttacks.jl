@@ -19,6 +19,8 @@ julia> ]add https://github.com/shnaky/AdversarialAttacks.jl
 
 ## Examples
 
+For comprehensive, executable tutorials with detailed explanations and visualizations, see the [Tutorials & Examples](https://shnaky.github.io/AdversarialAttacks.jl/dev/examples/) section in the documentation.
+
 The following example shows how to create an adversarial sample from a **single input sample** using the FGSM attack:
 
 ### FGSM attack - Flux Integration (white-box)

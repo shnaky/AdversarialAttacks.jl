@@ -1,3 +1,20 @@
+# # Black-Box Basic Random Search Attack on Iris (DecisionTree)
+#
+# This tutorial demonstrates how to perform a **black-box adversarial attack**
+# using Basic Random Search (a SimBA-style algorithm) against a Decision Tree
+# classifier trained on the Iris dataset.
+#
+# **What you will learn:**
+# - How to train a DecisionTree classifier on Iris
+# - How to construct a `BasicRandomSearch` attack with `AdversarialAttacks.jl`
+# - How to evaluate whether the attack succeeded
+# - How to visualize original vs adversarial samples in feature space
+#
+# ## Prerequisites
+#
+# Make sure you have the following packages installed:
+# `RDatasets`, `DecisionTree`, `Flux`, `OneHotArrays`, `Plots`, and `AdversarialAttacks`.
+
 using Random
 using RDatasets
 using DecisionTree
@@ -8,9 +25,11 @@ using Plots
 
 Random.seed!(1234)
 
-# ------------------------------------
-# 1. Train DecisionTree on Iris
-# ------------------------------------
+# ## 1. Train a DecisionTree on Iris
+#
+# We load the classic Iris dataset, extract features and labels, and fit a
+# `DecisionTreeClassifier` with a maximum depth of 3.
+
 iris = dataset("datasets", "iris")
 X = Matrix{Float64}(iris[:, 1:4])
 y_str = String.(iris.Species)
@@ -27,16 +46,18 @@ fit!(dt_model, X, y_str)
 println("Trained DecisionTreeClassifier on Iris.")
 println("Classes = ", dt_model.classes)
 
-# helper
+## helper
 function predict_class_index(model::DecisionTreeClassifier, x::AbstractVector)
     x_mat = reshape(Float64.(x), 1, :)
     probs = DecisionTree.predict_proba(model, x_mat)
     return argmax(probs)
 end
 
-# ------------------------------------
-# 2. Pick first correctly classified sample
-# ------------------------------------
+# ## 2. Pick a correctly classified demo sample
+#
+# We search for the first correctly classified sample (starting from the
+# versicolor class) to use as our attack target.
+
 demo_idx = findfirst(==("versicolor"), y_str)
 
 for i in 1:size(X, 1)
@@ -58,9 +79,11 @@ println("\nChosen demo sample index: ", demo_idx)
 println("Feature vector: ", x0)
 println("True label string: ", label_str, " (index ", true_idx, ")")
 
-# ------------------------------------
-# 3. Build sample NamedTuple
-# ------------------------------------
+# ## 3. Build the sample NamedTuple
+#
+# The attack interface expects a named tuple `(data=..., label=...)` where
+# `label` is a one-hot encoded vector.
+
 y0 = Flux.onehot(true_idx, 1:length(classes))
 sample = (data = Float32.(x0), label = y0)
 
@@ -71,9 +94,16 @@ orig_true_prob = orig_probs_vec[true_idx]
 println("\nOriginal probabilities: ", orig_probs_vec)
 println("Original predicted class index = ", argmax(orig_probs_vec))
 
-# ------------------------------------
-# 4. Run BasicRandomSearch
-# ------------------------------------
+# ## 4. Run BasicRandomSearch
+#
+# We configure the attack with:
+# - `epsilon = 0.3`: maximum perturbation per feature
+# - `bounds`: valid ranges for each Iris feature
+# - `max_iter = 100`: number of random search iterations
+#
+# The attack queries the model repeatedly with random perturbations and keeps
+# the one that most reduces the true-class probability.
+
 ε = 0.3f0
 atk = BasicRandomSearch(
     epsilon = ε,
@@ -95,6 +125,10 @@ println("Adversarial feature vector: ", x_adv)
 println("\nOriginal probs:     ", orig_probs_vec)
 println("Adversarial probs: ", adv_probs_vec)
 
+# ## 5. Evaluate the attack
+#
+# We check whether the attack decreased the true-class confidence.
+
 println("\nTrue-class probability before attack: ", orig_true_prob)
 println("True-class probability after attack:  ", adv_true_prob)
 
@@ -104,14 +138,17 @@ else
     println("\n[INFO] True-class confidence did not decrease.")
 end
 
-# ------------------------------------
-# 5. Visualization: 2D projections of Iris + highlighted sample
-# ------------------------------------
+# ## 6. Visualization
+#
+# We create two scatter plots showing 2D projections of the Iris dataset
+# (features 1 & 2, and features 3 & 4). The original sample is shown in
+# black and the adversarial sample in orange.
+
 idx_setosa = findall(==("setosa"), y_str)
 idx_versicolor = findall(==("versicolor"), y_str)
 idx_virginica = findall(==("virginica"), y_str)
 
-# Plot 1: features 1 & 2
+## Plot 1: features 1 & 2
 p12 = plot(
     xlabel = "SepalLength",
     ylabel = "SepalWidth",
@@ -130,7 +167,7 @@ scatter!(p12, X[idx_virginica, 1], X[idx_virginica, 2], color = :red, markershap
 scatter!(p12, [x0[1]], [x0[2]], markersize = 10, color = :black, label = "")
 scatter!(p12, [x_adv[1]], [x_adv[2]], markersize = 10, color = :orange, label = "")
 
-# Plot 2: features 3 & 4
+## Plot 2: features 3 & 4
 orig_pred_class = classes[argmax(orig_probs_vec)[2]]
 adv_pred_class = classes[argmax(adv_probs_vec)[2]]
 p34 = plot(xlabel = "PetalLength", ylabel = "PetalWidth", title = "Iris (features 3&4)")
@@ -172,7 +209,13 @@ annot_str = "true: $label_str\norig: $orig_pred_class\nadv: $adv_pred_class"
 annotate!(p34, x0[3] + 0.2, x0[4], text(annot_str, 8, :left))
 
 fig = plot(p12, p34, layout = (1, 2))
-display(fig)
+savefig(fig, joinpath(@__DIR__, "iris_bsr.svg")) #hide
 
-println("\nPress Enter to close plots...")
-readline()
+# ![BasicRandomSearch attack on Iris](iris_bsr.svg)
+
+# ## Common edits to try
+#
+# - Increase `epsilon` to make perturbations stronger.
+# - Increase `max_iter` to give the attack more search time.
+# - Adjust `bounds` to constrain or widen the search domain.
+# - Attack other samples by changing how `demo_idx` is chosen.

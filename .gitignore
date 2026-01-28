@@ -12,3 +12,4 @@
 trained_model.bson
 /examples/models/
 .DS_Store
+/docs/src/tutorials/
