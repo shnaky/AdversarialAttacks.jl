@@ -21,26 +21,22 @@ function main()
     println("Black-Box Attack on Decision Tree Classifier (MNIST)")
     println("="^70)
 
+    # MNIST • Dataset: 60000 samples, 784 features
+    # CIFAR10 • Dataset: 50000 samples, 3072 features
+
     # =========================================================================
     # [Step 0] Config the Experiment
     # =========================================================================
-    config = ExperimentConfig(
-        exp_name = "baseline_cifar_tree_exp",
-        model_file_name = "baseline_cifar_tree",
-        model_factory = make_mnist_tree,
-        dataset = DATASET_CIFAR10,
-        use_flatten = true,
-        force_retrain = false,
-        split_ratio = 0.8,
-        rng = 42,
-        model_hyperparams = (rng = 42, max_depth = 10)
-    )
 
+    # ==========================================
+    #   • Experiment: baseline_cifar_tree_exp
+    #   • Clean accuracy: 27.23%
+    # ==========================================
     # config = ExperimentConfig(
-    #     exp_name = "baseline_mnist_tree_exp",
-    #     model_file_name = "baseline_mnist_tree",
+    #     exp_name = "baseline_cifar_tree_exp",
+    #     model_file_name = "baseline_cifar_tree",
     #     model_factory = make_mnist_tree,
-    #     dataset = DATASET_MNIST,
+    #     dataset = DATASET_CIFAR10,
     #     use_flatten = true,
     #     force_retrain = false,
     #     split_ratio = 0.8,
@@ -48,6 +44,26 @@ function main()
     #     model_hyperparams = (rng = 42, max_depth = 10)
     # )
 
+    # ==========================================
+    #   • Experiment: baseline_mnist_tree_exp
+    #   • Clean accuracy: 86.48%
+    # ==========================================
+    config = ExperimentConfig(
+        exp_name = "baseline_mnist_tree_exp",
+        model_file_name = "baseline_mnist_tree",
+        model_factory = make_mnist_tree,
+        dataset = DATASET_MNIST,
+        use_flatten = true,
+        force_retrain = false,
+        split_ratio = 0.8,
+        rng = 42,
+        model_hyperparams = (rng = 42, max_depth = 10)
+    )
+
+    # ==========================================
+    #   • Experiment: baseline_mnist_knn_exp
+    #   • Clean accuracy: 96.58%
+    # ==========================================
     # config = ExperimentConfig(
     #     exp_name = "baseline_mnist_knn_exp",
     #     model_file_name = "baseline_mnist_knn",
@@ -60,6 +76,10 @@ function main()
     #     model_hyperparams = (K = 10,)
     # )
 
+    # ==========================================
+    #   • Experiment: baseline_mnist_xgboost_exp
+    #   • Clean accuracy: 96.99%
+    # ==========================================
     # config = ExperimentConfig(
     #     exp_name = "baseline_mnist_xgboost_exp",
     #     model_file_name = "baseline_mnist_xgboost",
@@ -72,6 +92,10 @@ function main()
     #     model_hyperparams = (num_round = 50,)
     # )
 
+    # ==========================================
+    #  • Experiment: baseline_mnist_logistic_exp
+    #  • Clean accuracy: 54.2%
+    # ==========================================
     # config = ExperimentConfig(
     #     exp_name = "baseline_mnist_logistic_exp",
     #     model_file_name = "baseline_mnist_logistic",
@@ -105,7 +129,6 @@ function main()
 
     println("  • Experiment: ", config.exp_name)
     println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
-    println("  • Tree depth: 10 levels")
 
     # =========================================================================
     # [Step 3] Prepare Test Samples
@@ -171,7 +194,7 @@ function main()
     println("╠═════════════════════════════╬═══════════════╣")
     println("║ Model                       ║  DecisionTree ║")
     println("║ Attack Method               ║  RandomSearch ║")
-    @printf("║ Attack Success Rate (ASR)   ║   %5.1f%%      ║\n", bb_asr)
+    @printf("║ Attack Success Rate (ASR)   ║   %5.1f%%     ║\n", bb_asr)
     @printf(
         "║ Successful Attacks          ║   %3d/%3d      ║\n",
         bb_report.num_successful_attacks, bb_report.num_clean_correct

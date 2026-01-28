@@ -70,7 +70,7 @@ end
 
 Create MLJFlux ImageClassifier for MNIST.
 """
-function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64)
+function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64, kwargs...)
     builder = SimpleConvBuilder(3, 16, 32, 28, 28)
 
     model = ImageClassifier(
@@ -80,6 +80,7 @@ function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64)
         epochs = epochs,
         batch_size = batch_size,
         rng = rng,
+        kwargs...
     )
 
     return model
@@ -126,8 +127,8 @@ end
 """
     make_mnist_forest(; rng=42, n_trees=100, max_depth=-1)
 """
-function make_mnist_forest(; rng::Int = 42, n_trees::Int = 100, max_depth::Int = -1)
-    model = RandomForestClassifier(n_trees = n_trees, max_depth = max_depth, rng = rng)
+function make_mnist_forest(; rng::Int = 42, n_trees::Int = 100, max_depth::Int = -1, kwargs...)
+    model = RandomForestClassifier(n_trees = n_trees, max_depth = max_depth, rng = rng, kwargs...)
     return model
 end
 
@@ -137,8 +138,8 @@ end
 Construct a single `DecisionTreeClassifier` for MNIST features.
 Useful as a simpler black-box baseline.
 """
-function make_mnist_tree(; rng::Int = 42, max_depth::Int = 5)
-    model = DecisionTreeClassifier(max_depth = max_depth, rng = rng)
+function make_mnist_tree(; rng::Int = 42, max_depth::Int = 5, kwargs...)
+    model = DecisionTreeClassifier(max_depth = max_depth, rng = rng, kwargs...)
     return model
 end
 
@@ -147,13 +148,13 @@ end
 
 K-Nearest Neighbors classifier for MNIST.
 """
-function make_mnist_knn(; K::Int = 5, weights::KNNKernel = Uniform())
-    model = KNNClassifier(K = K, weights = weights)
+function make_mnist_knn(; K::Int = 5, weights::KNNKernel = Uniform(), kwargs...)
+    model = KNNClassifier(K = K, weights = weights, kwargs...)
     return model
 end
 
-function make_mnist_logistic(; lambda::Float64 = 1.0e-4, penalty = :l2)
-    model = LogisticClassifier(lambda = lambda, penalty = penalty)
+function make_mnist_logistic(; lambda::Float64 = 1.0e-4, penalty = :l2, kwargs...)
+    model = LogisticClassifier(lambda = lambda, penalty = penalty, kwargs...)
     return model
 end
 
@@ -166,14 +167,16 @@ function make_mnist_xgboost(;
         num_round::Int = 100,
         max_depth::Int = 6,
         eta::Float64 = 0.3,
-        rng::Int = 42
+        rng::Int = 42,
+        kwargs...
     )
 
     model = XGBoostClassifier(
         num_round = num_round,
         max_depth = max_depth,
         eta = eta,
-        seed = rng
+        seed = rng,
+        kwargs...
     )
     return model
 end

@@ -25,13 +25,29 @@ using Images: channelview
 # =========================
 
 exp_name = "comparison_all"
-dataset = DATASET_CIFAR10 # DATASET_MNIST, DATASET_CIFAR10
+dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
 
 attackConfigs_FGSM = [(FGSM(epsilon = 0.1f0), 100), (FGSM(epsilon = 0.3f0), 1)]
 attackConfigs_BSR = [
     (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 1),
     (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 1),
 ]
+
+# ==========================================
+# 📦 Loaded cached comparison_mnist_cnn (Acc: 96.1%)
+# 📦 Loaded cached comparison_mnist_tree (Acc: 86.5%)
+# 📦 Loaded cached comparison_mnist_forest (Acc: 96.2%)
+# 📦 Loaded cached comparison_mnist_knn (Acc: 96.6%)
+# 📦 Loaded cached comparison_mnist_xgboost (Acc: 97.0%)
+# 📦 Loaded cached comparison_mnist_logistic (Acc: 54.2%)
+# ==========================================
+# 📦 Loaded cached comparison_cifar_cnn (Acc: 65.4%)
+# 📦 Loaded cached comparison_cifar_tree (Acc: 28.4%)
+# 📦 Loaded cached comparison_cifar_forest (Acc: 42.8%)
+# 📦 Loaded cached comparison_cifar_knn (Acc: 33.1%)
+# 📦 Loaded cached comparison_cifar_xgboost (Acc: 50.5%)
+# 📦 Loaded cached comparison_cifar_logistic (Acc: 41.0%)
+# ==========================================
 
 const ALL_CONFIGS = [
     (
@@ -44,7 +60,7 @@ const ALL_CONFIGS = [
             force_retrain = false,
             split_ratio = 0.8,
             rng = 42,
-            model_hyperparams = (epochs = 5,)
+            model_hyperparams = (epochs = 5,),
         ),
         attackConfigs_FGSM,
     ),

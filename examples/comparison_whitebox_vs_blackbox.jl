@@ -26,8 +26,15 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 1] Loading/Training MLJFlux CNN ...")
 
-    dataset == DATASET_MNIST
+    dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
 
+    # ==========================================
+    # ✅ comparison_wb_bb_mnist complete: 97.2%
+    #   • Clean accuracy: 97.21%
+    # ==========================================
+    # ✅ comparison_wb_bb_cifar complete: 67.5%
+    #   • Clean accuracy: 67.46%
+    # ==========================================
     config = ExperimentConfig(
         exp_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist_exp" : "comparison_wb_bb_cifar_exp",
         model_file_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist" : "comparison_wb_bb_cifar",

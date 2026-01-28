@@ -22,6 +22,13 @@ println("="^70)
 
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
 
+# ==========================================
+#   • Experiment: mnist_blackbox_forest_exp
+#   • Clean accuracy: 96.51%
+# ==========================================
+#   • Experiment: cifar_blackbox_forest_exp
+#   • Clean accuracy: 46.03%
+# ==========================================
 config = ExperimentConfig(
     exp_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest_exp" : "cifar_blackbox_forest_exp",
     model_file_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest" : "cifar_blackbox_forest",

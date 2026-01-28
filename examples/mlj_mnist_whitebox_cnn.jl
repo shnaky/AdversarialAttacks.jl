@@ -20,10 +20,17 @@ println("="^70)
 
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
 
+# ==========================================
+#   • Experiment: mnist_cnn_whitebox_exp
+#   • Clean accuracy: 96.14%
+# ==========================================
+#   • Experiment: cifar_cnn_whitebox_exp
+#   • Clean accuracy: 65.5%
+# ==========================================
 config = ExperimentConfig(
     exp_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox_exp" : "cifar_cnn_whitebox_exp",
     model_file_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox" : "cifar_cnn_whitebox",
-    model_factory = dataset == DATASET_MNIST ? "make_mnist_cnn" : "make_cifar_cnn",
+    model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
     dataset = dataset,
     use_flatten = false,
     force_retrain = false,
@@ -94,7 +101,6 @@ wb_report = evaluate_robustness(
     num_samples = length(test_data)
 )
 
-# Print results
 println("\n" * "="^70)
 println("ROBUSTNESS EVALUATION RESULTS")
 println("="^70)
