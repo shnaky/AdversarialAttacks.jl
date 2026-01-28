@@ -26,17 +26,19 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 1] Loading/Training MLJFlux CNN on MNIST...")
 
-    config = ExperimentConfig("comparison_wb_bb", 0.8, 42)
-
-    mach, meta = get_or_train(
-        make_mnist_cnn,
-        "comparison_wb_bb_final",
-        config = config,
-        force_retrain = false,
-        epochs = 10,
-        batch_size = 64,
+    config = ExperimentConfig(
+        exp_name = "comparison_wb_bb_exp",
+        model_file_name = "comparison_wb_bb",
+        model_factory = make_mnist_cnn,
+        dataset = DATASET_MNIST,
         use_flatten = false,
+        force_retrain = false,
+        split_ratio = 0.8,
+        rng = 42,
+        model_hyperparams = (epochs = 10, batch_size = 64)
     )
+
+    mach, meta = get_or_train(config)
 
     raw_model = extract_flux_model(mach)
 

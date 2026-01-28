@@ -18,6 +18,18 @@ println("="^70)
 println("White-Box Attack on MLJFlux CNN (MNIST)")
 println("="^70)
 
+config = ExperimentConfig(
+    exp_name = "mnist_cnn_whitebox_exp",
+    model_file_name = "mnist_forest",
+    model_factory = make_mnist_forest,
+    dataset = DATASET_MNIST,
+    use_flatten = true,
+    force_retrain = false,
+    split_ratio = 0.8,
+    rng = 42,
+    model_hyperparams = (n_trees = 200, max_depth = -1)
+)
+
 # 1. Load MNIST as images
 println("\n[1/4] Loading MNIST dataset...")
 # X_img, y = load_mnist_for_mlj()
