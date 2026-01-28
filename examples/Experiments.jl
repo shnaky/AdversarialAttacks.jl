@@ -27,7 +27,7 @@ export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, 
 export blackbox_predict, extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
 export DatasetType, DATASET_MNIST, DATASET_CIFAR10
-export load_data
+export load_data, dataset_shapes
 
 const MODELS_DIR = joinpath(@__DIR__, ".", "models")
 
@@ -48,6 +48,11 @@ Base.@kwdef struct ExperimentConfig
     rng::Int = 42
     model_hyperparams::NamedTuple = NamedTuple()
 end
+
+dataset_shapes = Dict(
+    DATASET_MNIST => (28, 28, 1),
+    DATASET_CIFAR10 => (32, 32, 3)
+)
 
 # =========================
 # Data loading
@@ -318,15 +323,12 @@ function get_or_train(config::ExperimentConfig)
 end
 
 function load_data(dataset::DatasetType, use_flatten)
-    if dataset === DATASET_MNIST
-        X_img, y = load_mnist_for_mlj()
-        return use_flatten ? (flatten_images(X_img), y) : (X_img, y)
-    elseif dataset === DATASET_CIFAR10
-        X_img, y = load_cifar10_for_mlj()
-        return use_flatten ? (flatten_images_cifar(X_img), y) : (X_img, y)
-    else
-        error("Unsupported dataset: $dataset")
-    end
+    X_org_img, y = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
+
+    X_img = use_flatten ? (dataset == DATASET_MNIST ? flatten_images(X_org_img) : flatten_images_cifar(X_org_img)) : X_org_img
+
+    return (X_img, y)
+
 end
 
 end

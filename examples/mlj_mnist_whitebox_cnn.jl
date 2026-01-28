@@ -15,69 +15,41 @@ using CategoricalArrays: levelcode
 using ImageCore: channelview
 
 println("="^70)
-println("White-Box Attack on MLJFlux CNN (MNIST)")
+println("White-Box Attack on MLJFlux CNN")
 println("="^70)
 
+dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+
 config = ExperimentConfig(
-    exp_name = "mnist_cnn_whitebox_exp",
-    model_file_name = "mnist_forest",
-    model_factory = make_mnist_forest,
-    dataset = DATASET_MNIST,
-    use_flatten = true,
+    exp_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox_exp" : "cifar_cnn_whitebox_exp",
+    model_file_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox" : "cifar_cnn_whitebox",
+    model_factory = dataset == DATASET_MNIST ? "make_mnist_cnn" : "make_cifar_cnn",
+    dataset = dataset,
+    use_flatten = false,
     force_retrain = false,
     split_ratio = 0.8,
     rng = 42,
-    model_hyperparams = (n_trees = 200, max_depth = -1)
+    model_hyperparams = (epochs = 5, batch_size = 64)
 )
 
-# 1. Load MNIST as images
-println("\n[1/4] Loading MNIST dataset...")
-# X_img, y = load_mnist_for_mlj()
-# H = 28
-# W = 28
-# C = 1
-# N = 1
-
-X_img, y = load_cifar10_for_mlj()
-H = 32
-W = 32
-C = 3
-N = 1
-
-
+# 1. Load data as images
+println("\n[1/4] Loading dataset...")
+if config.dataset == DATASET_MNIST
+    X_img, y = load_mnist_for_mlj()
+elseif config.dataset == DATASET_CIFAR10
+    X_img, y = load_cifar10_for_mlj()
+else
+    throw(ArgumentError("Unsupported DatasetType: $config.dataset"))
+end
 # 2. Train MLJFlux ImageClassifier
 println("\n[2/4] Training MLJFlux CNN...")
-
-# config = ExperimentConfig("mnist_cnn_whitebox", 0.8, 42)
-
-# mach, meta = get_or_train(
-#     make_mnist_cnn,
-#     "mnist_cnn_whitebox",
-#     config = config,
-#     force_retrain = false,
-#     epochs = 10,
-#     batch_size = 64,
-#     use_flatten = false,
-# )
-
-config = ExperimentConfig("cifar10_cnn_whitebox", 0.8, 42)
-
-mach, meta = get_or_train(
-    make_cifar_cnn,
-    "cifar_cnn",
-    dataset = :cifar10,
-    config = config,
-    force_retrain = false,
-    epochs = 1,
-    batch_size = 128,
-    use_flatten = false,
-)
+mach, meta = get_or_train(config)
 
 accuracy = meta["accuracy"]
 test_idx = meta["test_idx"]
 y_test = meta["y_test"]
 
-println("  • Experiment: ", config.name)
+println("  • Experiment: ", config.exp_name)
 println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 
 # 3. Extract Flux model
@@ -95,7 +67,8 @@ for i in 1:min(N_SAMPLES, length(test_idx))
     true_label_idx = levelcode(y_test[i])
 
     x_array = Float32.(channelview(x_img))
-    x_flux = reshape(x_array, H, W, C, N)
+    h, w, c = dataset_shapes[config.dataset]
+    x_flux = reshape(x_array, h, w, c, 1)
 
     # Verify correct classification
     pred = flux_model(x_flux)

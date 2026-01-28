@@ -20,30 +20,19 @@ println("="^70)
 println("Black-Box Attack on RandomForest Classifier (MNIST)")
 println("="^70)
 
+dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+
 config = ExperimentConfig(
-    exp_name = "mnist_forest_blackbox_exp",
-    model_file_name = "mnist_forest",
+    exp_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest_exp" : "cifar_blackbox_forest_exp",
+    model_file_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest" : "cifar_blackbox_forest",
     model_factory = make_mnist_forest,
-    dataset = DATASET_MNIST,
+    dataset = dataset,
     use_flatten = true,
     force_retrain = false,
     split_ratio = 0.8,
     rng = 42,
     model_hyperparams = (n_trees = 200, max_depth = -1)
 )
-
-# not ready yet
-# config = ExperimentConfig(
-#     exp_name = "cifar_forest_blackbox_exp",
-#     model_file_name = "cifar_forest",
-#     model_factory = make_mnist_forest,
-#     dataset = DATASET_CIFAR10,
-#     use_flatten = true,
-#     force_retrain = false,
-#     split_ratio = 0.8,
-#     rng = 42,
-#     model_hyperparams = (n_trees = 200, max_depth = -1)
-# )
 
 # =============================================================================
 # [Step 1] Load and Prepare Data

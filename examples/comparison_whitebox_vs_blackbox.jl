@@ -24,13 +24,15 @@ function run_comparison()
     # ==========================================================================
     # [Step 1] Train/Load CNN Model
     # ==========================================================================
-    println("\n[Step 1] Loading/Training MLJFlux CNN on MNIST...")
+    println("\n[Step 1] Loading/Training MLJFlux CNN ...")
+
+    dataset == DATASET_MNIST
 
     config = ExperimentConfig(
-        exp_name = "comparison_wb_bb_exp",
-        model_file_name = "comparison_wb_bb",
-        model_factory = make_mnist_cnn,
-        dataset = DATASET_MNIST,
+        exp_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist_exp" : "comparison_wb_bb_cifar_exp",
+        model_file_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist" : "comparison_wb_bb_cifar",
+        model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
+        dataset = dataset,
         use_flatten = false,
         force_retrain = false,
         split_ratio = 0.8,
@@ -61,8 +63,13 @@ function run_comparison()
     # [Step 2] Prepare Test Samples
     # ==========================================================================
     println("\n[Step 2] Preparing test samples...")
-
-    X_img, y = load_mnist_for_mlj()
+    if config.dataset == DATASET_MNIST
+        X_img, y = load_mnist_for_mlj()
+    elseif config.dataset == DATASET_CIFAR10
+        X_img, y = load_cifar10_for_mlj()
+    else
+        throw(ArgumentError("Unsupported DatasetType: $dataset"))
+    end
     N_SAMPLES = 100
 
     test_data = []
@@ -76,9 +83,10 @@ function run_comparison()
         x_img = X_img[idx]
         true_label_idx = levelcode(y_test[i])
 
-        # Convert to Flux format (28×28×1×1)
         x_array = Float32.(channelview(x_img))
-        x_flux = reshape(x_array, 28, 28, 1, 1)
+
+        h, w, c = dataset_shapes[dataset]
+        x_flux = reshape(x_array, h, w, c, 1)
 
         # Check if correctly classified
         pred = flux_model(x_flux)
