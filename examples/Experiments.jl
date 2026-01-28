@@ -26,19 +26,28 @@ export make_mnist_cnn, make_cifar_cnn
 export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export blackbox_predict, extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
+export DatasetType, DATASET_MNIST, DATASET_CIFAR10
+export load_data
 
 const MODELS_DIR = joinpath(@__DIR__, ".", "models")
 
 # =========================
 # Config & Data
 # =========================
-struct ExperimentConfig
-    name::String
-    train_fraction::Float64
-    rng::Int
-end
 
-const DEFAULT_CONFIG = ExperimentConfig("default", 0.8, 42)
+@enum DatasetType DATASET_MNIST DATASET_CIFAR10
+
+Base.@kwdef struct ExperimentConfig
+    exp_name::String = "default_exp"
+    model_file_name::String = "mnist_cnn"
+    model_factory::Function = make_mnist_cnn
+    dataset::DatasetType = DATASET_MNIST
+    use_flatten::Bool = false
+    force_retrain::Bool = false
+    split_ratio::Float64 = 0.8
+    rng::Int = 42
+    model_hyperparams::NamedTuple = NamedTuple()
+end
 
 # =========================
 # Data loading
@@ -152,7 +161,7 @@ attack/evaluation code.
 function run_experiment(model, X, y; config::ExperimentConfig = DEFAULT_CONFIG)
     n = length(y)
     train, test =
-        train_test_split(n; fraction_train = config.train_fraction, rng = config.rng)
+        train_test_split(n; fraction_train = config.split_ratio, rng = config.rng)
 
     # For DataFrame inputs we must use two-dimensional indexing
     Xtrain = X isa DataFrame ? X[train, :] : X[train]
@@ -280,36 +289,22 @@ flux_model = extract_flux_model(mach)
 ```
 
 """
-function get_or_train(
-        model_factory::Function, name::String;
-        config::ExperimentConfig = DEFAULT_CONFIG,
-        dataset = :mnist,  # :mnist or :cifar10
-        force_retrain = false, use_flatten = true, kwargs...
-    )
-
-    if !force_retrain
-        cached = load_experiment_result(name)
+function get_or_train(config::ExperimentConfig)
+    if !config.force_retrain
+        cached = load_experiment_result(config.model_file_name)
         if !isnothing(cached)
-            println("📦 Loaded cached $name (Acc: $(round(cached[2]["accuracy"] * 100, digits = 1))%)")
+            println("📦 Loaded cached $(config.model_file_name) (Acc: $(round(cached[2]["accuracy"] * 100, digits = 1))%)")
             return cached
         end
     end
 
-    println("🚀 Training $name on $dataset...")
-    if dataset == :mnist
-        X_img, y = load_mnist_for_mlj()
-        X = use_flatten ? flatten_images(X_img) : X_img
-    elseif dataset == :cifar10
-        X_img, y = load_cifar10_for_mlj()
-        X = use_flatten ? flatten_images_cifar(X_img) : X_img
-    else
-        error("Unsupported dataset: $dataset. Use :mnist or :cifar10.")
-    end
+    println("🚀 Training $(config.model_file_name) on $(config.dataset)...")
+    X, y = load_data(config.dataset, config.use_flatten)
 
-    model = model_factory(; kwargs...)
+    model = config.model_factory(; config.model_hyperparams...)
     result = run_experiment(model, X, y; config = config)
 
-    save_experiment_result(result, name)
+    save_experiment_result(result, config.model_file_name)
     meta = Dict(
         "test_idx" => result.test_idx,
         "y_test" => result.y_test,
@@ -318,8 +313,20 @@ function get_or_train(
         "model_type" => nameof(typeof(model))
     )
 
-    println("✅ $name complete: $(round(meta["accuracy"] * 100, digits = 1))%")
+    println("✅ $(config.model_file_name) complete: $(round(meta["accuracy"] * 100, digits = 1))%")
     return (result.mach, meta)
+end
+
+function load_data(dataset::DatasetType, use_flatten)
+    if dataset === DATASET_MNIST
+        X_img, y = load_mnist_for_mlj()
+        return use_flatten ? (flatten_images(X_img), y) : (X_img, y)
+    elseif dataset === DATASET_CIFAR10
+        X_img, y = load_cifar10_for_mlj()
+        return use_flatten ? (flatten_images_cifar(X_img), y) : (X_img, y)
+    else
+        error("Unsupported dataset: $dataset")
+    end
 end
 
 end

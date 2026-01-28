@@ -22,44 +22,30 @@ function main()
     println("="^70)
 
     # =========================================================================
-    # [Step 1] Load and Prepare Data
+    # [Step 0] Config the Experiment
     # =========================================================================
-    println("\n[Step 1] Loading dataset...")
-
-    # X_img, y = load_mnist_for_mlj()
-    # X_flat = flatten_images(X_img)
-
-    X_img, y = load_cifar10_for_mlj()
-    X_flat = flatten_images_cifar(X_img)
-
-    println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features")
-
-    # =========================================================================
-    # [Step 2] Train Decision Tree
-    # =========================================================================
-    println("\n[Step 2] Training Decision Tree Classifier...")
-
-    config = ExperimentConfig("mnist_tree_blackbox", 0.8, 42)
-
-    mach, meta = get_or_train(
-        make_mnist_tree,
-        "cifar_tree",
-        dataset = :cifar10,
-        config = config,
-        force_retrain = false,
-        rng = 42,
-        max_depth = 10,
+    config = ExperimentConfig(
+        exp_name = "cifar_tree_blackbox_exp",
+        model_file_name = "cifar_tree",
+        model_factory = make_mnist_tree,
+        dataset = DATASET_CIFAR10,
         use_flatten = true,
+        force_retrain = false,
+        split_ratio = 0.8,
+        rng = 42,
+        model_hyperparams = (rng = 42, max_depth = 10)
     )
 
-    # mach, meta = get_or_train(
-    #     make_mnist_tree,
-    #     "simple_tree",
-    #     config = config,
-    #     force_retrain = false,
-    #     rng = 42,
-    #     max_depth = 10,
+    # config = ExperimentConfig(
+    #     exp_name = "mnist_tree_blackbox_exp",
+    #     model_file_name = "simple_tree",
+    #     model_factory = make_mnist_tree,
+    #     dataset = DATASET_MNIST,
     #     use_flatten = true,
+    #     force_retrain = false,
+    #     split_ratio = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (rng = 42, max_depth = 10)
     # )
 
     # mach, meta = get_or_train(
@@ -88,11 +74,26 @@ function main()
     #     use_flatten = true,
     # )
 
+    # =========================================================================
+    # [Step 1] Load and Prepare Data
+    # =========================================================================
+    println("\n[Step 1] Loading dataset...")
+    X_flat, y = load_data(config.dataset, config.use_flatten)
+
+    println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features")
+
+    # =========================================================================
+    # [Step 2] Train Decision Tree
+    # =========================================================================
+    println("\n[Step 2] Training $(config.model_file_name)...")
+
+    mach, meta = get_or_train(config)
+
     accuracy = meta["accuracy"]
     test_idx = meta["test_idx"]
     y_test = meta["y_test"]
 
-    println("  • Experiment: ", config.name)
+    println("  • Experiment: ", config.exp_name)
     println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
     println("  • Tree depth: 10 levels")
 
