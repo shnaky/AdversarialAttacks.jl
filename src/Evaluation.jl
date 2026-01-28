@@ -132,7 +132,7 @@ end
 
 """
     calculate_metrics(n_test, num_clean_correct, num_adv_correct,
-                      num_successful_attacks, l_norms, n_attack)
+                      num_successful_attacks, l_norms)
 
 Compute accuracy, attack success, robustness, and perturbation norm statistics
 for adversarial evaluation.
@@ -148,9 +148,10 @@ for adversarial evaluation.
 - A `RobustnessReport` containing accuracy, robustness, and norm summary metrics
   (maximum and mean) for all three norm types.
 """
-function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms, n_attack)
+function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
+
     clean_accuracy = num_clean_correct / n_test
-    adv_accuracy = n_attack > 0 ? num_adv_correct / n_attack : 0.0
+    adv_accuracy = num_clean_correct > 0 ? num_adv_correct / num_clean_correct : 0.0
     attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
     robustness_score = 1.0 - attack_success_rate
 
@@ -266,7 +267,6 @@ function evaluate_robustness(
 
     # aggregators
     num_clean_correct = 0
-    n_attack = 0
     num_adv_correct = 0
     num_successful_attacks = 0
     l_norms = Dict(
@@ -291,7 +291,6 @@ function evaluate_robustness(
             num_clean_correct += is_clean_correct
 
             if is_clean_correct
-                n_attack += 1
                 # adversarial output
                 adv_data = attack(atk, model, sample)
                 adv_pred = predict_fn(adv_data)
@@ -318,7 +317,7 @@ function evaluate_robustness(
         end
     end
 
-    report = calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms, n_attack)
+    report = calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
     println("Evaluation complete!")
     return report
 end
