@@ -34,7 +34,7 @@ train_x, train_y = MLDatasets.MNIST.traindata()        # 28×28×60000, Vector{I
 train_x = train_x[:, :, 1:6000]                        # use 6000 samples for speed
 train_y = train_y[1:6000]
 
-X = Float32.(reshape(train_x, 28, 28, 1, :)) ./ 255     # 28×28×1×N
+X = Float32.(reshape(train_x, 28, 28, 1, :))     # 28×28×1×N
 y = Flux.onehotbatch(train_y, 0:9)                      # 10×N one-hot labels
 
 # ## 2. Define and train a CNN
@@ -95,7 +95,7 @@ println("✓ Trained simple CNN on MNIST subset\n")
 # wrapped as a named tuple `(data=x, label=y)` — this is the format that
 # `AdversarialAttacks.jl` expects.
 
-demo_idx = 2 # number zero
+demo_idx = 25 # number zero
 
 x0 = X[:, :, :, demo_idx:demo_idx]
 label_onehot = y[:, demo_idx]
@@ -126,7 +126,7 @@ println("Clean true prob: ", round(orig_true_prob, digits = 3))
 #
 # After the attack, we clamp pixel values back to `[0, 1]`.
 
-ε = 0.0015f0
+ε = 0.05f0
 fgsm_attack = FGSM(epsilon = ε)
 println("\nRunning FGSM with ε = $ε ...")
 

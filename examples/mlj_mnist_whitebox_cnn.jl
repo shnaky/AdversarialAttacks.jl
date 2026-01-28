@@ -15,33 +15,41 @@ using CategoricalArrays: levelcode
 using ImageCore: channelview
 
 println("="^70)
-println("White-Box Attack on MLJFlux CNN (MNIST)")
+println("White-Box Attack on MLJFlux CNN")
 println("="^70)
 
-# 1. Load MNIST as images
-println("\n[1/4] Loading MNIST dataset...")
-X_img, y = load_mnist_for_mlj()
+dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
 
+config = ExperimentConfig(
+    exp_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox_exp" : "cifar_cnn_whitebox_exp",
+    model_file_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox" : "cifar_cnn_whitebox",
+    model_factory = dataset == DATASET_MNIST ? "make_mnist_cnn" : "make_cifar_cnn",
+    dataset = dataset,
+    use_flatten = false,
+    force_retrain = false,
+    split_ratio = 0.8,
+    rng = 42,
+    model_hyperparams = (epochs = 5, batch_size = 64)
+)
+
+# 1. Load data as images
+println("\n[1/4] Loading dataset...")
+if config.dataset == DATASET_MNIST
+    X_img, y = load_mnist_for_mlj()
+elseif config.dataset == DATASET_CIFAR10
+    X_img, y = load_cifar10_for_mlj()
+else
+    throw(ArgumentError("Unsupported DatasetType: $config.dataset"))
+end
 # 2. Train MLJFlux ImageClassifier
 println("\n[2/4] Training MLJFlux CNN...")
-
-config = ExperimentConfig("mnist_cnn_whitebox", 0.8, 42)
-
-mach, meta = get_or_train(
-    make_mnist_cnn,
-    "mnist_cnn_whitebox",
-    config = config,
-    force_retrain = false,
-    epochs = 10,
-    batch_size = 64,
-    use_flatten = false,
-)
+mach, meta = get_or_train(config)
 
 accuracy = meta["accuracy"]
 test_idx = meta["test_idx"]
 y_test = meta["y_test"]
 
-println("  • Experiment: ", config.name)
+println("  • Experiment: ", config.exp_name)
 println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 
 # 3. Extract Flux model
@@ -59,7 +67,8 @@ for i in 1:min(N_SAMPLES, length(test_idx))
     true_label_idx = levelcode(y_test[i])
 
     x_array = Float32.(channelview(x_img))
-    x_flux = reshape(x_array, 28, 28, 1, 1)
+    h, w, c = dataset_shapes[config.dataset]
+    x_flux = reshape(x_array, h, w, c, 1)
 
     # Verify correct classification
     pred = flux_model(x_flux)

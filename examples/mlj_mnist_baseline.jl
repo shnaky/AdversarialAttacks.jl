@@ -22,63 +22,88 @@ function main()
     println("="^70)
 
     # =========================================================================
+    # [Step 0] Config the Experiment
+    # =========================================================================
+    config = ExperimentConfig(
+        exp_name = "baseline_cifar_tree_exp",
+        model_file_name = "baseline_cifar_tree",
+        model_factory = make_mnist_tree,
+        dataset = DATASET_CIFAR10,
+        use_flatten = true,
+        force_retrain = false,
+        split_ratio = 0.8,
+        rng = 42,
+        model_hyperparams = (rng = 42, max_depth = 10)
+    )
+
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_tree_exp",
+    #     model_file_name = "baseline_mnist_tree",
+    #     model_factory = make_mnist_tree,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     split_ratio = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (rng = 42, max_depth = 10)
+    # )
+
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_knn_exp",
+    #     model_file_name = "baseline_mnist_knn",
+    #     model_factory = make_mnist_knn,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     split_ratio = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (K = 10,)
+    # )
+
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_xgboost_exp",
+    #     model_file_name = "baseline_mnist_xgboost",
+    #     model_factory = make_mnist_xgboost,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     split_ratio = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (num_round = 50,)
+    # )
+
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_logistic_exp",
+    #     model_file_name = "baseline_mnist_logistic",
+    #     model_factory = make_mnist_logistic,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     split_ratio = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = NamedTuple()  # default
+    # )
+
+    # =========================================================================
     # [Step 1] Load and Prepare Data
     # =========================================================================
-    println("\n[Step 1] Loading MNIST dataset...")
-
-    X_img, y = load_mnist_for_mlj()
-    X_flat = flatten_images(X_img)
+    println("\n[Step 1] Loading dataset...")
+    X_flat, y = load_data(config.dataset, config.use_flatten)
 
     println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features")
 
     # =========================================================================
     # [Step 2] Train Decision Tree
     # =========================================================================
-    println("\n[Step 2] Training Decision Tree Classifier...")
+    println("\n[Step 2] Training $(config.model_file_name)...")
 
-    config = ExperimentConfig("mnist_tree_blackbox", 0.8, 42)
-
-    mach, meta = get_or_train(
-        make_mnist_tree,
-        "simple_tree",
-        config = config,
-        force_retrain = false,
-        rng = 42,
-        max_depth = 10,
-        use_flatten = true,
-    )
-
-    # mach, meta = get_or_train(
-    #     make_mnist_knn,
-    #     "simple_knn",
-    #     config = config,
-    #     force_retrain = false,
-    #     K = 7,
-    #     use_flatten = true,
-    # )
-
-    # mach, meta = get_or_train(
-    #     make_mnist_xgboost,
-    #     "simple_xgboost",
-    #     config = config,
-    #     force_retrain = false,
-    #     num_round = 50,
-    #     use_flatten = true,
-    # )
-
-    # mach, meta = get_or_train(
-    #     make_mnist_logistic,
-    #     "simple_nlogistic",
-    #     config = config,
-    #     force_retrain = false,
-    #     use_flatten = true,
-    # )
+    mach, meta = get_or_train(config)
 
     accuracy = meta["accuracy"]
     test_idx = meta["test_idx"]
     y_test = meta["y_test"]
 
-    println("  • Experiment: ", config.name)
+    println("  • Experiment: ", config.exp_name)
     println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
     println("  • Tree depth: 10 levels")
 

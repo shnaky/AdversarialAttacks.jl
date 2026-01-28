@@ -13,28 +13,46 @@ using MLDatasets
 using StatsBase: mode
 using DataFrames
 
-using ColorTypes: Gray
-using Images
+using ColorTypes: Color, Gray, RGB
+using Images: channelview
+using ScientificTypes: ColorImage
+
 using BSON
 using Dates
 
-export ExperimentConfig, run_experiment, load_mnist_for_mlj, flatten_images
-export make_mnist_cnn, make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
+export ExperimentConfig, run_experiment
+export load_mnist_for_mlj, flatten_images, load_cifar10_for_mlj, flatten_images_cifar
+export make_mnist_cnn, make_cifar_cnn
+export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
 export blackbox_predict, extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
+export DatasetType, DATASET_MNIST, DATASET_CIFAR10
+export load_data, dataset_shapes
 
 const MODELS_DIR = joinpath(@__DIR__, ".", "models")
 
 # =========================
 # Config & Data
 # =========================
-struct ExperimentConfig
-    name::String
-    train_fraction::Float64
-    rng::Int
+
+@enum DatasetType DATASET_MNIST DATASET_CIFAR10
+
+Base.@kwdef struct ExperimentConfig
+    exp_name::String = "default_exp"
+    model_file_name::String = "mnist_cnn"
+    model_factory::Function = make_mnist_cnn
+    dataset::DatasetType = DATASET_MNIST
+    use_flatten::Bool = false
+    force_retrain::Bool = false
+    split_ratio::Float64 = 0.8
+    rng::Int = 42
+    model_hyperparams::NamedTuple = NamedTuple()
 end
 
-const DEFAULT_CONFIG = ExperimentConfig("default", 0.8, 42)
+dataset_shapes = Dict(
+    DATASET_MNIST => (28, 28, 1),
+    DATASET_CIFAR10 => (32, 32, 3)
+)
 
 # =========================
 # Data loading
@@ -59,6 +77,16 @@ function flatten_images(X_img::Vector{<:AbstractArray})
     return df
 end
 
+function flatten_images_cifar(X_img::Vector{Matrix{RGB{Float32}}})
+    n = length(X_img)
+    d = 3 * 32 * 32  # 3072
+    Xmat = Array{Float32}(undef, n, d)
+
+    for i in 1:n
+        Xmat[i, :] .= vec(channelview(X_img[i]))
+    end
+    return DataFrame(Xmat, :auto)
+end
 
 """
     load_mnist_for_mlj(; n_train=60000)
@@ -84,6 +112,24 @@ function load_mnist_for_mlj(; n_train::Int = 60000)
     y = coerce(labels, Multiclass)
 
     return X_vec, y
+end
+
+"""
+    load_cifar10_for_mlj(; n_train::Int = 50000)
+
+MLJFlux ColorImage for CIFAR10. C×H×W, Float32 Array{3}.
+"""
+function load_cifar10_for_mlj(; n_train::Int = 50000)
+    dataset = MLDatasets.CIFAR10(split = :train)
+
+    # raw 4D array (32x32x3xN Float32 HWC)
+    images = dataset.features[:, :, :, 1:n_train]
+
+    images = coerce(images, ColorImage)
+
+    labels = coerce(dataset.targets[1:n_train], Multiclass{10})
+
+    return images, labels  # Array{ColorImage,4}
 end
 
 # =========================
@@ -120,7 +166,7 @@ attack/evaluation code.
 function run_experiment(model, X, y; config::ExperimentConfig = DEFAULT_CONFIG)
     n = length(y)
     train, test =
-        train_test_split(n; fraction_train = config.train_fraction, rng = config.rng)
+        train_test_split(n; fraction_train = config.split_ratio, rng = config.rng)
 
     # For DataFrame inputs we must use two-dimensional indexing
     Xtrain = X isa DataFrame ? X[train, :] : X[train]
@@ -248,28 +294,22 @@ flux_model = extract_flux_model(mach)
 ```
 
 """
-function get_or_train(
-        model_factory::Function, name::String;
-        config::ExperimentConfig = DEFAULT_CONFIG,
-        force_retrain = false, use_flatten = true, kwargs...
-    )
-
-    if !force_retrain
-        cached = load_experiment_result(name)
+function get_or_train(config::ExperimentConfig)
+    if !config.force_retrain
+        cached = load_experiment_result(config.model_file_name)
         if !isnothing(cached)
-            println("📦 Loaded cached $name (Acc: $(round(cached[2]["accuracy"] * 100, digits = 1))%)")
+            println("📦 Loaded cached $(config.model_file_name) (Acc: $(round(cached[2]["accuracy"] * 100, digits = 1))%)")
             return cached
         end
     end
 
-    println("🚀 Training $name...")
-    X_img, y = load_mnist_for_mlj()
-    X = use_flatten ? flatten_images(X_img) : X_img
+    println("🚀 Training $(config.model_file_name) on $(config.dataset)...")
+    X, y = load_data(config.dataset, config.use_flatten)
 
-    model = model_factory(; kwargs...)
+    model = config.model_factory(; config.model_hyperparams...)
     result = run_experiment(model, X, y; config = config)
 
-    save_experiment_result(result, name)
+    save_experiment_result(result, config.model_file_name)
     meta = Dict(
         "test_idx" => result.test_idx,
         "y_test" => result.y_test,
@@ -278,8 +318,17 @@ function get_or_train(
         "model_type" => nameof(typeof(model))
     )
 
-    println("✅ $name complete: $(round(meta["accuracy"] * 100, digits = 1))%")
+    println("✅ $(config.model_file_name) complete: $(round(meta["accuracy"] * 100, digits = 1))%")
     return (result.mach, meta)
+end
+
+function load_data(dataset::DatasetType, use_flatten)
+    X_org_img, y = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
+
+    X_img = use_flatten ? (dataset == DATASET_MNIST ? flatten_images(X_org_img) : flatten_images_cifar(X_org_img)) : X_org_img
+
+    return (X_img, y)
+
 end
 
 end

@@ -3,7 +3,7 @@
 """
 Comprehensive adversarial attack comparison across all integrated models.
 
-Uses the built-in evaluate_robustness function for clean implementation.
+Uses ExperimentConfig for unified configuration.
 
 Usage:
     julia --project=examples examples/compare_all_models_attacks.jl
@@ -11,7 +11,6 @@ Usage:
 
 include("Experiments.jl")
 using .Experiments
-using .Experiments.Models
 
 using AdversarialAttacks
 using MLJ
@@ -19,72 +18,120 @@ using Flux
 using Printf
 using Dates
 using CategoricalArrays: levelcode
+using Images: channelview
 
 # =========================
-# Configuration
+# Experiment Configurations
 # =========================
 
-# Model configurations: (name, factory_function, use_flatten, attack_configs)
-const MODEL_CONFIGS = [
-    (
-        "CNN", () -> make_mnist_cnn(epochs = 5), false,
-        [(FGSM(epsilon = 0.1f0), 100), (FGSM(epsilon = 0.3f0), 100)],
-    ),
+exp_name = "comparison_all"
+dataset = DATASET_CIFAR10 # DATASET_MNIST, DATASET_CIFAR10
 
-    (
-        "DecisionTree", () -> make_mnist_tree(max_depth = 10), true,
-        [
-            (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 100),
-            (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 100),
-        ],
-    ),
+attackConfigs_FGSM = [(FGSM(epsilon = 0.1f0), 100), (FGSM(epsilon = 0.3f0), 1)]
+attackConfigs_BSR = [
+    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 1),
+    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 1),
+]
 
+const ALL_CONFIGS = [
     (
-        "RandomForest", () -> make_mnist_forest(n_trees = 50), true,
-        [
-            (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 100),
-            (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 100),
-        ],
+        ExperimentConfig(
+            exp_name = exp_name,
+            model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_cnn" : "comparison_cifar_cnn", #     is_cnn = (exp_config.model_file_name == "comparison_mnist_cnn" || exp_config.model_file_name == "comparison_cifar_cnn")
+            model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
+            dataset = dataset,
+            use_flatten = false,
+            force_retrain = false,
+            split_ratio = 0.8,
+            rng = 42,
+            model_hyperparams = (epochs = 5,)
+        ),
+        attackConfigs_FGSM,
     ),
-
     (
-        "KNN", () -> make_mnist_knn(K = 5), true,
-        [
-            (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 100),
-            (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 100),
-        ],
+        ExperimentConfig(
+            exp_name = exp_name,
+            model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_tree" : "comparison_cifar_tree",
+            model_factory = make_mnist_tree,
+            dataset = dataset,
+            use_flatten = true,
+            force_retrain = false,
+            split_ratio = 0.8,
+            rng = 42,
+            model_hyperparams = (max_depth = 10,)
+        ),
+        attackConfigs_BSR,
     ),
-
     (
-        "XGBoost", () -> make_mnist_xgboost(num_round = 50, max_depth = 6), true,
-        [
-            (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 100),
-            (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 100),
-        ],
+        ExperimentConfig(
+            exp_name = exp_name,
+            model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_forest" : "comparison_cifar_forest",
+            model_factory = make_mnist_forest,
+            dataset = dataset,
+            use_flatten = true,
+            force_retrain = false,
+            split_ratio = 0.8,
+            rng = 42,
+            model_hyperparams = (n_trees = 50,)
+        ),
+        attackConfigs_BSR,
     ),
-
     (
-        "LogisticReg", () -> make_mnist_logistic(), true,
-        [
-            (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 100),
-            (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 100),
-        ],
+        ExperimentConfig(
+            exp_name = exp_name,
+            model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_knn" : "comparison_cifar_knn",
+            model_factory = make_mnist_knn,
+            dataset = dataset,
+            use_flatten = true,
+            force_retrain = false,
+            split_ratio = 0.8,
+            rng = 42,
+            model_hyperparams = (K = 10,)
+        ),
+        attackConfigs_BSR,
+    ),
+    (
+        ExperimentConfig(
+            exp_name = exp_name,
+            model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_xgboost" : "comparison_cifar_xgboost",
+            model_factory = make_mnist_xgboost,
+            dataset = dataset,
+            use_flatten = true,
+            force_retrain = false,
+            split_ratio = 0.8,
+            rng = 42,
+            model_hyperparams = (num_round = 50, max_depth = 6)
+        ),
+        attackConfigs_BSR,
+    ),
+    (
+
+        ExperimentConfig(
+            exp_name = exp_name,
+            model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_logistic" : "comparison_cifar_logistic",
+            model_factory = make_mnist_logistic,
+            dataset = dataset,
+            use_flatten = true,
+            force_retrain = false,
+            split_ratio = 0.8,
+            rng = 42,
+            model_hyperparams = NamedTuple()  # default
+        ),
+        attackConfigs_BSR,
     ),
 ]
 
 # =========================
 # Helper Functions
 # =========================
-
 """
     prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_cnn::Bool)
 
 Prepare test samples in format required by evaluate_robustness.
 Returns vector of (data, label) tuples with integer labels.
 """
-function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_cnn::Bool)
-    # Load full MNIST dataset
-    X_img, y_full = load_mnist_for_mlj()
+function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_cnn::Bool, dataset::DatasetType)
+    X_img, y_full = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
 
     # Get test indices
     test_idx = meta["test_idx"]
@@ -103,11 +150,12 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
 
         if use_flatten
             # For tree-based models: flatten to vector
-            x_flat = vec(Float32.(X_test_img[i]))
+            x_flat = dataset == DATASET_CIFAR10 ? x_flat = vec(Float32.(channelview(X_test_img[i]))) : vec(Float32.(X_test_img[i]))
             push!(test_samples, (data = x_flat, label = label_int))
         elseif is_cnn
-            # For CNN: reshape to 4D array (28×28×1×1)
-            x_4d = reshape(Float32.(X_test_img[i]), 28, 28, 1, 1)
+            # For CNN: reshape to 4D array (28×28×1×1) or (32x32x3xN)
+            h, w, c = dataset_shapes[dataset]
+            x_4d = dataset == DATASET_CIFAR10 ? reshape(Float32.(channelview(X_test_img[i])), h, w, c, 1) : reshape(Float32.(X_test_img[i]), h, w, c, 1)
             push!(test_samples, (data = x_4d, label = label_int))
         else
             # For other models: keep as matrix
@@ -179,25 +227,16 @@ end
 
 Evaluate single model with all its attack configurations.
 """
-function evaluate_single_model(
-        model_name::String, factory, use_flatten::Bool,
-        attack_configs
-    )
+function evaluate_single_model(exp_config::ExperimentConfig, attack_configs)
     println("\n" * "="^70)
-    println("📦 Model: $model_name")
+    println("📦 Model: $(exp_config.model_file_name)")
     println("="^70)
 
-    # Load or train model
-    mach, meta = get_or_train(
-        factory,
-        "comparison_$(lowercase(model_name))";
-        force_retrain = false,
-        use_flatten = use_flatten
-    )
+    mach, meta = get_or_train(exp_config)
     println("✓ Loaded (Clean Acc: $(round(meta["accuracy"] * 100, digits = 1))%)")
 
     # Get model in correct format
-    is_cnn = (model_name == "CNN")
+    is_cnn = (exp_config.model_file_name == "comparison_mnist_cnn" || exp_config.model_file_name == "comparison_cifar_cnn")
     model = get_model_for_evaluation(mach, is_cnn)
 
     # Run all attacks
@@ -205,11 +244,11 @@ function evaluate_single_model(
     for (attack, n_samples) in attack_configs
         attack_name = "$(typeof(attack).name.name)_eps$(attack.epsilon)"
 
-        println("\n⚔️  Attack: $attack_name")
+        println("\n⚔️  Attack: $attack_name, Samples: $n_samples")
 
         try
             # Prepare test data with correct format for model type
-            test_samples = prepare_test_samples(mach, meta, n_samples, use_flatten, is_cnn)
+            test_samples = prepare_test_samples(mach, meta, n_samples, exp_config.use_flatten, is_cnn, exp_config.dataset)
 
             # Run evaluation using built-in function
             report = evaluate_robustness(model, attack, test_samples)
@@ -219,7 +258,7 @@ function evaluate_single_model(
 
             # Create result tuple
             result = (
-                model = model_name,
+                model = exp_config.model_file_name,
                 attack = attack_name,
                 clean_acc = metrics.clean_acc,
                 asr = metrics.asr,
@@ -259,8 +298,8 @@ function run_full_comparison()
 
     all_results = []
 
-    for (model_name, factory, use_flatten, attack_configs) in MODEL_CONFIGS
-        results = evaluate_single_model(model_name, factory, use_flatten, attack_configs)
+    for (exp_config, attack_configs) in ALL_CONFIGS
+        results = evaluate_single_model(exp_config, attack_configs)
         append!(all_results, results)
     end
 
@@ -319,13 +358,4 @@ end
 # =========================
 # Main Entry Point
 # =========================
-
-function main()
-    results = run_full_comparison()
-    return results
-end
-
-# Run if executed as script
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
-end
+run_full_comparison()

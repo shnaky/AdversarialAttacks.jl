@@ -20,13 +20,26 @@ println("="^70)
 println("Black-Box Attack on RandomForest Classifier (MNIST)")
 println("="^70)
 
+dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+
+config = ExperimentConfig(
+    exp_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest_exp" : "cifar_blackbox_forest_exp",
+    model_file_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest" : "cifar_blackbox_forest",
+    model_factory = make_mnist_forest,
+    dataset = dataset,
+    use_flatten = true,
+    force_retrain = false,
+    split_ratio = 0.8,
+    rng = 42,
+    model_hyperparams = (n_trees = 200, max_depth = -1)
+)
+
 # =============================================================================
 # [Step 1] Load and Prepare Data
 # =============================================================================
 println("\n[Step 1] Loading MNIST dataset...")
 
-X_img, y = load_mnist_for_mlj()
-X_flat = flatten_images(X_img)  # Flatten images for tabular model
+X_flat, y = load_data(config.dataset, config.use_flatten) # Flatten images for tabular model
 
 println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features")
 
@@ -35,23 +48,13 @@ println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features"
 # =============================================================================
 println("\n[Step 2] Training RandomForest Classifier...")
 
-config = ExperimentConfig("mnist_forest_blackbox", 0.8, 42)
-
-mach, meta = get_or_train(
-    make_mnist_forest,
-    "robust_forest",
-    config = config,
-    force_retrain = false,
-    n_trees = 200,
-    max_depth = -1,
-    use_flatten = true,
-)
+mach, meta = get_or_train(config)
 
 accuracy = meta["accuracy"]
 test_idx = meta["test_idx"]
 y_test = meta["y_test"]
 
-println("  • Experiment: ", config.name)
+println("  • Experiment: ", config.exp_name)
 println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 
 # =============================================================================

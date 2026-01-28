@@ -24,19 +24,23 @@ function run_comparison()
     # ==========================================================================
     # [Step 1] Train/Load CNN Model
     # ==========================================================================
-    println("\n[Step 1] Loading/Training MLJFlux CNN on MNIST...")
+    println("\n[Step 1] Loading/Training MLJFlux CNN ...")
 
-    config = ExperimentConfig("comparison_wb_bb", 0.8, 42)
+    dataset == DATASET_MNIST
 
-    mach, meta = get_or_train(
-        make_mnist_cnn,
-        "comparison_wb_bb_final",
-        config = config,
-        force_retrain = false,
-        epochs = 10,
-        batch_size = 64,
+    config = ExperimentConfig(
+        exp_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist_exp" : "comparison_wb_bb_cifar_exp",
+        model_file_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist" : "comparison_wb_bb_cifar",
+        model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
+        dataset = dataset,
         use_flatten = false,
+        force_retrain = false,
+        split_ratio = 0.8,
+        rng = 42,
+        model_hyperparams = (epochs = 10, batch_size = 64)
     )
+
+    mach, meta = get_or_train(config)
 
     raw_model = extract_flux_model(mach)
 
@@ -59,8 +63,13 @@ function run_comparison()
     # [Step 2] Prepare Test Samples
     # ==========================================================================
     println("\n[Step 2] Preparing test samples...")
-
-    X_img, y = load_mnist_for_mlj()
+    if config.dataset == DATASET_MNIST
+        X_img, y = load_mnist_for_mlj()
+    elseif config.dataset == DATASET_CIFAR10
+        X_img, y = load_cifar10_for_mlj()
+    else
+        throw(ArgumentError("Unsupported DatasetType: $dataset"))
+    end
     N_SAMPLES = 100
 
     test_data = []
@@ -74,9 +83,10 @@ function run_comparison()
         x_img = X_img[idx]
         true_label_idx = levelcode(y_test[i])
 
-        # Convert to Flux format (28×28×1×1)
         x_array = Float32.(channelview(x_img))
-        x_flux = reshape(x_array, 28, 28, 1, 1)
+
+        h, w, c = dataset_shapes[dataset]
+        x_flux = reshape(x_array, h, w, c, 1)
 
         # Check if correctly classified
         pred = flux_model(x_flux)
