@@ -28,7 +28,7 @@ println("=== White-Box FGSM Attack Tutorial ===\n")
 #
 # We load a subset of MNIST (6000 samples) and reshape it into the 4D tensor
 # format that Flux CNNs expect: `(height, width, channels, batch)`.
-# Pixel values are normalized to `[0, 1]`.
+# MLDatasets returns pixel values already in the `[0, 1]` range.
 
 train_x, train_y = MLDatasets.MNIST.traindata()        # 28×28×60000, Vector{Int}
 train_x = train_x[:, :, 1:6000]                        # use 6000 samples for speed
@@ -205,6 +205,6 @@ savefig(fig, joinpath(@__DIR__, "mnist_fgsm.svg")) #hide
 
 # ## Common edits to try
 #
-# - Change `ε` (e.g., `0.0015f0 → 0.003f0`) to make perturbations stronger or weaker.
+# - Change `ε` (e.g., `0.05f0 → 0.1f0` or `0.01f0`) to make perturbations stronger or weaker.
 # - Change `demo_idx` to attack different digits.
 # - Increase training epochs or use more samples for a stronger base classifier.
