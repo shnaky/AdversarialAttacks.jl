@@ -28,13 +28,7 @@ for filename in [
     )
 end
 
-# Ensure all image files produced by tutorials exist alongside the markdown for Documenter.jl references
-for ext in (".svg", ".png", ".jpg")
-    for img in readdir(TUTORIALS_OUTPUT; join=true)
-        endswith(img, ext) || continue
-        cp(img, joinpath(@__DIR__, "src", "tutorials", basename(img)); force=true)
-    end
-end
+
 
 makedocs(
     modules = [AdversarialAttacks],

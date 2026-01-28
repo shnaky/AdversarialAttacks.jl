@@ -97,16 +97,16 @@ println("✓ Trained simple CNN on MNIST subset\n")
 
 demo_idx = 25 # number zero
 
-x0 = X[:, :, :, demo_idx:demo_idx]
+x_orig = X[:, :, :, demo_idx:demo_idx]
 label_onehot = y[:, demo_idx]
 
 true_label = argmax(label_onehot)                 # 1–10 index
 true_digit = Flux.onecold(label_onehot, 0:9)      # 0–9 digit
 
-sample = (data = x0, label = label_onehot)
+sample = (data = x_orig, label = label_onehot)
 
 ## Clean prediction
-orig_pred = model(x0)
+orig_pred = model(x_orig)
 orig_true_prob = orig_pred[true_label]
 
 clean_label = argmax(orig_pred)[1]
@@ -139,9 +139,9 @@ adv_true_prob = adv_pred[true_label]
 adv_label = argmax(adv_pred)[1]
 adv_digit = Flux.onecold(adv_pred, 0:9)[1]
 
-println("\nOriginal image stats   : min=$(minimum(x0)), max=$(maximum(x0))")
+println("\nOriginal image stats   : min=$(minimum(x_orig)), max=$(maximum(x_orig))")
 println("Adversarial image stats: min=$(minimum(x_adv)), max=$(maximum(x_adv))")
-println("Perturbation L∞ norm   : ", maximum(abs.(x_adv .- x0)))
+println("Perturbation L∞ norm   : ", maximum(abs.(x_adv .- x_orig)))
 
 # ## 5. Evaluate the attack
 #
@@ -181,7 +181,7 @@ println("Digits summary: true=$true_digit, clean=$clean_digit, adv=$adv_digit")
 # - **Perturbation**: the pixel-wise difference, showing where the attack changed the image
 
 p1 = heatmap(
-    reshape(x0[:, :, 1, 1], 28, 28),
+    reshape(x_orig[:, :, 1, 1], 28, 28),
     title = "Original (digit=$true_digit)",
     color = :grays, aspect_ratio = 1, size = (300, 300)
 )
@@ -193,7 +193,7 @@ p2 = heatmap(
 )
 
 p3 = heatmap(
-    reshape(x_adv[:, :, 1, 1] .- x0[:, :, 1, 1], 28, 28),
+    reshape(x_adv[:, :, 1, 1] .- x_orig[:, :, 1, 1], 28, 28),
     title = "Perturbation (ε=$ε)",
     color = :RdBu, aspect_ratio = 1, size = (300, 300)
 )
