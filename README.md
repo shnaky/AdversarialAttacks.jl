@@ -111,28 +111,33 @@ julia> println(report)
 
 Dataset
   Total samples evaluated        : 10
-  Clean-correct samples          : 4 / 10
+  Clean-correct samples          : 5 / 10
 
 Clean Performance
-  Clean accuracy                 : 40.0%
+  Clean accuracy                 : 50.0%
 
 Adversarial Performance
-  Adversarial accuracy           : 0.0%
+  Adversarial accuracy           : 20.0%
 
 Attack Effectiveness
-  Successful attacks             : 4 / 4
-  Attack success rate (ASR)      : 100.0%
-  Robustness score (1 - ASR)     : 0.0%
+  Successful attacks             : 4 / 5
+  Attack success rate (ASR)      : 80.0%
+  Robustness score (1 - ASR)     : 20.0%
 
-Perturbation Analysis (L_inf norm)
-  Maximum perturbation           : 0.5
-  Mean perturbation              : 0.5
+Perturbation Analysis (Norms)
+  L_inf Maximum perturbation     : 0.5
+  L_inf Mean perturbation        : 0.5
+  L_2 Maximum perturbation       : 1.0
+  L_2 Mean perturbation          : 1.0
+  L_1 Maximum perturbation       : 2.0
+  L_1 Mean perturbation          : 2.0
 
 Notes
   • Attack success is counted only when:
     - the clean prediction is correct
     - the adversarial prediction is incorrect
 ===================================
+
 ```
 
 ## License

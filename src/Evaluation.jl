@@ -132,7 +132,7 @@ end
 
 """
     calculate_metrics(n_test, num_clean_correct, num_adv_correct,
-                      num_successful_attacks, l_norms)
+                      num_successful_attacks, l_norms, n_attack)
 
 Compute accuracy, attack success, robustness, and perturbation norm statistics
 for adversarial evaluation.

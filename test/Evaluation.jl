@@ -79,12 +79,14 @@ using CategoricalArrays: levels
             :l2 => Float64[],
             :l1 => Float64[]
         )
+        n_attack = 5
         metrics = AdversarialAttacks.calculate_metrics(
             n_test,
             num_clean_correct,
             num_adv_correct,
             num_successful_attacks,
-            l_norms
+            l_norms,
+            n_attack
         )
         @test metrics isa RobustnessReport
 
@@ -105,10 +107,11 @@ using CategoricalArrays: levels
             num_clean_correct,
             num_adv_correct,
             num_successful_attacks,
-            l_norms
+            l_norms,
+            n_attack
         )
         @test metrics.clean_accuracy == num_clean_correct / n_test
-        @test metrics.adv_accuracy == num_adv_correct / n_test
+        @test metrics.adv_accuracy == num_adv_correct / n_attack
         @test metrics.attack_success_rate == num_successful_attacks / num_clean_correct
         @test metrics.robustness_score == 1.0 - metrics.attack_success_rate
         @test metrics.linf_norm_max > 0.0 && metrics.linf_norm_mean > 0.0
