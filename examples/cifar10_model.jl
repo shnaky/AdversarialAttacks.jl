@@ -1,4 +1,9 @@
 using Flux
+using LazyArtifacts
+
+"""
+Providing a model trained on CIFAR10 with an accuracy of around 85%
+"""
 
 """
     load_pretrained_c10_model() -> FluxModel
@@ -6,11 +11,11 @@ using Flux
 Loads the FluxModel state of a model trained on CIFAR-10 from Github and initializes it as a FluxModel.
 
 # Returns
-- `FluxModel`: FluxModel instance with pretrained weights for CIFAR-10 classification.
+- `FluxModel`: A Flux Chain with pretrained weights for CIFAR-10 classification.
 """
 function load_pretrained_c10_model()
 
-    artifact_toml = LazyArtifacts.find_artifacts_toml(".")
+    artifact_toml = LazyArtifacts.find_artifacts_toml("..")
     _hash = artifact_hash("cifar10_model", artifact_toml)
 
     artifact_dir = artifact_path(_hash)

@@ -31,7 +31,7 @@ using BSON: @load
 using Pkg.Artifacts
 using LazyArtifacts
 
-include("cifar10.jl")
+include("cifar10_model.jl")
 
 const MODELS_DIR = joinpath(@__DIR__, ".", "models")
 
