@@ -151,4 +151,5 @@ using DecisionTree
         @test result == 2
     end
 end
+
 end # module

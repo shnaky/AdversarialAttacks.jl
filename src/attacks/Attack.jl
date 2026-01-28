@@ -58,3 +58,4 @@ Generate an adversarial example by applying the attack to a sample.
 function attack(atk::AbstractAttack, model, sample; kwargs...)
     throw(MethodError(attack, (atk, model, sample)))
 end
+

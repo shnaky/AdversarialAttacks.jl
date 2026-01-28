@@ -27,6 +27,12 @@ export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, 
 export blackbox_predict, extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
 
+using BSON: @load
+using Pkg.Artifacts
+using LazyArtifacts
+
+include("cifar10_model.jl")
+
 const MODELS_DIR = joinpath(@__DIR__, ".", "models")
 
 # =========================
@@ -321,5 +327,7 @@ function get_or_train(
     println("✅ $name complete: $(round(meta["accuracy"] * 100, digits = 1))%")
     return (result.mach, meta)
 end
+
+export load_pretrained_c10_model
 
 end

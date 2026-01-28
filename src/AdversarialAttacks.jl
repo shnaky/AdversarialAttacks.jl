@@ -1,5 +1,4 @@
 module AdversarialAttacks
-using Random
 
 # External dependencies
 using DecisionTree: DecisionTreeClassifier, predict_proba
@@ -8,12 +7,14 @@ using MLJ: predict, levels, Machine, machine, table
 using Distributions: pdf
 using LinearAlgebra: norm
 
+using Random
+
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")
 include("attacks/FGSM.jl")
 include("Interface.jl")
 include("Evaluation.jl")
-
+#include("../examples/cifar10.jl")
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
 export FGSM, BasicRandomSearch, SquareAttack
