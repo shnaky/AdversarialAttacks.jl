@@ -16,7 +16,7 @@ train_x = train_x[:, :, 1:6000]                        # use 6000 samples for sp
 train_y = train_y[1:6000]
 
 # 4D tensor for CNN: (height, width, channels, batch)
-X = Float32.(reshape(train_x, 28, 28, 1, :)) ./ 255     # 28×28×1×N
+X = Float32.(reshape(train_x, 28, 28, 1, :))     # 28×28×1×N
 y = Flux.onehotbatch(train_y, 0:9)                      # 10×N one-hot labels
 
 # ------------------------------------
@@ -71,7 +71,7 @@ println("✓ Trained simple CNN on MNIST subset\n")
 # 3. Pick a demo sample
 #    (hand-picked index that works well for FGSM)
 # ------------------------------------
-demo_idx = 2 # number zero
+demo_idx = 25 # number zero
 
 x0 = X[:, :, :, demo_idx:demo_idx]
 label_onehot = y[:, demo_idx]
@@ -97,7 +97,7 @@ println("Clean true prob: ", round(orig_true_prob, digits = 3))
 # ------------------------------------
 # 4. Run FGSM white-box attack
 # ------------------------------------
-ε = 0.0015f0
+ε = 0.05f0
 fgsm_attack = FGSM(epsilon = ε)
 println("\nRunning FGSM with ε = $ε ...")
 
