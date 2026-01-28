@@ -148,10 +148,9 @@ for adversarial evaluation.
 - A `RobustnessReport` containing accuracy, robustness, and norm summary metrics
   (maximum and mean) for all three norm types.
 """
-function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
-
+function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms, n_attack)
     clean_accuracy = num_clean_correct / n_test
-    adv_accuracy = num_adv_correct / n_test
+    adv_accuracy = n_attack > 0 ? num_adv_correct / n_attack : 0.0
     attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
     robustness_score = 1.0 - attack_success_rate
 
@@ -249,6 +248,7 @@ report = evaluate_robustness(model, FGSM(ε=0.1), test_data, num_samples=50)
 println(report)
 ```
 """
+
 function evaluate_robustness(
         model,
         atk,
@@ -266,6 +266,7 @@ function evaluate_robustness(
 
     # aggregators
     num_clean_correct = 0
+    n_attack = 0
     num_adv_correct = 0
     num_successful_attacks = 0
     l_norms = Dict(
@@ -289,21 +290,24 @@ function evaluate_robustness(
             is_clean_correct = (clean_label == true_label)
             num_clean_correct += is_clean_correct
 
-            # adversarial output
-            adv_data = attack(atk, model, sample)
-            adv_pred = predict_fn(adv_data)
-            adv_label = argmax(vec(adv_pred))
-            is_adv_correct = (adv_label == true_label)
-            num_adv_correct += is_adv_correct
+            if is_clean_correct
+                n_attack += 1
+                # adversarial output
+                adv_data = attack(atk, model, sample)
+                adv_pred = predict_fn(adv_data)
+                adv_label = argmax(vec(adv_pred))
+                is_adv_correct = (adv_label == true_label)
+                num_adv_correct += is_adv_correct
 
-            # Compute all three norm metrics
-            push!(l_norms[:linf], compute_norm(sample.data, adv_data, Inf))
-            push!(l_norms[:l2], compute_norm(sample.data, adv_data, 2))
-            push!(l_norms[:l1], compute_norm(sample.data, adv_data, 1))
+                # Compute all three norm metrics
+                push!(l_norms[:linf], compute_norm(sample.data, adv_data, Inf))
+                push!(l_norms[:l2], compute_norm(sample.data, adv_data, 2))
+                push!(l_norms[:l1], compute_norm(sample.data, adv_data, 1))
 
-            # successful attack condition (a flip happened in prediction)
-            if is_clean_correct && !is_adv_correct
-                num_successful_attacks += 1
+                # successful attack condition (a flip happened in prediction)
+                if !is_adv_correct
+                    num_successful_attacks += 1
+                end
             end
         catch e
             @warn "Failed to evaluate sample $i" exception = e
@@ -314,7 +318,7 @@ function evaluate_robustness(
         end
     end
 
-    report = calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
+    report = calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms, n_attack)
     println("Evaluation complete!")
     return report
 end
