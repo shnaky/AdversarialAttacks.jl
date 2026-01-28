@@ -151,7 +151,8 @@ for adversarial evaluation.
 function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
 
     clean_accuracy = num_clean_correct / n_test
-    adv_accuracy = num_adv_correct / n_test
+    adv_accuracy = num_clean_correct > 0 ? num_adv_correct / num_clean_correct : 0.0
+
     attack_success_rate = num_clean_correct > 0 ? num_successful_attacks / num_clean_correct : 0.0
     robustness_score = 1.0 - attack_success_rate
 
@@ -289,21 +290,23 @@ function evaluate_robustness(
             is_clean_correct = (clean_label == true_label)
             num_clean_correct += is_clean_correct
 
-            # adversarial output
-            adv_data = attack(atk, model, sample)
-            adv_pred = predict_fn(adv_data)
-            adv_label = argmax(vec(adv_pred))
-            is_adv_correct = (adv_label == true_label)
-            num_adv_correct += is_adv_correct
+            if is_clean_correct
+                # adversarial output
+                adv_data = attack(atk, model, sample)
+                adv_pred = predict_fn(adv_data)
+                adv_label = argmax(vec(adv_pred))
+                is_adv_correct = (adv_label == true_label)
+                num_adv_correct += is_adv_correct
 
-            # Compute all three norm metrics
-            push!(l_norms[:linf], compute_norm(sample.data, adv_data, Inf))
-            push!(l_norms[:l2], compute_norm(sample.data, adv_data, 2))
-            push!(l_norms[:l1], compute_norm(sample.data, adv_data, 1))
+                # Compute all three norm metrics
+                push!(l_norms[:linf], compute_norm(sample.data, adv_data, Inf))
+                push!(l_norms[:l2], compute_norm(sample.data, adv_data, 2))
+                push!(l_norms[:l1], compute_norm(sample.data, adv_data, 1))
 
-            # successful attack condition (a flip happened in prediction)
-            if is_clean_correct && !is_adv_correct
-                num_successful_attacks += 1
+                # successful attack condition (a flip happened in prediction)
+                if !is_adv_correct
+                    num_successful_attacks += 1
+                end
             end
         catch e
             @warn "Failed to evaluate sample $i" exception = e
