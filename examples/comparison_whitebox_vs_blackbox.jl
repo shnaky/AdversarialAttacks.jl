@@ -15,6 +15,7 @@ using CategoricalArrays: levelcode
 using ImageCore: channelview
 using Statistics: mean
 using Printf
+using MLJ
 
 function run_comparison()
     println("="^70)
@@ -26,8 +27,8 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 1] Loading/Training MLJFlux CNN ...")
 
-    dataset = DATASET_CIFAR10 # DATASET_MNIST, DATASET_CIFAR10
-    N_SAMPLES = 100
+    dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+    N_SAMPLES = 200
 
     # ==========================================
     # ✅ comparison_wb_bb_mnist complete: 97.2%
@@ -49,7 +50,6 @@ function run_comparison()
     )
 
     mach, meta = get_or_train(config)
-
     raw_model = extract_flux_model(mach)
 
     # Ensure model has softmax at the end
@@ -71,28 +71,33 @@ function run_comparison()
     # [Step 2] Prepare Test Samples
     # ==========================================================================
     println("\n[Step 2] Preparing test samples...")
-    X_img, y = config.dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
+
+    X_img, _ = load_data(config.dataset, config.use_flatten)
+    Xtest_img = X_img[test_idx]
+    y_pred_test = predict_mode(mach, Xtest_img)
+
     n_available = min(N_SAMPLES, length(test_idx))
     test_data = []
 
     for i in 1:n_available
         idx = test_idx[i]
         x_img = X_img[idx]
-        true_label_idx = levelcode(y_test[i])
+        true_label = y_test[i]
+
+        # Use precomputed MLJ prediction for this test index
+        y_mlj = y_pred_test[i]
+        if y_mlj != true_label
+            continue
+        end
 
         x_array = Float32.(channelview(x_img))
-
         h, w, c = dataset_shapes[dataset]
         x_flux = reshape(x_array, h, w, c, 1)
 
-        # Check if correctly classified
-        pred = flux_model(x_flux)
-        pred_label = argmax(pred[:, 1])
+        true_label_idx = levelcode(true_label)
+        y_onehot = Flux.onehot(true_label_idx, 1:length(levels(y_test)))
 
-        if pred_label == true_label_idx
-            y_onehot = Flux.onehot(true_label_idx, 1:10)
-            push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
-        end
+        push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
     end
 
     println("  • Selected $(length(test_data)) correctly classified samples")
@@ -104,29 +109,22 @@ function run_comparison()
 
     fgsm = FGSM(epsilon = 0.1f0)
 
-    wb_success = 0
     wb_perturbations = Float64[]
     wb_conf_drops = Float64[]
 
     wb_time = @elapsed begin
         for (i, sample) in enumerate(test_data)
             pred_clean = flux_model(sample.data)
-            clean_label = argmax(pred_clean[:, 1])
             clean_conf = pred_clean[sample.true_idx, 1]
 
             x_adv = attack(fgsm, flux_model, sample)
 
             pred_adv = flux_model(x_adv)
-            adv_label = argmax(pred_adv[:, 1])
             adv_conf = pred_adv[sample.true_idx, 1]
 
             linf = maximum(abs.(x_adv .- sample.data))
             push!(wb_perturbations, Float64(linf))
             push!(wb_conf_drops, Float64(clean_conf - adv_conf))
-
-            if clean_label == sample.true_idx && adv_label != sample.true_idx
-                wb_success += 1
-            end
 
             if i % 20 == 0
                 print("  Progress: $i/$(length(test_data)) samples\r")
@@ -152,29 +150,22 @@ function run_comparison()
 
     brs = BasicRandomSearch(epsilon = 0.2f0, max_iter = 100)
 
-    bb_success = 0
     bb_perturbations = Float64[]
     bb_conf_drops = Float64[]
 
     bb_time = @elapsed begin
         for (i, sample) in enumerate(test_data)
             pred_clean = flux_model(sample.data)
-            clean_label = argmax(pred_clean[:, 1])
             clean_conf = pred_clean[sample.true_idx, 1]
 
             x_adv = attack(brs, flux_model, sample)
 
             pred_adv = flux_model(x_adv)
-            adv_label = argmax(pred_adv[:, 1])
             adv_conf = pred_adv[sample.true_idx, 1]
 
             linf = maximum(abs.(x_adv .- sample.data))
             push!(bb_perturbations, Float64(linf))
             push!(bb_conf_drops, Float64(clean_conf - adv_conf))
-
-            if clean_label == sample.true_idx && adv_label != sample.true_idx
-                bb_success += 1
-            end
 
             if i % 20 == 0
                 print("  Progress: $i/$(length(test_data)) samples\r")
@@ -201,10 +192,9 @@ function run_comparison()
     println("="^70)
 
     n_samples = length(test_data)
+    bb_asr = bb_report.attack_success_rate * 100
+    wb_asr = wb_report.attack_success_rate * 100
 
-    # Manual calculations
-    wb_asr = (wb_success / n_samples) * 100
-    bb_asr = (bb_success / n_samples) * 100
 
     println("\n╔═════════════════════════════╦═══════════════╦═══════════════╗")
     println("║ Metric                      ║  White-Box    ║  Black-Box    ║")
@@ -212,57 +202,56 @@ function run_comparison()
     println("║ Attack Method               ║  FGSM         ║  RandomSearch ║")
     @printf(
         "║ Attack Success Rate (ASR)   ║   %5.1f%%      ║   %5.1f%%      ║\n",
-        wb_asr,
-        bb_asr
+        wb_report.attack_success_rate * 100,
+        bb_report.attack_success_rate * 100,
     )
     @printf(
         "║ Successful Attacks          ║   %3d/%3d      ║   %3d/%3d      ║\n",
-        wb_success,
-        n_samples,
-        bb_success,
-        n_samples
+        wb_report.num_successful_attacks,
+        wb_report.num_clean_correct,
+        bb_report.num_successful_attacks,
+        bb_report.num_clean_correct,
     )
     println("╠═════════════════════════════╬═══════════════╬═══════════════╣")
     @printf(
         "║ Clean Accuracy              ║   %5.1f%%      ║   %5.1f%%      ║\n",
         wb_report.clean_accuracy * 100,
-        bb_report.clean_accuracy * 100
+        bb_report.clean_accuracy * 100,
     )
     @printf(
         "║ Adversarial Accuracy        ║   %5.1f%%      ║   %5.1f%%      ║\n",
         wb_report.adv_accuracy * 100,
-        bb_report.adv_accuracy * 100
+        bb_report.adv_accuracy * 100,
     )
     @printf(
         "║ Robustness Score (1-ASR)    ║   %5.1f%%      ║   %5.1f%%      ║\n",
         wb_report.robustness_score * 100,
-        bb_report.robustness_score * 100
+        bb_report.robustness_score * 100,
     )
     println("╠═════════════════════════════╬═══════════════╬═══════════════╣")
     @printf(
         "║ Avg L∞ Perturbation         ║   %.4f      ║   %.4f      ║\n",
         wb_report.linf_norm_mean,
-        bb_report.linf_norm_mean
+        bb_report.linf_norm_mean,
     )
     @printf(
         "║ Max L∞ Perturbation         ║   %.4f      ║   %.4f      ║\n",
         wb_report.linf_norm_max,
-        bb_report.linf_norm_max
+        bb_report.linf_norm_max,
     )
     println("╠═════════════════════════════╬═══════════════╬═══════════════╣")
-    @printf("║ Queries per Sample          ║      1        ║    100        ║\n")
+    @printf("║ Queries per Sample          ║      1        ║    %3d        ║\n", brs.max_iter)
     @printf(
         "║ Total Time (s)              ║   %6.2f      ║   %6.2f      ║\n",
         wb_time,
-        bb_time
+        bb_time,
     )
     @printf(
         "║ Time per Sample (ms)        ║   %6.1f      ║   %6.1f      ║\n",
         (wb_time / n_samples) * 1000,
-        (bb_time / n_samples) * 1000
+        (bb_time / n_samples) * 1000,
     )
     println("╚═════════════════════════════╩═══════════════╩═══════════════╝")
-
     # ==========================================================================
     # [Step 6] Key Insights
     # ==========================================================================

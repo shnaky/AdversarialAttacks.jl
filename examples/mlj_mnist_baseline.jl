@@ -31,36 +31,52 @@ function main()
     N_SAMPLES = 100
 
     # ==========================================
-    #   • Experiment: baseline_cifar_tree_exp
-    #   • Clean accuracy: 27.23%
+    #   • Experiment: baseline_mnist_forest_exp
+    #   • Clean accuracy: 96.51%
+    # ==========================================
+    config = ExperimentConfig(
+        exp_name = "baseline_mnist_forest_exp",
+        model_file_name = "baseline_mnist_forest",
+        model_factory = make_forest,
+        dataset = DATASET_MNIST,
+        use_flatten = true,
+        force_retrain = false,
+        split_ratio = 0.8,
+        rng = 42,
+        model_hyperparams = (n_trees = 200, max_depth = -1)
+    )
+
+    # ==========================================
+    #   • Experiment: baseline_cifar_forest_exp
+    #   • Clean accuracy: 46.03%
     # ==========================================
     # config = ExperimentConfig(
-    #     exp_name = "baseline_cifar_tree_exp",
-    #     model_file_name = "baseline_cifar_tree",
-    #     model_factory = make_tree,
+    #     exp_name = "baseline_cifar_forest_exp",
+    #     model_file_name = "baseline_cifar_forest",
+    #     model_factory = make_forest,
     #     dataset = DATASET_CIFAR10,
     #     use_flatten = true,
     #     force_retrain = false,
     #     split_ratio = 0.8,
     #     rng = 42,
-    #     model_hyperparams = (rng = 42, max_depth = 10)
+    #     model_hyperparams = (n_trees = 200, max_depth = -1)
     # )
 
     # ==========================================
     #   • Experiment: baseline_mnist_tree_exp
     #   • Clean accuracy: 86.48%
     # ==========================================
-    config = ExperimentConfig(
-        exp_name = "baseline_mnist_tree_exp",
-        model_file_name = "baseline_mnist_tree",
-        model_factory = make_tree,
-        dataset = DATASET_MNIST,
-        use_flatten = true,
-        force_retrain = false,
-        split_ratio = 0.8,
-        rng = 42,
-        model_hyperparams = (rng = 42, max_depth = 10)
-    )
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_tree_exp",
+    #     model_file_name = "baseline_mnist_tree",
+    #     model_factory = make_tree,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     split_ratio = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (rng = 42, max_depth = 10)
+    # )
 
     # ==========================================
     #   • Experiment: baseline_mnist_knn_exp
@@ -109,6 +125,23 @@ function main()
     #     rng = 42,
     #     model_hyperparams = NamedTuple()  # default
     # )
+
+    # ==========================================
+    #   • Experiment: baseline_cifar_tree_exp
+    #   • Clean accuracy: 27.23%
+    # ==========================================
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_cifar_tree_exp",
+    #     model_file_name = "baseline_cifar_tree",
+    #     model_factory = make_tree,
+    #     dataset = DATASET_CIFAR10,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     split_ratio = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (rng = 42, max_depth = 10)
+    # )
+
 
     # =========================================================================
     # [Step 1] Load and Prepare Data
@@ -189,17 +222,19 @@ function main()
     println("ROBUSTNESS EVALUATION RESULTS")
     println("="^70)
 
-    bb_asr = bb_report.attack_success_rate * 100
-
     println("\n╔═════════════════════════════╦═══════════════╗")
     println("║ Metric                      ║  Black-Box    ║")
     println("╠═════════════════════════════╬═══════════════╣")
     println("║ Model                       ║  DecisionTree ║")
     println("║ Attack Method               ║  RandomSearch ║")
-    @printf("║ Attack Success Rate (ASR)   ║   %5.1f%%     ║\n", bb_asr)
+    @printf(
+        "║ Attack Success Rate (ASR)   ║   %5.1f%%     ║\n",
+        bb_report.attack_success_rate * 100
+    )
     @printf(
         "║ Successful Attacks          ║   %3d/%3d      ║\n",
-        bb_report.num_successful_attacks, bb_report.num_clean_correct
+        bb_report.num_successful_attacks,
+        bb_report.num_clean_correct,
     )
     println("╠═════════════════════════════╬═══════════════╣")
     @printf(
@@ -224,8 +259,9 @@ function main()
         bb_report.linf_norm_max
     )
     println("╠═════════════════════════════╬═══════════════╣")
-    @printf("║ Queries per Sample          ║    200        ║\n")
+    @printf("║ Queries per Sample          ║    %3d        ║\n", attack_config.max_iter)
     println("╚═════════════════════════════╩═══════════════╝")
+
 
     # =========================================================================
     # [Step 6] Key Insights
@@ -256,7 +292,7 @@ function main()
         ensemble methods like RandomForest.
         """,
         accuracy * 100,
-        bb_asr,
+        bb_report.attack_success_rate * 100,
         bb_report.num_successful_attacks,
         bb_report.num_clean_correct,
         bb_report.linf_norm_mean,

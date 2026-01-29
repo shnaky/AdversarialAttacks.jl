@@ -123,18 +123,19 @@ println("\n" * "="^70)
 println("ROBUSTNESS EVALUATION RESULTS")
 println("="^70)
 
-n_samples = length(test_data)
-bb_asr = bb_report.attack_success_rate * 100
-
 println("\n╔═════════════════════════════╦═══════════════╗")
 println("║ Metric                      ║  Black-Box    ║")
 println("╠═════════════════════════════╬═══════════════╣")
 println("║ Model                       ║  RandomForest ║")
 println("║ Attack Method               ║  RandomSearch ║")
-@printf("║ Attack Success Rate (ASR)   ║   %5.1f%%      ║\n", bb_asr)
+@printf(
+    "║ Attack Success Rate (ASR)   ║   %5.1f%%      ║\n",
+    bb_report.attack_success_rate * 100
+)
 @printf(
     "║ Successful Attacks          ║   %3d/%3d      ║\n",
-    bb_report.num_successful_attacks, bb_report.num_clean_correct
+    bb_report.num_successful_attacks,
+    bb_report.num_clean_correct,
 )
 println("╠═════════════════════════════╬═══════════════╣")
 @printf(
@@ -159,8 +160,12 @@ println("╠══════════════════════�
     bb_report.linf_norm_max
 )
 println("╠═════════════════════════════╬═══════════════╣")
-@printf("║ Queries per Sample          ║    200        ║\n")
+@printf(
+    "║ Queries per Sample          ║    %3d        ║\n",
+    brs.max_iter
+)
 println("╚═════════════════════════════╩═══════════════╝")
+
 
 # =============================================================================
 # [Step 6] Key Insights
@@ -190,7 +195,7 @@ println("="^70)
     query-based exploration of the decision boundary.
     """,
     accuracy * 100,
-    bb_asr,
+    bb_report.attack_success_rate * 100,
     bb_report.num_successful_attacks,
     bb_report.num_clean_correct,
     bb_report.linf_norm_mean,
