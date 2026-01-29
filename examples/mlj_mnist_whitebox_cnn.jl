@@ -5,6 +5,9 @@ White-Box Attack on MLJFlux CNN
 
 Demonstrates FGSM gradient-based attack on a CNN classifier.
 Uses evaluate_robustness() to assess attack effectiveness across multiple samples.
+
+Usage:
+    julia --project=examples examples/mlj_mnist_whitebox_cnn.jl
 """
 
 include("Experiments.jl")

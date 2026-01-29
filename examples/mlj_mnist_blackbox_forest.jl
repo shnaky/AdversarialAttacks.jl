@@ -6,6 +6,9 @@ Black-Box Attack on MLJ RandomForest
 Demonstrates query-based adversarial attack on a traditional ML ensemble model.
 Unlike neural networks, tree-based models have no gradients, making only
 black-box attacks feasible.
+
+Usage:
+    julia --project=examples examples/mlj_mnist_blackbox_forest.jl
 """
 
 include("Experiments.jl")

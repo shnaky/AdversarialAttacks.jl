@@ -5,6 +5,9 @@ White-Box vs Black-Box Attack Comparison on Neural Networks
 
 Demonstrates the efficiency and effectiveness differences between gradient-based
 (white-box) and query-based (black-box) adversarial attacks on the same CNN model.
+
+Usage:
+    julia --project=examples examples/comparison_whitebox_vs_blackbox.jl
 """
 
 include("Experiments.jl")

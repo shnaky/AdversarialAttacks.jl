@@ -1,4 +1,4 @@
-# examples/mlj_mnist_blackbox_tree.jl
+# examples/mlj_mnist_baseline.jl
 
 """
 Black-Box Attack on Decision Tree Classifier
@@ -6,6 +6,9 @@ Black-Box Attack on Decision Tree Classifier
 Demonstrates query-based adversarial attacks on a traditional ML model
 using BasicRandomSearch. Unlike neural networks, decision trees have
 no gradients, making only black-box attacks feasible.
+
+Usage:
+    julia --project=examples examples/mlj_mnist_baseline.jl
 """
 
 include("Experiments.jl")
