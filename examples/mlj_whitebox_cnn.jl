@@ -1,14 +1,17 @@
-# examples/mlj_mnist_whitebox_cnn.jl
+# examples/mlj_whitebox_cnn.jl
 
 """
 White-Box Attack on MLJFlux CNN
 
 Demonstrates FGSM gradient-based attack on a CNN classifier.
 Uses evaluate_robustness() to assess attack effectiveness across multiple samples.
+
+Usage:
+    julia --project=examples examples/mlj_whitebox_cnn.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using Flux
 using CategoricalArrays: levelcode
@@ -36,25 +39,29 @@ config = ExperimentConfig(
     dataset = dataset,
     use_flatten = false,
     force_retrain = false,
-    split_ratio = 0.8,
+    fraction_train = 0.8,
     rng = 42,
-    model_hyperparams = (epochs = 5, batch_size = 64)
+    model_hyperparams = (epochs = 5, batch_size = 64),
 )
 
 # 1. Load data as images
 println("\n[1/4] Loading dataset...")
-X_img, y = config.dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
+X_img, y = load_data(config.dataset, config.use_flatten)
 
 # 2. Train MLJFlux ImageClassifier
 println("\n[2/4] Training MLJFlux CNN...")
 mach, meta = get_or_train(config)
 
-accuracy = meta["accuracy"]
+acc_meta = meta["accuracy"]
 test_idx = meta["test_idx"]
 y_test = meta["y_test"]
 
 println("  • Experiment: ", config.exp_name)
-println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
+println("  • Clean accuracy: ", round(acc_meta * 100, digits = 2), "%")
+
+# 2.5 Recompute MLJ test predictions (optional but consistent)
+Xtest_img = X_img[test_idx]
+y_pred_test = predict_mode(mach, Xtest_img)
 
 # 3. Extract Flux model
 flux_model = extract_flux_model(mach)
@@ -62,8 +69,7 @@ flux_model = extract_flux_model(mach)
 # 4. Prepare test samples
 println("\n[3/4] Preparing test samples...")
 
-label_levels = levels(y_test)  # CategoricalArray level order
-
+label_levels = levels(y_test)
 n_available = min(N_SAMPLES, length(test_idx))
 test_data = []
 
@@ -72,8 +78,8 @@ for i in 1:n_available
     x_img = X_img[idx]
     true_label = y_test[i]
 
-    # Verify correct classification by using MLJ
-    y_mlj = predict_mode(mach, [x_img])[1]
+    # Use precomputed MLJ prediction for this test index
+    y_mlj = y_pred_test[i]
     if y_mlj != true_label
         continue
     end

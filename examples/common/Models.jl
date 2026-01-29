@@ -1,5 +1,3 @@
-module Models
-
 using MLJ
 using MLJFlux
 using Flux
@@ -258,6 +256,4 @@ function make_xgboost(;
         seed = rng,
         kwargs...,
     )
-end
-
 end

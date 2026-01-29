@@ -1,4 +1,4 @@
-# examples/compare_all_models_attacks.jl
+# examples/comparison_all_models_attacks.jl
 
 """
 Comprehensive adversarial attack comparison across all integrated models.
@@ -6,11 +6,11 @@ Comprehensive adversarial attack comparison across all integrated models.
 Uses ExperimentConfig for unified configuration.
 
 Usage:
-    julia --project=examples examples/compare_all_models_attacks.jl
+    julia --project=examples examples/comparison_all_models_attacks.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 
 using AdversarialAttacks
 using MLJ
@@ -62,7 +62,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = false,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (epochs = 5,),
         ),
@@ -76,7 +76,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (max_depth = 10,)
         ),
@@ -90,7 +90,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (n_trees = 50,)
         ),
@@ -104,7 +104,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (K = 10,)
         ),
@@ -118,7 +118,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (num_round = 50, max_depth = 6)
         ),
@@ -133,7 +133,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = NamedTuple()  # default
         ),
@@ -155,8 +155,7 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
     test_idx = meta["test_idx"]
     y_test = meta["y_test"]
 
-    X_org_img, y_full = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
-    X_img = use_flatten ? (dataset == DATASET_MNIST ? flatten_images(X_org_img) : flatten_images_cifar(X_org_img)) : X_org_img
+    X_img, y_full = load_data(dataset, use_flatten)
 
     label_levels = levels(y_test)  # CategoricalArray level order
 

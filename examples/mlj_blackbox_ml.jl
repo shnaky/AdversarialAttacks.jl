@@ -1,15 +1,18 @@
-# examples/mlj_mnist_blackbox_forest.jl
+# examples/mlj_blackbox_ml.jl
 
 """
-Black-Box Attack on MLJ RandomForest
+Black-Box Attack on MLJ traditional ML models
 
 Demonstrates query-based adversarial attack on a traditional ML ensemble model.
 Unlike neural networks, tree-based models have no gradients, making only
 black-box attacks feasible.
+
+Usage:
+    julia --project=examples examples/mlj_blackbox_mlj_mnist_blackbox_ml.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using MLJ: mode, predict, table
 using CategoricalArrays: levelcode
@@ -17,7 +20,7 @@ using Flux  # For onehot encoding
 using Printf
 
 println("="^70)
-println("Black-Box Attack on RandomForest Classifier (MNIST)")
+println("Black-Box Attack on Traditional ML")
 println("="^70)
 
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
@@ -37,7 +40,7 @@ config = ExperimentConfig(
     dataset = dataset,
     use_flatten = true,
     force_retrain = false,
-    split_ratio = 0.8,
+    fraction_train = 0.8,
     rng = 42,
     model_hyperparams = (n_trees = 200, max_depth = -1)
 )
@@ -123,18 +126,19 @@ println("\n" * "="^70)
 println("ROBUSTNESS EVALUATION RESULTS")
 println("="^70)
 
-n_samples = length(test_data)
-bb_asr = bb_report.attack_success_rate * 100
-
 println("\n╔═════════════════════════════╦═══════════════╗")
 println("║ Metric                      ║  Black-Box    ║")
 println("╠═════════════════════════════╬═══════════════╣")
 println("║ Model                       ║  RandomForest ║")
 println("║ Attack Method               ║  RandomSearch ║")
-@printf("║ Attack Success Rate (ASR)   ║   %5.1f%%      ║\n", bb_asr)
+@printf(
+    "║ Attack Success Rate (ASR)   ║   %5.1f%%      ║\n",
+    bb_report.attack_success_rate * 100
+)
 @printf(
     "║ Successful Attacks          ║   %3d/%3d      ║\n",
-    bb_report.num_successful_attacks, bb_report.num_clean_correct
+    bb_report.num_successful_attacks,
+    bb_report.num_clean_correct,
 )
 println("╠═════════════════════════════╬═══════════════╣")
 @printf(
@@ -159,8 +163,12 @@ println("╠══════════════════════�
     bb_report.linf_norm_max
 )
 println("╠═════════════════════════════╬═══════════════╣")
-@printf("║ Queries per Sample          ║    200        ║\n")
+@printf(
+    "║ Queries per Sample          ║    %3d        ║\n",
+    brs.max_iter
+)
 println("╚═════════════════════════════╩═══════════════╝")
+
 
 # =============================================================================
 # [Step 6] Key Insights
@@ -190,7 +198,7 @@ println("="^70)
     query-based exploration of the decision boundary.
     """,
     accuracy * 100,
-    bb_asr,
+    bb_report.attack_success_rate * 100,
     bb_report.num_successful_attacks,
     bb_report.num_clean_correct,
     bb_report.linf_norm_mean,
