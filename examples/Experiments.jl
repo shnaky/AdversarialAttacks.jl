@@ -23,7 +23,7 @@ using Dates
 export ExperimentConfig, run_experiment
 export load_mnist_for_mlj, flatten_images, load_cifar10_for_mlj, flatten_images_cifar
 export make_mnist_cnn, make_cifar_cnn
-export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
+export make_forest, make_tree, make_knn, make_logistic, make_xgboost
 export extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
 export DatasetType, DATASET_MNIST, DATASET_CIFAR10

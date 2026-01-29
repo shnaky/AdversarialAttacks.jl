@@ -33,7 +33,7 @@ N_SAMPLES = 100
 config = ExperimentConfig(
     exp_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest_exp" : "cifar_blackbox_forest_exp",
     model_file_name = dataset == DATASET_MNIST ? "mnist_blackbox_forest" : "cifar_blackbox_forest",
-    model_factory = make_mnist_forest,
+    model_factory = make_forest,
     dataset = dataset,
     use_flatten = true,
     force_retrain = false,

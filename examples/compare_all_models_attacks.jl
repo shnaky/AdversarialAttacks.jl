@@ -72,7 +72,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_tree" : "comparison_cifar_tree",
-            model_factory = make_mnist_tree,
+            model_factory = make_tree,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -86,7 +86,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_forest" : "comparison_cifar_forest",
-            model_factory = make_mnist_forest,
+            model_factory = make_forest,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -100,7 +100,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_knn" : "comparison_cifar_knn",
-            model_factory = make_mnist_knn,
+            model_factory = make_knn,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -114,7 +114,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_xgboost" : "comparison_cifar_xgboost",
-            model_factory = make_mnist_xgboost,
+            model_factory = make_xgboost,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -129,7 +129,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_logistic" : "comparison_cifar_logistic",
-            model_factory = make_mnist_logistic,
+            model_factory = make_logistic,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,

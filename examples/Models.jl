@@ -4,7 +4,7 @@ using MLJ, MLJFlux, Flux, Optimisers, MLUtils
 using NearestNeighborModels
 
 export make_mnist_cnn, make_cifar_cnn
-export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
+export make_forest, make_tree, make_knn, make_logistic, make_xgboost
 export extract_flux_model
 export SimpleConvBuilder
 
@@ -109,45 +109,45 @@ end
 # Traditional ML Models (Black-box)
 # =========================
 """
-    make_mnist_forest(; rng=42, n_trees=100, max_depth=-1)
+    make_forest(; rng=42, n_trees=100, max_depth=-1)
 """
-function make_mnist_forest(; rng::Int = 42, n_trees::Int = 100, max_depth::Int = -1, kwargs...)
+function make_forest(; rng::Int = 42, n_trees::Int = 100, max_depth::Int = -1, kwargs...)
     model = RandomForestClassifier(n_trees = n_trees, max_depth = max_depth, rng = rng, kwargs...)
     return model
 end
 
 """
-    make_mnist_tree(; rng=42, max_depth=5)
+    make_tree(; rng=42, max_depth=5)
 
 Construct a single `DecisionTreeClassifier` for MNIST features.
 Useful as a simpler black-box baseline.
 """
-function make_mnist_tree(; rng::Int = 42, max_depth::Int = 5, kwargs...)
+function make_tree(; rng::Int = 42, max_depth::Int = 5, kwargs...)
     model = DecisionTreeClassifier(max_depth = max_depth, rng = rng, kwargs...)
     return model
 end
 
 """
-    make_mnist_knn(; K::Int = 5, weights = :uniform)
+    make_knn(; K::Int = 5, weights = :uniform)
 
 K-Nearest Neighbors classifier for MNIST.
 """
-function make_mnist_knn(; K::Int = 5, weights::KNNKernel = Uniform(), kwargs...)
+function make_knn(; K::Int = 5, weights::KNNKernel = Uniform(), kwargs...)
     model = KNNClassifier(K = K, weights = weights, kwargs...)
     return model
 end
 
-function make_mnist_logistic(; lambda::Float64 = 1.0e-4, penalty = :l2, kwargs...)
+function make_logistic(; lambda::Float64 = 1.0e-4, penalty = :l2, kwargs...)
     model = LogisticClassifier(lambda = lambda, penalty = penalty, kwargs...)
     return model
 end
 
 """
-    make_mnist_xgboost(; num_round::Int = 100, max_depth::Int = 6, eta::Float64 = 0.3)
+    make_xgboost(; num_round::Int = 100, max_depth::Int = 6, eta::Float64 = 0.3)
 
 XGBoost classifier for MNIST.
 """
-function make_mnist_xgboost(;
+function make_xgboost(;
         num_round::Int = 100,
         max_depth::Int = 6,
         eta::Float64 = 0.3,
