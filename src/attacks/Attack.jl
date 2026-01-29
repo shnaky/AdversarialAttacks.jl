@@ -42,7 +42,7 @@ Human-readable name for an attack.
 name(atk::AbstractAttack)::String = string(typeof(atk))
 
 """
-    attack(atk::AbstractAttack, model, sample; kwargs...) -> adversarial_sample
+    attack(atk::AbstractAttack, model, sample; detailed_result=false, kwargs...)
 
 Generate an adversarial example by applying the attack to a sample.
 
@@ -50,11 +50,20 @@ Generate an adversarial example by applying the attack to a sample.
 - `atk::AbstractAttack`: Attack configuration and algorithm
 - `model`: Target model to attack
 - `sample`: Input sample to perturb (e.g., image, text)
+- `detailed_result::Bool=false`: 
+  - `false` (default): Returns adversarial example only (backward compatible)
+  - `true`: Returns `AttackResult` with metrics
 - `kwargs...`: Additional attack-specific parameters
 
 # Returns
-- Adversarial example with the same shape as the input sample
+- `detailed_result=false`: adversarial example only
+- `detailed_result=true`: NamedTuple with fields:
+  - `x_adv`: Adversarial example
+  - `success`: Attack succeeded
+  - `queries_used`: Number of model queries
+  - `final_label`: Final prediction
+
 """
-function attack(atk::AbstractAttack, model, sample; kwargs...)
+function attack(atk::AbstractAttack, model, sample; detailed_result::Bool = false, kwargs...)
     throw(MethodError(attack, (atk, model, sample)))
 end
