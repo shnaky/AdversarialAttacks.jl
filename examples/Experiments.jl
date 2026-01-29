@@ -24,13 +24,10 @@ using Dates
 # Public API
 # ------------------------------------------------------------------
 export ExperimentConfig, run_experiment
-export load_mnist_for_mlj, flatten_images, load_cifar10_for_mlj, flatten_images_cifar
-export make_mnist_cnn, make_cifar_cnn
+export make_mnist_cnn, make_cifar_cnn, extract_flux_model
 export make_forest, make_tree, make_knn, make_logistic, make_xgboost
-export extract_flux_model
 export save_experiment_result, load_experiment_result, get_or_train
-export DatasetType, DATASET_MNIST, DATASET_CIFAR10
-export load_data, dataset_shapes
+export DatasetType, DATASET_MNIST, DATASET_CIFAR10, load_data, dataset_shapes
 
 const MODELS_DIR = joinpath(@__DIR__, "models")
 
@@ -92,13 +89,13 @@ dataset_shapes = Dict(
 # ------------------------------------------------------------------
 
 """
-    flatten_images(X_img)
+    flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
 
 Convert a vector of H×W×C image arrays into a `DataFrame` suitable for
 tabular MLJ models (trees, linear models, etc.). Each pixel becomes one
 feature column (e.g. `x1, x2, ...`).
 """
-function flatten_images(X_img::Vector{<:AbstractArray})
+function flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
     n = length(X_img)
     d = length(vec(X_img[1]))
 
@@ -111,12 +108,12 @@ function flatten_images(X_img::Vector{<:AbstractArray})
 end
 
 """
-    flatten_images_cifar(X_img)
+    flatten_images(X_img::Vector{<:AbstractMatrix{<:RGB}})
 
 Flatten a vector of `RGB` images into a `DataFrame` with one row per
 image and 3×32×32 columns (channel-first after `channelview`).
 """
-function flatten_images_cifar(X_img::Vector{Matrix{RGB{Float32}}})
+function flatten_images(X_img::Vector{<:AbstractMatrix{<:RGB}})
     h, w, c = dataset_shapes[DATASET_CIFAR10]
     n = length(X_img)
     d = h * w * c
@@ -202,11 +199,7 @@ to tabular features if `use_flatten == true`.
 function load_data(dataset::DatasetType, use_flatten::Bool)
     X_img, y = load_dataset_for_mlj(Val(dataset))
 
-    X = if use_flatten
-        dataset == DATASET_MNIST ? flatten_images(X_img) : flatten_images_cifar(X_img)
-    else
-        X_img
-    end
+    X = use_flatten ? flatten_images(X_img) : X_img
 
     return X, y
 end
