@@ -28,6 +28,8 @@ function main()
     # [Step 0] Config the Experiment
     # =========================================================================
 
+    N_SAMPLES = 100
+
     # ==========================================
     #   • Experiment: baseline_cifar_tree_exp
     #   • Clean accuracy: 27.23%
@@ -35,7 +37,7 @@ function main()
     # config = ExperimentConfig(
     #     exp_name = "baseline_cifar_tree_exp",
     #     model_file_name = "baseline_cifar_tree",
-    #     model_factory = make_mnist_tree,
+    #     model_factory = make_tree,
     #     dataset = DATASET_CIFAR10,
     #     use_flatten = true,
     #     force_retrain = false,
@@ -51,7 +53,7 @@ function main()
     config = ExperimentConfig(
         exp_name = "baseline_mnist_tree_exp",
         model_file_name = "baseline_mnist_tree",
-        model_factory = make_mnist_tree,
+        model_factory = make_tree,
         dataset = DATASET_MNIST,
         use_flatten = true,
         force_retrain = false,
@@ -67,7 +69,7 @@ function main()
     # config = ExperimentConfig(
     #     exp_name = "baseline_mnist_knn_exp",
     #     model_file_name = "baseline_mnist_knn",
-    #     model_factory = make_mnist_knn,
+    #     model_factory = make_knn,
     #     dataset = DATASET_MNIST,
     #     use_flatten = true,
     #     force_retrain = false,
@@ -83,7 +85,7 @@ function main()
     # config = ExperimentConfig(
     #     exp_name = "baseline_mnist_xgboost_exp",
     #     model_file_name = "baseline_mnist_xgboost",
-    #     model_factory = make_mnist_xgboost,
+    #     model_factory = make_xgboost,
     #     dataset = DATASET_MNIST,
     #     use_flatten = true,
     #     force_retrain = false,
@@ -99,7 +101,7 @@ function main()
     # config = ExperimentConfig(
     #     exp_name = "baseline_mnist_logistic_exp",
     #     model_file_name = "baseline_mnist_logistic",
-    #     model_factory = make_mnist_logistic,
+    #     model_factory = make_logistic,
     #     dataset = DATASET_MNIST,
     #     use_flatten = true,
     #     force_retrain = false,
@@ -135,7 +137,6 @@ function main()
     # =========================================================================
     println("\n[Step 3] Preparing test samples...")
 
-    N_SAMPLES = 100
     n_available = min(N_SAMPLES, length(test_idx))
     test_data = []
 

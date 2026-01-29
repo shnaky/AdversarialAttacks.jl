@@ -1,114 +1,131 @@
 module Models
 
-using MLJFlux, Flux, Optimisers
-
 using MLJ
+using MLJFlux
+using Flux
+using Optimisers
+using MLUtils
 using NearestNeighborModels
 
-export make_mnist_cnn, make_cifar_cnn
-export make_mnist_forest, make_mnist_tree, make_mnist_knn, make_mnist_logistic, make_mnist_xgboost
-export extract_flux_model
+# ------------------------------------------------------------------
+# Public API
+# ------------------------------------------------------------------
 export SimpleConvBuilder
+export make_mnist_cnn, make_cifar_cnn
+export make_forest, make_tree, make_knn, make_logistic, make_xgboost
+export extract_flux_model
 
+# ------------------------------------------------------------------
+# Aliases for MLJ models
+# ------------------------------------------------------------------
 const DecisionTreeClassifier = @load DecisionTreeClassifier pkg = DecisionTree
 const RandomForestClassifier = @load RandomForestClassifier pkg = DecisionTree
-const KNNClassifier = @load KNNClassifier pkg = NearestNeighborModels
-const LogisticClassifier = @load LogisticClassifier pkg = MLJLinearModels
-const XGBoostClassifier = @load XGBoostClassifier pkg = XGBoost
+const KNNClassifier = @load KNNClassifier         pkg = NearestNeighborModels
+const LogisticClassifier = @load LogisticClassifier    pkg = MLJLinearModels
+const XGBoostClassifier = @load XGBoostClassifier     pkg = XGBoost
 
+# For convenience, keep a local alias
 const ImageClassifier = MLJFlux.ImageClassifier
 
-# =========================
-# Neural Network Models (White-box)
-# =========================
+# ------------------------------------------------------------------
+# Convolutional builders (white-box models)
+# ------------------------------------------------------------------
+
+"""
+    SimpleConvBuilder
+
+Lightweight configuration object for constructing a small ConvNet
+suitable for MNIST or CIFAR-10 through `MLJFlux.ImageClassifier`.
+
+The actual network is defined in `MLJFlux.build(::SimpleConvBuilder, ...)`.
+"""
 struct SimpleConvBuilder
     filter_size::Int
     channels1::Int
     channels2::Int
-    h::Int
-    w::Int
-end
-
-"""
-    FlattenLayer
-
-Named flatten layer for reliable serialization.
-Reshapes 4D image tensor (H, W, C, N) to 2D matrix (flat_dim, N).
-"""
-struct FlattenLayer end
-
-function (f::FlattenLayer)(x)
-    return reshape(x, :, size(x, ndims(x)))
+    channels3::Int
 end
 
 """
     MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
 
-Build small ConvNet for image classification.
-Assumes 28×28 input images.
+Builds a simple convolutional classifier for image inputs.
+
+- `n_in`      : tuple `(height, width)`
+- `n_out`     : number of classes
+- `n_channels`: number of input channels (1 for gray, 3 for RGB)
+
+The resulting architecture is:
+
+Conv -> MaxPool -> Conv -> MaxPool -> Conv -> MaxPool -> Flatten -> Dense
 """
 function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
-    k, c1, c2 = b.filter_size, b.channels1, b.channels2
-    @assert isodd(k)
-    p = div(k - 1, 2)
-    init = Flux.glorot_uniform(rng)
-    h = b.h; w = b.w; h, w = div(h, 2), div(w, 2); h, w = div(h, 2), div(w, 2)
-    flat_dim = h * w * c2
-    return Chain(
+    k, c1, c2, c3 = b.filter_size, b.channels1, b.channels2, b.channels3
+    @assert isodd(k) "filter_size must be odd to keep spatial dimensions aligned"
+
+    p = div(k - 1, 2)                 # symmetric padding
+    init = Flux.glorot_uniform(rng)      # deterministic initializer
+
+    front = Chain(
         Conv((k, k), n_channels => c1, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
         Conv((k, k), c1 => c2, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
-        FlattenLayer(),
-        Dense(flat_dim, 128, relu, init = init),
-        Dense(128, n_out, init = init)
+        Conv((k, k), c2 => c3, pad = (p, p), relu, init = init),
+        MaxPool((2, 2)),
+        MLUtils.flatten,
     )
+
+    # `Flux.outputsize` returns a tuple of sizes for a single sample.
+    # For image classifiers we only need the feature dimension.
+    d = first(Flux.outputsize(front, (n_in..., n_channels, 1)))
+
+    return Chain(front, Dense(d, n_out, init = init))
 end
 
-"""
-    make_mnist_cnn(; rng=42, epochs=5, batch_size=64)
+# ------------------------------------------------------------------
+# CNN wrappers for MLJFlux
+# ------------------------------------------------------------------
 
-Create MLJFlux ImageClassifier for MNIST.
+"""
+    make_mnist_cnn(; rng=42, epochs=5, batch_size=64, kwargs...)
+
+Construct an `MLJFlux.ImageClassifier` configured for MNIST-like data
+(single-channel 28×28 images) using a small ConvNet.
+
+Additional keyword arguments are forwarded to `ImageClassifier`.
 """
 function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64, kwargs...)
-    builder = SimpleConvBuilder(3, 16, 32, 28, 28)
+    builder = SimpleConvBuilder(3, 16, 32, 32)
 
-    model = ImageClassifier(
+    return ImageClassifier(
         builder = builder,
         loss = Flux.Losses.crossentropy,
         optimiser = Optimisers.Adam(0.001),
         epochs = epochs,
         batch_size = batch_size,
         rng = rng,
-        kwargs...
+        kwargs...,
     )
-
-    return model
 end
 
 """
-    extract_flux_model(mach)
+    make_cifar_cnn(; epochs=10, batch_size=64, optimiser=Adam(), loss=crossentropy, kwargs...)
 
-Extract underlying Flux.Chain from MLJFlux machine.
-"""
-function extract_flux_model(mach)
-    fp = fitted_params(mach)
-    return fp.chain
-end
+Construct an `MLJFlux.ImageClassifier` for CIFAR-10-like data
+(3-channel 32×32 images) using the same ConvNet recipe as for MNIST,
+but with typically more training epochs.
 
-"""
-    make_cifar_cnn(; kwargs...)
-
-CNN builder for CIFAR10 (3channels, 32x32) 
+All hyperparameters can be overridden via keywords.
 """
 function make_cifar_cnn(;
-        epochs = 10,
-        batch_size = 64,
+        epochs::Int = 10,
+        batch_size::Int = 64,
         optimiser = Adam(),
         loss = Flux.Losses.crossentropy,
-        kwargs...
+        kwargs...,
     )
-    builder = SimpleConvBuilder(3, 16, 32, 32, 32)
+    builder = SimpleConvBuilder(3, 16, 32, 32)
 
     return ImageClassifier(
         builder = builder,
@@ -116,69 +133,131 @@ function make_cifar_cnn(;
         batch_size = batch_size,
         optimiser = optimiser,
         loss = loss,
-        kwargs...
+        kwargs...,
     )
 end
 
+"""
+    extract_flux_model(mach) -> Flux.Chain
 
-# =========================
-# Traditional ML Models (Black-box)
-# =========================
+Extract the underlying `Flux.Chain` from a fitted MLJFlux `machine`.
+
+Note: The returned chain does **not** include any MLJ preprocessing
+such as coercions or rescaling; it corresponds only to the raw
+neural network part used by `ImageClassifier`.
 """
-    make_mnist_forest(; rng=42, n_trees=100, max_depth=-1)
+function extract_flux_model(mach)
+    fp = fitted_params(mach)
+    return fp.chain
+end
+
+# ------------------------------------------------------------------
+# Classical ML models (black-box baselines)
+# ------------------------------------------------------------------
+
 """
-function make_mnist_forest(; rng::Int = 42, n_trees::Int = 100, max_depth::Int = -1, kwargs...)
-    model = RandomForestClassifier(n_trees = n_trees, max_depth = max_depth, rng = rng, kwargs...)
-    return model
+    make_forest(; rng=42, n_trees=100, max_depth=-1, kwargs...) -> RandomForestClassifier
+
+Generic random forest classifier factory.
+
+Suitable for both MNIST and CIFAR-10 once the images are flattened
+into tabular features. Additional keyword arguments are forwarded to
+`RandomForestClassifier`.
+"""
+function make_forest(;
+        rng::Int = 42,
+        n_trees::Int = 100,
+        max_depth::Int = -1,
+        kwargs...,
+    )
+    return RandomForestClassifier(
+        n_trees = n_trees,
+        max_depth = max_depth,
+        rng = rng,
+        kwargs...,
+    )
 end
 
 """
-    make_mnist_tree(; rng=42, max_depth=5)
+    make_tree(; rng=42, max_depth=5, kwargs...) -> DecisionTreeClassifier
 
-Construct a single `DecisionTreeClassifier` for MNIST features.
-Useful as a simpler black-box baseline.
+Single CART decision tree baseline. Works on any tabular representation
+of MNIST or CIFAR-10 features.
 """
-function make_mnist_tree(; rng::Int = 42, max_depth::Int = 5, kwargs...)
-    model = DecisionTreeClassifier(max_depth = max_depth, rng = rng, kwargs...)
-    return model
+function make_tree(; rng::Int = 42, max_depth::Int = 5, kwargs...)
+    return DecisionTreeClassifier(
+        max_depth = max_depth,
+        rng = rng,
+        kwargs...,
+    )
 end
 
 """
-    make_mnist_knn(; K::Int = 5, weights = :uniform)
+    make_knn(; K=5, weights=Uniform(), kwargs...) -> KNNClassifier
 
-K-Nearest Neighbors classifier for MNIST.
+k-Nearest Neighbors classifier for flattened image features.
+
+- `K`       : number of neighbors
+- `weights` : instance of `KNNKernel` (e.g. `Uniform()`, `DistanceWeighted()`)
+
+Additional keyword arguments are forwarded to `KNNClassifier`.
 """
-function make_mnist_knn(; K::Int = 5, weights::KNNKernel = Uniform(), kwargs...)
-    model = KNNClassifier(K = K, weights = weights, kwargs...)
-    return model
+function make_knn(; K::Int = 5, weights::KNNKernel = Uniform(), kwargs...)
+    return KNNClassifier(
+        K = K,
+        weights = weights,
+        kwargs...,
+    )
 end
 
-function make_mnist_logistic(; lambda::Float64 = 1.0e-4, penalty = :l2, kwargs...)
-    model = LogisticClassifier(lambda = lambda, penalty = penalty, kwargs...)
-    return model
+"""
+    make_logistic(; lambda=1e-4, penalty=:l2, kwargs...) -> LogisticClassifier
+
+Multinomial logistic regression baseline on tabular features.
+
+- `lambda` : ℓ2/ℓ1 regularization strength
+- `penalty`: `:l2` or `:l1`
+
+Additional keyword arguments are forwarded to `LogisticClassifier`.
+"""
+function make_logistic(; lambda::Float64 = 1.0e-4, penalty = :l2, kwargs...)
+    return LogisticClassifier(
+        lambda = lambda,
+        penalty = penalty,
+        kwargs...,
+    )
 end
 
 """
-    make_mnist_xgboost(; num_round::Int = 100, max_depth::Int = 6, eta::Float64 = 0.3)
+    make_xgboost(; num_round=100, max_depth=6, eta=0.3, rng=42, kwargs...) -> XGBoostClassifier
 
-XGBoost classifier for MNIST.
+Generic XGBoost classifier factory for tabular features.
+
+This is dataset-agnostic and can be used for MNIST or CIFAR-10
+once images are flattened. Hyperparameters mirror common XGBoost
+naming:
+
+- `num_round` : number of boosting iterations
+- `max_depth` : depth of each tree
+- `eta`       : learning rate
+- `rng`       : random seed
+
+Additional keyword arguments are forwarded to `XGBoostClassifier`.
 """
-function make_mnist_xgboost(;
+function make_xgboost(;
         num_round::Int = 100,
         max_depth::Int = 6,
         eta::Float64 = 0.3,
         rng::Int = 42,
-        kwargs...
+        kwargs...,
     )
-
-    model = XGBoostClassifier(
+    return XGBoostClassifier(
         num_round = num_round,
         max_depth = max_depth,
         eta = eta,
         seed = rng,
-        kwargs...
+        kwargs...,
     )
-    return model
 end
 
 end

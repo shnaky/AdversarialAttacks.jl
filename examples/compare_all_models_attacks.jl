@@ -72,7 +72,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_tree" : "comparison_cifar_tree",
-            model_factory = make_mnist_tree,
+            model_factory = make_tree,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -86,7 +86,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_forest" : "comparison_cifar_forest",
-            model_factory = make_mnist_forest,
+            model_factory = make_forest,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -100,7 +100,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_knn" : "comparison_cifar_knn",
-            model_factory = make_mnist_knn,
+            model_factory = make_knn,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -114,7 +114,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_xgboost" : "comparison_cifar_xgboost",
-            model_factory = make_mnist_xgboost,
+            model_factory = make_xgboost,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -129,7 +129,7 @@ const ALL_CONFIGS = [
         ExperimentConfig(
             exp_name = exp_name,
             model_file_name = dataset == DATASET_MNIST ? "comparison_mnist_logistic" : "comparison_cifar_logistic",
-            model_factory = make_mnist_logistic,
+            model_factory = make_logistic,
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
@@ -153,16 +153,19 @@ Returns vector of (data, label) tuples with integer labels.
 function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_cnn::Bool, dataset::DatasetType)
     flux_model = is_cnn ? extract_flux_model(mach) : nothing
     test_idx = meta["test_idx"]
+    y_test = meta["y_test"]
 
     X_org_img, y_full = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
     X_img = use_flatten ? (dataset == DATASET_MNIST ? flatten_images(X_org_img) : flatten_images_cifar(X_org_img)) : X_org_img
 
-    n_available = min(n_samples, length(test_idx))
+    label_levels = levels(y_test)  # CategoricalArray level order
 
+    n_available = min(n_samples, length(test_idx))
     test_data = []
 
     for i in 1:n_available
         global_idx = test_idx[i]
+        true_label = y_test[i]
 
         true_label_obj = y_full[global_idx]
         true_label_idx = levelcode(true_label_obj)
@@ -170,19 +173,20 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
         if is_cnn
             x_img = X_img[global_idx]
 
-            x_array = Float32.(dataset == DATASET_CIFAR10 ? channelview(x_img) : x_img)
+            y_mlj = predict_mode(mach, [x_img])[1]
+            if y_mlj != true_label
+                continue
+            end
 
             # For CNN: reshape to 4D array (28×28×1×1) or (32x32x3xN)
+            x_array = Float32.(channelview(x_img))
             h, w, c = dataset_shapes[dataset]
             x_flux = reshape(x_array, h, w, c, 1)
 
-            pred = flux_model(x_flux)
-            pred_label = argmax(pred[:, 1])
+            true_label_idx = levelcode(true_label)
+            y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
 
-            if pred_label == true_label_idx
-                y_onehot = Flux.onehot(true_label_idx, 1:10)
-                push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
-            end
+            push!(test_data, (data = x_flux, label = y_onehot))
         else
             # For tree-based models: flatten to vector
             x_flat = Float32.(Vector(X_img[global_idx, :]))
@@ -191,8 +195,9 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
             X_tbl = table(x_row)
             pred_prob = predict(mach, X_tbl)[1]
             pred_label = mode(pred_prob)
+
             if pred_label == true_label_obj
-                y_onehot = Flux.onehot(true_label_idx, 1:10)
+                y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
                 push!(test_data, (data = x_flat, label = y_onehot, true_idx = true_label_idx))
             end
         end
