@@ -208,7 +208,7 @@ Returns a named tuple with:
 - `mach`     : fitted MLJ machine
 - `train_idx`: training indices
 - `test_idx` : test indices
-- `ŷ_test`  : probabilistic predictions on the test set
+- `y_pred_test`  : probabilistic predictions on the test set
 - `y_test`   : true labels on the test set
 - `config`   : the `ExperimentConfig` used
 - `report`   : small summary named tuple (currently only `accuracy`)
@@ -229,10 +229,10 @@ function run_experiment(model, X, y; config::ExperimentConfig)
     fit!(mach, verbosity = 1)
 
     # Probabilistic predictions on the test set
-    ŷ_test = predict(mach, Xtest)
+    y_pred_test = predict(mach, Xtest)
 
     # Convert to point predictions via `mode`
-    acc = accuracy(mode.(ŷ_test), y[test])
+    acc = accuracy(mode.(y_pred_test), y[test])
 
     report = (accuracy = acc,)
 
@@ -240,7 +240,7 @@ function run_experiment(model, X, y; config::ExperimentConfig)
         mach = mach,
         train_idx = train,
         test_idx = test,
-        ŷ_test = ŷ_test,
+        y_pred_test = y_pred_test,
         y_test = y[test],
         config = config,
         report = report,
