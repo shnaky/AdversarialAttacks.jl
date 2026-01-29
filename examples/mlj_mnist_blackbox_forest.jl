@@ -70,9 +70,10 @@ println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 println("\n[Step 3] Preparing test samples...")
 
 N_SAMPLES = 100
+n_available = min(N_SAMPLES, length(test_idx))
 test_data = []
 
-for i in 1:min(N_SAMPLES, length(test_idx))
+for i in 1:n_available
     idx = test_idx[i]
     x_vec = Float32.(Vector(X_flat[idx, :]))
 

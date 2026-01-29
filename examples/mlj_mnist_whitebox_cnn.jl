@@ -41,13 +41,8 @@ config = ExperimentConfig(
 
 # 1. Load data as images
 println("\n[1/4] Loading dataset...")
-if config.dataset == DATASET_MNIST
-    X_img, y = load_mnist_for_mlj()
-elseif config.dataset == DATASET_CIFAR10
-    X_img, y = load_cifar10_for_mlj()
-else
-    throw(ArgumentError("Unsupported DatasetType: $config.dataset"))
-end
+X_img, y = config.dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
+
 # 2. Train MLJFlux ImageClassifier
 println("\n[2/4] Training MLJFlux CNN...")
 mach, meta = get_or_train(config)
@@ -66,9 +61,11 @@ flux_model = extract_flux_model(mach)
 println("\n[3/4] Preparing test samples...")
 
 N_SAMPLES = 100
+n_available = min(N_SAMPLES, length(test_idx))
+
 test_data = []
 
-for i in 1:min(N_SAMPLES, length(test_idx))
+for i in 1:n_available
     idx = test_idx[i]
     x_img = X_img[idx]
     true_label_idx = levelcode(y_test[i])

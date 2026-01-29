@@ -26,11 +26,15 @@ using Images: channelview
 
 exp_name = "comparison_all"
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+num_of_samples = 10
 
-attackConfigs_FGSM = [(FGSM(epsilon = 0.1f0), 100), (FGSM(epsilon = 0.3f0), 1)]
+attackConfigs_FGSM = [
+    (FGSM(epsilon = 0.1f0), num_of_samples),
+    (FGSM(epsilon = 0.3f0), num_of_samples),
+]
 attackConfigs_BSR = [
-    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), 1),
-    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), 1),
+    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), num_of_samples),
+    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), num_of_samples),
 ]
 
 # ==========================================
@@ -147,39 +151,56 @@ Prepare test samples in format required by evaluate_robustness.
 Returns vector of (data, label) tuples with integer labels.
 """
 function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_cnn::Bool, dataset::DatasetType)
-    X_img, y_full = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
-
-    # Get test indices
+    flux_model = is_cnn ? extract_flux_model(mach) : nothing
     test_idx = meta["test_idx"]
+
+    X_org_img, y_full = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
+    X_img = use_flatten ? (dataset == DATASET_MNIST ? flatten_images(X_org_img) : flatten_images_cifar(X_org_img)) : X_org_img
+
     n_available = min(n_samples, length(test_idx))
-    sample_idx = test_idx[1:n_available]
 
-    X_test_img = X_img[sample_idx]
-    y_test = y_full[sample_idx]
-
-    # Create test samples in required format
-    test_samples = []
+    test_data = []
 
     for i in 1:n_available
-        # Convert CategoricalValue to Int
-        label_int = levelcode(y_test[i])
+        global_idx = test_idx[i]
 
-        if use_flatten
-            # For tree-based models: flatten to vector
-            x_flat = dataset == DATASET_CIFAR10 ? x_flat = vec(Float32.(channelview(X_test_img[i]))) : vec(Float32.(X_test_img[i]))
-            push!(test_samples, (data = x_flat, label = label_int))
-        elseif is_cnn
+        true_label_obj = y_full[global_idx]
+        true_label_idx = levelcode(true_label_obj)
+
+        if is_cnn
+            x_img = X_img[global_idx]
+
+            x_array = Float32.(dataset == DATASET_CIFAR10 ? channelview(x_img) : x_img)
+
             # For CNN: reshape to 4D array (28×28×1×1) or (32x32x3xN)
             h, w, c = dataset_shapes[dataset]
-            x_4d = dataset == DATASET_CIFAR10 ? reshape(Float32.(channelview(X_test_img[i])), h, w, c, 1) : reshape(Float32.(X_test_img[i]), h, w, c, 1)
-            push!(test_samples, (data = x_4d, label = label_int))
+            x_flux = reshape(x_array, h, w, c, 1)
+
+            pred = flux_model(x_flux)
+            pred_label = argmax(pred[:, 1])
+
+            if pred_label == true_label_idx
+                y_onehot = Flux.onehot(true_label_idx, 1:10)
+                push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
+            end
         else
-            # For other models: keep as matrix
-            push!(test_samples, (data = X_test_img[i], label = label_int))
+            # For tree-based models: flatten to vector
+            x_flat = Float32.(Vector(X_img[global_idx, :]))
+
+            x_row = reshape(x_flat, 1, :)
+            X_tbl = table(x_row)
+            pred_prob = predict(mach, X_tbl)[1]
+            pred_label = mode(pred_prob)
+            if pred_label == true_label_obj
+                y_onehot = Flux.onehot(true_label_idx, 1:10)
+                push!(test_data, (data = x_flat, label = y_onehot, true_idx = true_label_idx))
+            end
         end
     end
 
-    return test_samples
+    println("  • Selected $(length(test_data)) correctly classified samples")
+
+    return test_data
 end
 
 """
@@ -228,8 +249,8 @@ function extract_metrics_from_report(report)
         clean_acc = report.clean_accuracy,
         asr = report.attack_success_rate,
         robustness = report.robustness_score,
-        linf_mean = linf_mean,
-        linf_max = linf_max,
+        linf_mean = report.linf_norm_mean,
+        linf_max = report.linf_norm_max,
     )
 end
 
@@ -266,8 +287,13 @@ function evaluate_single_model(exp_config::ExperimentConfig, attack_configs)
             # Prepare test data with correct format for model type
             test_samples = prepare_test_samples(mach, meta, n_samples, exp_config.use_flatten, is_cnn, exp_config.dataset)
 
+            println("length(test_samples)", length(test_samples))
             # Run evaluation using built-in function
-            report = evaluate_robustness(model, attack, test_samples)
+            report = evaluate_robustness(
+                model, attack, test_samples,
+                num_samples = length(test_samples)
+            )
+            println(report)
 
             # Extract metrics safely
             metrics = extract_metrics_from_report(report)

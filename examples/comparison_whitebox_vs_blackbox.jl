@@ -70,22 +70,13 @@ function run_comparison()
     # [Step 2] Prepare Test Samples
     # ==========================================================================
     println("\n[Step 2] Preparing test samples...")
-    if config.dataset == DATASET_MNIST
-        X_img, y = load_mnist_for_mlj()
-    elseif config.dataset == DATASET_CIFAR10
-        X_img, y = load_cifar10_for_mlj()
-    else
-        throw(ArgumentError("Unsupported DatasetType: $dataset"))
-    end
-    N_SAMPLES = 100
+    X_img, y = config.dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
 
+    N_SAMPLES = 100
+    n_available = min(N_SAMPLES, length(test_idx))
     test_data = []
 
-    for i in 1:length(test_idx)
-        if length(test_data) >= N_SAMPLES
-            break
-        end
-
+    for i in 1:n_available
         idx = test_idx[i]
         x_img = X_img[idx]
         true_label_idx = levelcode(y_test[i])
