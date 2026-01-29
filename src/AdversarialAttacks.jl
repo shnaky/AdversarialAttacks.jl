@@ -11,7 +11,6 @@ using LinearAlgebra: norm
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")
 include("attacks/FGSM.jl")
-include("Interface.jl")
 include("Evaluation.jl")
 
 # Export attack types
@@ -19,16 +18,13 @@ export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
 export FGSM, BasicRandomSearch, SquareAttack
 
 # Export attack interface functions
-export name
+export name, attack
 
 # Export model interface functions
 export predict, loss, params
 
 # Export evaluation functions
 export RobustnessReport
-export evaluate_robustness, make_prediction_function, evaluation_curve
-
-# Export high-level interface
-export attack, benchmark
+export evaluate_robustness, make_prediction_function, evaluation_curve, benchmark
 
 end

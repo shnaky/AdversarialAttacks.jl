@@ -1,15 +1,18 @@
-# examples/mlj_mnist_blackbox_tree.jl
+# examples/mlj_baseline.jl
 
 """
-Black-Box Attack on Decision Tree Classifier
+Black-Box Attack on Traditional ML model
 
 Demonstrates query-based adversarial attacks on a traditional ML model
 using BasicRandomSearch. Unlike neural networks, decision trees have
 no gradients, making only black-box attacks feasible.
+
+Usage:
+    julia --project=examples examples/mlj_baseline.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using Flux
 using MLJ: mode, predict, table
@@ -18,79 +21,162 @@ using Printf
 
 function main()
     println("="^70)
-    println("Black-Box Attack on Decision Tree Classifier (MNIST)")
+    println("Black-Box Attack on Traditional ML model")
     println("="^70)
+
+    # MNIST • Dataset: 60000 samples, 784 features
+    # CIFAR10 • Dataset: 50000 samples, 3072 features
+
+    # =========================================================================
+    # [Step 0] Config the Experiment
+    # =========================================================================
+
+    N_SAMPLES = 100
+
+    # ==========================================
+    #   • Experiment: baseline_mnist_forest_exp
+    #   • Clean accuracy: 96.51%
+    # ==========================================
+    config = ExperimentConfig(
+        exp_name = "baseline_mnist_forest_exp",
+        model_file_name = "baseline_mnist_forest",
+        model_factory = make_forest,
+        dataset = DATASET_MNIST,
+        use_flatten = true,
+        force_retrain = true,
+        fraction_train = 0.8,
+        rng = 42,
+        model_hyperparams = (n_trees = 200, max_depth = -1)
+    )
+
+    # ==========================================
+    #   • Experiment: baseline_cifar_forest_exp
+    #   • Clean accuracy: 46.03%
+    # ==========================================
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_cifar_forest_exp",
+    #     model_file_name = "baseline_cifar_forest",
+    #     model_factory = make_forest,
+    #     dataset = DATASET_CIFAR10,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     fraction_train = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (n_trees = 200, max_depth = -1)
+    # )
+
+    # ==========================================
+    #   • Experiment: baseline_mnist_tree_exp
+    #   • Clean accuracy: 86.48%
+    # ==========================================
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_tree_exp",
+    #     model_file_name = "baseline_mnist_tree",
+    #     model_factory = make_tree,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     fraction_train = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (rng = 42, max_depth = 10)
+    # )
+
+    # ==========================================
+    #   • Experiment: baseline_mnist_knn_exp
+    #   • Clean accuracy: 96.58%
+    # ==========================================
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_knn_exp",
+    #     model_file_name = "baseline_mnist_knn",
+    #     model_factory = make_knn,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     fraction_train = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (K = 10,)
+    # )
+
+    # ==========================================
+    #   • Experiment: baseline_mnist_xgboost_exp
+    #   • Clean accuracy: 96.99%
+    # ==========================================
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_xgboost_exp",
+    #     model_file_name = "baseline_mnist_xgboost",
+    #     model_factory = make_xgboost,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     fraction_train = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (num_round = 50,)
+    # )
+
+    # ==========================================
+    #  • Experiment: baseline_mnist_logistic_exp
+    #  • Clean accuracy: 54.2%
+    # ==========================================
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_mnist_logistic_exp",
+    #     model_file_name = "baseline_mnist_logistic",
+    #     model_factory = make_logistic,
+    #     dataset = DATASET_MNIST,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     fraction_train = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = NamedTuple()  # default
+    # )
+
+    # ==========================================
+    #   • Experiment: baseline_cifar_tree_exp
+    #   • Clean accuracy: 27.23%
+    # ==========================================
+    # config = ExperimentConfig(
+    #     exp_name = "baseline_cifar_tree_exp",
+    #     model_file_name = "baseline_cifar_tree",
+    #     model_factory = make_tree,
+    #     dataset = DATASET_CIFAR10,
+    #     use_flatten = true,
+    #     force_retrain = false,
+    #     fraction_train = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (rng = 42, max_depth = 10)
+    # )
+
 
     # =========================================================================
     # [Step 1] Load and Prepare Data
     # =========================================================================
-    println("\n[Step 1] Loading MNIST dataset...")
-
-    X_img, y = load_mnist_for_mlj()
-    X_flat = flatten_images(X_img)
+    println("\n[Step 1] Loading dataset...")
+    X_flat, y = load_data(config.dataset, config.use_flatten)
 
     println("  • Dataset: $(size(X_flat, 1)) samples, $(size(X_flat, 2)) features")
 
     # =========================================================================
     # [Step 2] Train Decision Tree
     # =========================================================================
-    println("\n[Step 2] Training Decision Tree Classifier...")
+    println("\n[Step 2] Training $(config.model_file_name)...")
 
-    config = ExperimentConfig("mnist_tree_blackbox", 0.8, 42)
-
-    mach, meta = get_or_train(
-        make_mnist_tree,
-        "simple_tree",
-        config = config,
-        force_retrain = false,
-        rng = 42,
-        max_depth = 10,
-        use_flatten = true,
-    )
-
-    # mach, meta = get_or_train(
-    #     make_mnist_knn,
-    #     "simple_knn",
-    #     config = config,
-    #     force_retrain = false,
-    #     K = 7,
-    #     use_flatten = true,
-    # )
-
-    # mach, meta = get_or_train(
-    #     make_mnist_xgboost,
-    #     "simple_xgboost",
-    #     config = config,
-    #     force_retrain = false,
-    #     num_round = 50,
-    #     use_flatten = true,
-    # )
-
-    # mach, meta = get_or_train(
-    #     make_mnist_logistic,
-    #     "simple_nlogistic",
-    #     config = config,
-    #     force_retrain = false,
-    #     use_flatten = true,
-    # )
+    mach, meta = get_or_train(config)
 
     accuracy = meta["accuracy"]
     test_idx = meta["test_idx"]
     y_test = meta["y_test"]
 
-    println("  • Experiment: ", config.name)
+    println("  • Experiment: ", config.exp_name)
     println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
-    println("  • Tree depth: 10 levels")
 
     # =========================================================================
     # [Step 3] Prepare Test Samples
     # =========================================================================
     println("\n[Step 3] Preparing test samples...")
 
-    N_SAMPLES = 100
+    n_available = min(N_SAMPLES, length(test_idx))
     test_data = []
 
-    for i in 1:min(N_SAMPLES, length(test_idx))
+    for i in 1:n_available
         idx = test_idx[i]
         x_flat = Float32.(Vector(X_flat[idx, :]))
 
@@ -139,17 +225,19 @@ function main()
     println("ROBUSTNESS EVALUATION RESULTS")
     println("="^70)
 
-    bb_asr = bb_report.attack_success_rate * 100
-
     println("\n╔═════════════════════════════╦═══════════════╗")
     println("║ Metric                      ║  Black-Box    ║")
     println("╠═════════════════════════════╬═══════════════╣")
     println("║ Model                       ║  DecisionTree ║")
     println("║ Attack Method               ║  RandomSearch ║")
-    @printf("║ Attack Success Rate (ASR)   ║   %5.1f%%      ║\n", bb_asr)
+    @printf(
+        "║ Attack Success Rate (ASR)   ║   %5.1f%%     ║\n",
+        bb_report.attack_success_rate * 100
+    )
     @printf(
         "║ Successful Attacks          ║   %3d/%3d      ║\n",
-        bb_report.num_successful_attacks, bb_report.num_clean_correct
+        bb_report.num_successful_attacks,
+        bb_report.num_clean_correct,
     )
     println("╠═════════════════════════════╬═══════════════╣")
     @printf(
@@ -174,8 +262,9 @@ function main()
         bb_report.linf_norm_max
     )
     println("╠═════════════════════════════╬═══════════════╣")
-    @printf("║ Queries per Sample          ║    200        ║\n")
+    @printf("║ Queries per Sample          ║    %3d        ║\n", attack_config.max_iter)
     println("╚═════════════════════════════╩═══════════════╝")
+
 
     # =========================================================================
     # [Step 6] Key Insights
@@ -206,7 +295,7 @@ function main()
         ensemble methods like RandomForest.
         """,
         accuracy * 100,
-        bb_asr,
+        bb_report.attack_success_rate * 100,
         bb_report.num_successful_attacks,
         bb_report.num_clean_correct,
         bb_report.linf_norm_mean,
