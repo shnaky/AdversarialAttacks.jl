@@ -284,4 +284,17 @@ using CategoricalArrays: levels
             @test length(probs_row) == 3
         end
     end
+
+    @testset "Benchmark" begin
+        struct BenchmarkDummyAttack <: AbstractAttack end
+        AdversarialAttacks.attack(::BenchmarkDummyAttack, model, sample; kwargs...) = sample .+ 1.0
+
+        dataset = [([1.0], 0), ([2.0], 1)]
+        function metric(model, adv_samples, labels)
+            @test length(adv_samples) == length(labels)
+            return length(adv_samples)
+        end
+        result = benchmark(BenchmarkDummyAttack(), Chain(x -> x), dataset, metric)
+        @test result == 2
+    end
 end
