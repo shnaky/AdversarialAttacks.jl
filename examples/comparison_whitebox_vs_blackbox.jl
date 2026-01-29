@@ -10,8 +10,8 @@ Usage:
     julia --project=examples examples/comparison_whitebox_vs_blackbox.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using Flux
 using CategoricalArrays: levelcode

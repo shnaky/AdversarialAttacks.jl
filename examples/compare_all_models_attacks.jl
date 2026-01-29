@@ -9,8 +9,8 @@ Usage:
     julia --project=examples examples/compare_all_models_attacks.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 
 using AdversarialAttacks
 using MLJ

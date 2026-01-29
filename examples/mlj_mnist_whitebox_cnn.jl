@@ -10,8 +10,8 @@ Usage:
     julia --project=examples examples/mlj_mnist_whitebox_cnn.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using Flux
 using CategoricalArrays: levelcode

@@ -11,8 +11,8 @@ Usage:
     julia --project=examples examples/mlj_mnist_blackbox_forest.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using MLJ: mode, predict, table
 using CategoricalArrays: levelcode

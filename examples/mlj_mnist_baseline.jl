@@ -11,8 +11,8 @@ Usage:
     julia --project=examples examples/mlj_mnist_baseline.jl
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using Flux
 using MLJ: mode, predict, table

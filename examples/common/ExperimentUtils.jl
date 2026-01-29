@@ -1,7 +1,6 @@
-module Experiments
+module ExperimentUtils
 
 include("Models.jl")
-using .Models
 
 using MLJ
 using MLJ: partition, accuracy
@@ -29,7 +28,7 @@ export make_forest, make_tree, make_knn, make_logistic, make_xgboost
 export save_experiment_result, load_experiment_result, get_or_train
 export DatasetType, DATASET_MNIST, DATASET_CIFAR10, load_data, dataset_shapes
 
-const MODELS_DIR = joinpath(@__DIR__, "models")
+const MODELS_DIR = joinpath(@__DIR__, "..", "models")
 
 # ------------------------------------------------------------------
 # Configuration and dataset metadata
