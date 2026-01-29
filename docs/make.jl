@@ -50,7 +50,6 @@ makedocs(
             "FGSM (White-Box)" => "FGSM.md",
             "BasicRandomSearch (Black-Box)" => "BasicRandomSearch.md",
             "Robustness Evaluation Suite" => "evaluation.md",
-            "Interface" => "interface.md",
         ],
     ],
 )
