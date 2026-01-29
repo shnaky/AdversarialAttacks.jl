@@ -1,4 +1,4 @@
-# examples/mlj_baseline.jl
+# examples/mlj_blackbox_mls.jl
 
 """
 Black-Box Attack on Traditional ML model
@@ -8,7 +8,7 @@ using BasicRandomSearch. Unlike neural networks, decision trees have
 no gradients, making only black-box attacks feasible.
 
 Usage:
-    julia --project=examples examples/mlj_baseline.jl
+    julia --project=examples examples/mlj_blackbox_mls.jl
 """
 
 include("./common/ExperimentUtils.jl")
@@ -32,6 +32,7 @@ function main()
     # =========================================================================
 
     N_SAMPLES = 100
+    attack_config = BasicRandomSearch(epsilon = 0.1f0, max_iter = 1000)
 
     # ==========================================
     #   • Experiment: baseline_mnist_forest_exp
@@ -43,7 +44,7 @@ function main()
         model_factory = make_forest,
         dataset = DATASET_MNIST,
         use_flatten = true,
-        force_retrain = true,
+        force_retrain = false,
         fraction_train = 0.8,
         rng = 42,
         model_hyperparams = (n_trees = 200, max_depth = -1)
@@ -208,8 +209,6 @@ function main()
     # [Step 4] Black-Box Attack Evaluation
     # =========================================================================
     println("\n[Step 4] Running Black-Box Attack (BasicRandomSearch with ε=0.1, 200 iter)...")
-
-    attack_config = BasicRandomSearch(epsilon = 0.1f0, max_iter = 200)
 
     bb_report = evaluate_robustness(
         mach,
