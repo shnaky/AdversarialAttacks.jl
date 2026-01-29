@@ -200,8 +200,7 @@ p3 = heatmap(
 
 fig = plot(p1, p2, p3, layout = (1, 3), size = (900, 300))
 savefig(fig, joinpath(@__DIR__, "mnist_fgsm.svg")) #hide
-
-# ![FGSM attack on MNIST](mnist_fgsm.svg)
+fig #hide
 
 # ## Common edits to try
 #

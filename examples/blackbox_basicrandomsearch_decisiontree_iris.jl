@@ -210,8 +210,7 @@ annotate!(p34, x0[3] + 0.2, x0[4], text(annot_str, 8, :left))
 
 fig = plot(p12, p34, layout = (1, 2))
 savefig(fig, joinpath(@__DIR__, "iris_bsr.svg")) #hide
-
-# ![BasicRandomSearch attack on Iris](iris_bsr.svg)
+fig #hide
 
 # ## Common edits to try
 #
