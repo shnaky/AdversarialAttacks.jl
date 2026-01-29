@@ -62,6 +62,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
           GKSwstype: "100"
+          DATADEPS_ALWAYS_ACCEPT: "true"
       - name: Run doctests
         shell: julia --project=docs --color=yes {0}
         run: |
