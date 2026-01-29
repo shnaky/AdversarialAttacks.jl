@@ -43,8 +43,8 @@ function main()
         model_factory = make_forest,
         dataset = DATASET_MNIST,
         use_flatten = true,
-        force_retrain = false,
-        split_ratio = 0.8,
+        force_retrain = true,
+        fraction_train = 0.8,
         rng = 42,
         model_hyperparams = (n_trees = 200, max_depth = -1)
     )
@@ -60,7 +60,7 @@ function main()
     #     dataset = DATASET_CIFAR10,
     #     use_flatten = true,
     #     force_retrain = false,
-    #     split_ratio = 0.8,
+    #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (n_trees = 200, max_depth = -1)
     # )
@@ -76,7 +76,7 @@ function main()
     #     dataset = DATASET_MNIST,
     #     use_flatten = true,
     #     force_retrain = false,
-    #     split_ratio = 0.8,
+    #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (rng = 42, max_depth = 10)
     # )
@@ -92,7 +92,7 @@ function main()
     #     dataset = DATASET_MNIST,
     #     use_flatten = true,
     #     force_retrain = false,
-    #     split_ratio = 0.8,
+    #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (K = 10,)
     # )
@@ -108,7 +108,7 @@ function main()
     #     dataset = DATASET_MNIST,
     #     use_flatten = true,
     #     force_retrain = false,
-    #     split_ratio = 0.8,
+    #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (num_round = 50,)
     # )
@@ -124,7 +124,7 @@ function main()
     #     dataset = DATASET_MNIST,
     #     use_flatten = true,
     #     force_retrain = false,
-    #     split_ratio = 0.8,
+    #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = NamedTuple()  # default
     # )
@@ -140,7 +140,7 @@ function main()
     #     dataset = DATASET_CIFAR10,
     #     use_flatten = true,
     #     force_retrain = false,
-    #     split_ratio = 0.8,
+    #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (rng = 42, max_depth = 10)
     # )

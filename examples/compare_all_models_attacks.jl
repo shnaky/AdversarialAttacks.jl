@@ -62,7 +62,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = false,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (epochs = 5,),
         ),
@@ -76,7 +76,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (max_depth = 10,)
         ),
@@ -90,7 +90,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (n_trees = 50,)
         ),
@@ -104,7 +104,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (K = 10,)
         ),
@@ -118,7 +118,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (num_round = 50, max_depth = 6)
         ),
@@ -133,7 +133,7 @@ const ALL_CONFIGS = [
             dataset = dataset,
             use_flatten = true,
             force_retrain = false,
-            split_ratio = 0.8,
+            fraction_train = 0.8,
             rng = 42,
             model_hyperparams = NamedTuple()  # default
         ),

@@ -57,7 +57,7 @@ Lightweight configuration struct describing a single experiment:
 - `dataset`        : `DatasetType` enum
 - `use_flatten`    : if `true`, images are flattened to tabular features
 - `force_retrain`  : retrain even if a cached model exists
-- `split_ratio`    : train fraction for the train/test split
+- `fraction_train`    : train fraction for the train/test split
 - `rng`            : integer seed for reproducible splits and training
 - `model_hyperparams`: named tuple of kwargs forwarded to `model_factory`
 """
@@ -68,7 +68,7 @@ Base.@kwdef struct ExperimentConfig
     dataset::DatasetType = DATASET_MNIST
     use_flatten::Bool = false
     force_retrain::Bool = false
-    split_ratio::Float64 = 0.8
+    fraction_train::Float64 = 0.8
     rng::Int = 42
     model_hyperparams::NamedTuple = NamedTuple()
 end
@@ -242,8 +242,7 @@ sets up a clean baseline experiment.
 """
 function run_experiment(model, X, y; config::ExperimentConfig)
     n = length(y)
-    train, test =
-        train_test_split(n; fraction_train = config.split_ratio, rng = config.rng)
+    train, test = train_test_split(n; fraction_train = config.fraction_train, rng = config.rng)
 
     # For DataFrame inputs we must use two-dimensional indexing
     Xtrain = X isa DataFrame ? X[train, :] : X[train]

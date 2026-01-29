@@ -39,7 +39,7 @@ config = ExperimentConfig(
     dataset = dataset,
     use_flatten = false,
     force_retrain = false,
-    split_ratio = 0.8,
+    fraction_train = 0.8,
     rng = 42,
     model_hyperparams = (epochs = 5, batch_size = 64),
 )

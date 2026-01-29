@@ -40,7 +40,7 @@ config = ExperimentConfig(
     dataset = dataset,
     use_flatten = true,
     force_retrain = false,
-    split_ratio = 0.8,
+    fraction_train = 0.8,
     rng = 42,
     model_hyperparams = (n_trees = 200, max_depth = -1)
 )
