@@ -1,4 +1,4 @@
-# examples/mlj_mnist_blackbox_ml.jl
+# examples/mlj_blackbox_ml.jl
 
 """
 Black-Box Attack on MLJ traditional ML models
@@ -8,7 +8,7 @@ Unlike neural networks, tree-based models have no gradients, making only
 black-box attacks feasible.
 
 Usage:
-    julia --project=examples examples/mlj_mnist_blackbox_mlj_mnist_blackbox_ml.jl
+    julia --project=examples examples/mlj_blackbox_mlj_mnist_blackbox_ml.jl
 """
 
 include("./common/ExperimentUtils.jl")

@@ -1,4 +1,4 @@
-# examples/mlj_mnist_baseline.jl
+# examples/mlj_baseline.jl
 
 """
 Black-Box Attack on Traditional ML model
@@ -8,7 +8,7 @@ using BasicRandomSearch. Unlike neural networks, decision trees have
 no gradients, making only black-box attacks feasible.
 
 Usage:
-    julia --project=examples examples/mlj_mnist_baseline.jl
+    julia --project=examples examples/mlj_baseline.jl
 """
 
 include("./common/ExperimentUtils.jl")
