@@ -42,7 +42,6 @@ function _basic_random_search_core(
         rng::AbstractRNG;
         bounds = nothing,
         detailed_result = false,
-        kwargs...,
     )
     queries_used = 0
 
@@ -137,7 +136,7 @@ end
 
 
 """
-    attack(atk::BasicRandomSearch, model::Chain, sample)
+    attack(atk::BasicRandomSearch, model::Chain, sample; detailed_result)
 
 Perform a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
@@ -148,7 +147,6 @@ Perform a black-box adversarial attack on the given model using the provided sam
 - `detailed_result::Bool=false`: Return format control
   - `false` (default): Returns adversarial example only (Array)
   - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
-- `kwargs...`: Additional attack-specific parameters
 
 # Returns
 - If `detailed_result=false`: Adversarial example (same type as `sample.data`)
@@ -159,7 +157,7 @@ Perform a black-box adversarial attack on the given model using the provided sam
   - `final_label::Int`: Final predicted class
   
 """
-function attack(atk::BasicRandomSearch, model::Chain, sample; detailed_result = false, kwargs...)
+function attack(atk::BasicRandomSearch, model::Chain, sample; detailed_result = false)
     x = sample.data
     y = sample.label
 
@@ -188,7 +186,7 @@ function attack(atk::BasicRandomSearch, model::Chain, sample; detailed_result = 
 end
 
 """
-    attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
+    attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample; detailed_result)
 
 Perform a black-box adversarial attack on a DecisionTreeClassifier using BasicRandomSearch (SimBA).
 
@@ -199,7 +197,6 @@ Perform a black-box adversarial attack on a DecisionTreeClassifier using BasicRa
 - `detailed_result::Bool=false`: Return format control
   - `false` (default): Returns adversarial example only (Array)
   - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
-- `kwargs...`: Additional attack-specific parameters
 
 # Returns
 - If `detailed_result=false`: Adversarial example (same type as `sample.data`)
@@ -210,7 +207,7 @@ Perform a black-box adversarial attack on a DecisionTreeClassifier using BasicRa
   - `final_label::Int`: Final predicted class
 
 """
-function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample; detailed_result = false, kwargs...)
+function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample; detailed_result = false)
     x = sample.data
     y = sample.label
 
@@ -249,7 +246,6 @@ using BasicRandomSearch (SimBA), via `predict`.
 - `detailed_result::Bool=false`: Return format control
   - `false` (default): Returns adversarial example only (Array)
   - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
-- `kwargs...`: Additional attack-specific parameters
 
 # Returns
 - If `detailed_result=false`: Adversarial example (same type as `sample.data`)
@@ -260,7 +256,7 @@ using BasicRandomSearch (SimBA), via `predict`.
   - `final_label::Int`: Final predicted class
 
 """
-function attack(atk::BasicRandomSearch, mach::Machine, sample; detailed_result = false, kwargs...)
+function attack(atk::BasicRandomSearch, mach::Machine, sample; detailed_result = false)
     x = sample.data
     y = sample.label
     ε = convert(eltype(x), atk.epsilon)
