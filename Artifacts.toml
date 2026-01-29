@@ -1,6 +1,6 @@
 [cifar10_model]
-git-tree-sha1 = "f3b3b43ea458b74f9389c7abcb271a8888d3ad8b"
+git-tree-sha1 = "a242e206740c0836e5f81521128c10436e6cd674"
 
     [[cifar10_model.download]]
-    url = "https://github.com/shnaky/AdversarialAttacks.jl/archive/refs/tags/0.0.1.tar.gz"
-    sha256 = "73571de040c2cae00c77ddbf7a7c1697c502ede54f1c31c3e6705ab7f130a2a8"
+    url = "https://github.com/user-attachments/files/24946611/cifar10_model.tar.gz"
+    sha256 = "0e840c39321b1f9624215182e27436d64871d7036e0d76269124ab638512b8dd"
