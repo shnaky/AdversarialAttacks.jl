@@ -28,6 +28,8 @@ function main()
     # [Step 0] Config the Experiment
     # =========================================================================
 
+    N_SAMPLES = 100
+
     # ==========================================
     #   • Experiment: baseline_cifar_tree_exp
     #   • Clean accuracy: 27.23%
@@ -135,7 +137,6 @@ function main()
     # =========================================================================
     println("\n[Step 3] Preparing test samples...")
 
-    N_SAMPLES = 100
     n_available = min(N_SAMPLES, length(test_idx))
     test_data = []
 

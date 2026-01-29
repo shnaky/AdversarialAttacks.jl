@@ -21,6 +21,7 @@ println("Black-Box Attack on RandomForest Classifier (MNIST)")
 println("="^70)
 
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+N_SAMPLES = 100
 
 # ==========================================
 #   • Experiment: mnist_blackbox_forest_exp
@@ -69,7 +70,6 @@ println("  • Clean accuracy: ", round(accuracy * 100, digits = 2), "%")
 # =============================================================================
 println("\n[Step 3] Preparing test samples...")
 
-N_SAMPLES = 100
 n_available = min(N_SAMPLES, length(test_idx))
 test_data = []
 

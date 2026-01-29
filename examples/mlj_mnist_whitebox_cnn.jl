@@ -13,12 +13,14 @@ using AdversarialAttacks
 using Flux
 using CategoricalArrays: levelcode
 using ImageCore: channelview
+using MLJ
 
 println("="^70)
 println("White-Box Attack on MLJFlux CNN")
 println("="^70)
 
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+N_SAMPLES = 100
 
 # ==========================================
 #   • Experiment: mnist_cnn_whitebox_exp
@@ -60,28 +62,30 @@ flux_model = extract_flux_model(mach)
 # 4. Prepare test samples
 println("\n[3/4] Preparing test samples...")
 
-N_SAMPLES = 100
-n_available = min(N_SAMPLES, length(test_idx))
+label_levels = levels(y_test)  # CategoricalArray level order
 
+n_available = min(N_SAMPLES, length(test_idx))
 test_data = []
 
 for i in 1:n_available
     idx = test_idx[i]
     x_img = X_img[idx]
-    true_label_idx = levelcode(y_test[i])
+    true_label = y_test[i]
+
+    # Verify correct classification by using MLJ
+    y_mlj = predict_mode(mach, [x_img])[1]
+    if y_mlj != true_label
+        continue
+    end
 
     x_array = Float32.(channelview(x_img))
     h, w, c = dataset_shapes[config.dataset]
     x_flux = reshape(x_array, h, w, c, 1)
 
-    # Verify correct classification
-    pred = flux_model(x_flux)
-    pred_label = argmax(pred[:, 1])
+    true_label_idx = levelcode(true_label)
+    y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
 
-    if pred_label == true_label_idx
-        y_onehot = Flux.onehot(true_label_idx, 1:10)
-        push!(test_data, (data = x_flux, label = y_onehot))
-    end
+    push!(test_data, (data = x_flux, label = y_onehot))
 end
 
 println("  • Selected $(length(test_data)) correctly classified samples")
