@@ -130,7 +130,7 @@ function flatten_images_cifar(X_img::Vector{Matrix{RGB{Float32}}})
 end
 
 """
-    load_mnist_for_mlj(; n_train=60000)
+    load_dataset_for_mlj(::Val{DATASET_MNIST}; n_train::Int = 60000)
 
 Load the MNIST training split and return `(X, y)` in a form compatible
 with `MLJFlux.ImageClassifier`.
@@ -140,7 +140,7 @@ Returns:
 - `X`: `Vector` of 28×28 `Gray` images (values in [0, 1])
 - `y`: `CategoricalVector` of digit labels (0–9) with `Multiclass` scitype
 """
-function load_mnist_for_mlj(; n_train::Int = 60000)
+function load_dataset_for_mlj(::Val{DATASET_MNIST}; n_train::Int = 60000)
     # images: 28×28×N UInt8, labels: Vector{Int}
     images, labels = MLDatasets.MNIST(split = :train)[:]
     images = images[:, :, 1:n_train]
@@ -156,7 +156,7 @@ function load_mnist_for_mlj(; n_train::Int = 60000)
 end
 
 """
-    load_cifar10_for_mlj(; n_train=50000)
+    load_dataset_for_mlj(::Val{DATASET_CIFAR10}; n_train::Int = 50000)
 
 Load the CIFAR-10 training split and return `(X, y)` in a form
 compatible with `MLJFlux.ImageClassifier`.
@@ -166,7 +166,7 @@ Returns:
 - `X`: 4D array of `ColorImage` (as required by MLJFlux)
 - `y`: `CategoricalVector` with `Multiclass{10}` scitype
 """
-function load_cifar10_for_mlj(; n_train::Int = 50000)
+function load_dataset_for_mlj(::Val{DATASET_CIFAR10}; n_train::Int = 50000)
     dataset = MLDatasets.CIFAR10(split = :train)
 
     # raw 4D array: 32×32×3×N (HWC layout)
@@ -179,6 +179,36 @@ function load_cifar10_for_mlj(; n_train::Int = 50000)
     labels = coerce(dataset.targets[1:n_train], Multiclass{10})
 
     return images, labels
+end
+
+# ------------------------------------------------------------------
+# Dataset loading dispatcher
+# ------------------------------------------------------------------
+
+"""
+    load_data(dataset::DatasetType, use_flatten)
+
+Load `(X, y)` for the given `dataset` and optionally flatten images
+to tabular features if `use_flatten == true`.
+
+- For `DATASET_MNIST`:
+  - `use_flatten = false`: vector of `Gray` images
+  - `use_flatten = true` : tabular `DataFrame` of pixel features
+
+- For `DATASET_CIFAR10`:
+  - `use_flatten = false`: 4D `ColorImage` array
+  - `use_flatten = true` : tabular `DataFrame` of pixel features
+"""
+function load_data(dataset::DatasetType, use_flatten::Bool)
+    X_img, y = load_dataset_for_mlj(Val(dataset))
+
+    X = if use_flatten
+        dataset == DATASET_MNIST ? flatten_images(X_img) : flatten_images_cifar(X_img)
+    else
+        X_img
+    end
+
+    return X, y
 end
 
 # ------------------------------------------------------------------
@@ -368,37 +398,6 @@ function get_or_train(config::ExperimentConfig)
     )
 
     return (result.mach, meta)
-end
-
-# ------------------------------------------------------------------
-# Dataset loading dispatcher
-# ------------------------------------------------------------------
-
-"""
-    load_data(dataset::DatasetType, use_flatten)
-
-Load `(X, y)` for the given `dataset` and optionally flatten images
-to tabular features if `use_flatten == true`.
-
-- For `DATASET_MNIST`:
-  - `use_flatten = false`: vector of `Gray` images
-  - `use_flatten = true` : tabular `DataFrame` of pixel features
-
-- For `DATASET_CIFAR10`:
-  - `use_flatten = false`: 4D `ColorImage` array
-  - `use_flatten = true` : tabular `DataFrame` of pixel features
-"""
-function load_data(dataset::DatasetType, use_flatten::Bool)
-    X_img, y =
-        dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
-
-    X = if use_flatten
-        dataset == DATASET_MNIST ? flatten_images(X_img) : flatten_images_cifar(X_img)
-    else
-        X_img
-    end
-
-    return X, y
 end
 
 end
