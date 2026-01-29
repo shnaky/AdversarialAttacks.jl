@@ -17,9 +17,9 @@ EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 TUTORIALS_OUTPUT = joinpath(@__DIR__, "src", "tutorials")
 
 for filename in [
-    "whitebox_fgsm_flux_mnist.jl",
-    "blackbox_basicrandomsearch_decisiontree_iris.jl",
-]
+        "whitebox_fgsm_flux_mnist.jl",
+        "blackbox_basicrandomsearch_decisiontree_iris.jl",
+    ]
     Literate.markdown(
         joinpath(EXAMPLES_DIR, filename),
         TUTORIALS_OUTPUT;
@@ -27,7 +27,6 @@ for filename in [
         credit = false,
     )
 end
-
 
 
 makedocs(
