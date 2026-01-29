@@ -1,4 +1,4 @@
-# examples/compare_all_models_attacks.jl
+# examples/comparison_all_models_attacks.jl
 
 """
 Comprehensive adversarial attack comparison across all integrated models.
@@ -6,7 +6,7 @@ Comprehensive adversarial attack comparison across all integrated models.
 Uses ExperimentConfig for unified configuration.
 
 Usage:
-    julia --project=examples examples/compare_all_models_attacks.jl
+    julia --project=examples examples/comparison_all_models_attacks.jl
 """
 
 include("./common/ExperimentUtils.jl")

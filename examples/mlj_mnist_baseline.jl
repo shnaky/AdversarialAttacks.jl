@@ -1,7 +1,7 @@
 # examples/mlj_mnist_baseline.jl
 
 """
-Black-Box Attack on Decision Tree Classifier
+Black-Box Attack on Traditional ML model
 
 Demonstrates query-based adversarial attacks on a traditional ML model
 using BasicRandomSearch. Unlike neural networks, decision trees have
@@ -21,7 +21,7 @@ using Printf
 
 function main()
     println("="^70)
-    println("Black-Box Attack on Decision Tree Classifier (MNIST)")
+    println("Black-Box Attack on Traditional ML model")
     println("="^70)
 
     # MNIST • Dataset: 60000 samples, 784 features

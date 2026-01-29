@@ -1,14 +1,14 @@
-# examples/mlj_mnist_blackbox_forest.jl
+# examples/mlj_mnist_blackbox_ml.jl
 
 """
-Black-Box Attack on MLJ RandomForest
+Black-Box Attack on MLJ traditional ML models
 
 Demonstrates query-based adversarial attack on a traditional ML ensemble model.
 Unlike neural networks, tree-based models have no gradients, making only
 black-box attacks feasible.
 
 Usage:
-    julia --project=examples examples/mlj_mnist_blackbox_forest.jl
+    julia --project=examples examples/mlj_mnist_blackbox_mlj_mnist_blackbox_ml.jl
 """
 
 include("./common/ExperimentUtils.jl")
@@ -20,7 +20,7 @@ using Flux  # For onehot encoding
 using Printf
 
 println("="^70)
-println("Black-Box Attack on RandomForest Classifier (MNIST)")
+println("Black-Box Attack on Traditional ML")
 println("="^70)
 
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
