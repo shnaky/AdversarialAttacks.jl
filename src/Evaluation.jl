@@ -245,7 +245,7 @@ and perturbation statistics for L∞, L2, and L1 norms.
 
 # Example
 ```julia
-report = evaluate_robustness(model, FGSM(ε=0.1), test_data, num_samples=50)
+report = evaluate_robustness(model, FGSM(epsilon=0.1), test_data, num_samples=50)
 println(report)
 ```
 """
