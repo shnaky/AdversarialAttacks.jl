@@ -181,17 +181,4 @@ function make_mnist_xgboost(;
     return model
 end
 
-"""
-    blackbox_predict(mach, X)
-
-Pure prediction API for black-box attacks. Given an MLJ machine
-and new features `X`, return probabilistic predictions.
-
-This intentionally hides all training details and gradients.
-"""
-function blackbox_predict(mach, X)
-    # For tree/forest models, `predict` already returns probabilistic predictions.
-    return predict(mach, X)
 end
-
-end # module Models

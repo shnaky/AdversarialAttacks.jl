@@ -188,7 +188,7 @@ end
     attack(atk::BasicRandomSearch, mach::Machine, sample)
 
 Black-box adversarial attack on an MLJ `Machine` (e.g. a `RandomForestClassifier`)
-using BasicRandomSearch (SimBA), via `blackbox_predict`/`predict`.
+using BasicRandomSearch (SimBA), via `predict`.
 
 - `atk::BasicRandomSearch`: Attack instance with `epsilon` and `max_iter`.
 - `mach::Machine`: Trained MLJ machine with probabilistic predictions.
