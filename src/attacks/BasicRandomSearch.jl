@@ -1,7 +1,9 @@
 """
     BasicRandomSearch(; epsilon=0.1, max_iter=50, bounds=nothing, rng=Random.default_rng())
 
-Subtype of BlackBoxAttack. Creates adversarial examples using the SimBA random search algorithm.
+Subtype of `BlackBoxAttack`. Creates adversarial examples using the SimBA random search algorithm. 
+Based on Guo, C., Gardner, J., You, Y., Wilson, A. G., & Weinberger, K. (2019, May). Simple black-box adversarial attacks. In International conference on machine learning (pp. 2484-2493). PMLR.
+(https://proceedings.mlr.press/v97/guo19a.html)
 
 # Arguments
 - `epsilon`: Step size for perturbations (default: 0.1)
