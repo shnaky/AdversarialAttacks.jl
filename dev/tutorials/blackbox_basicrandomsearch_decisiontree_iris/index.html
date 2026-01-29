@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Black-Box – Basic Random Search (DecisionTree, Iris) · AdversarialAttacks.jl</title><meta name="title" content="Black-Box – Basic Random Search (DecisionTree, Iris) · AdversarialAttacks.jl"/><meta property="og:title" content="Black-Box – Basic Random Search (DecisionTree, Iris) · AdversarialAttacks.jl"/><meta property="twitter:title" content="Black-Box – Basic Random Search (DecisionTree, Iris) · AdversarialAttacks.jl"/><meta name="description" content="Documentation for AdversarialAttacks.jl."/><meta property="og:description" content="Documentation for AdversarialAttacks.jl."/><meta property="twitter:description" content="Documentation for AdversarialAttacks.jl."/><meta property="og:url" content="https://shnaky.github.io/AdversarialAttacks.jl/tutorials/blackbox_basicrandomsearch_decisiontree_iris/"/><meta property="twitter:url" content="https://shnaky.github.io/AdversarialAttacks.jl/tutorials/blackbox_basicrandomsearch_decisiontree_iris/"/><link rel="canonical" href="https://shnaky.github.io/AdversarialAttacks.jl/tutorials/blackbox_basicrandomsearch_decisiontree_iris/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">AdversarialAttacks.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Getting Started</a></li><li><span class="tocitem">Tutorials &amp; Examples</span><ul><li><a class="tocitem" href="../../examples/">Overview</a></li><li><a class="tocitem" href="../whitebox_fgsm_flux_mnist/">White-Box – FGSM (Flux, MNIST)</a></li><li class="is-active"><a class="tocitem" href>Black-Box – Basic Random Search (DecisionTree, Iris)</a><ul class="internal"><li><a class="tocitem" href="#Prerequisites"><span>Prerequisites</span></a></li><li><a class="tocitem" href="#1.-Train-a-DecisionTree-on-Iris"><span>1. Train a DecisionTree on Iris</span></a></li><li><a class="tocitem" href="#2.-Pick-a-correctly-classified-demo-sample"><span>2. Pick a correctly classified demo sample</span></a></li><li><a class="tocitem" href="#3.-Build-the-sample-NamedTuple"><span>3. Build the sample NamedTuple</span></a></li><li><a class="tocitem" href="#4.-Run-BasicRandomSearch"><span>4. Run BasicRandomSearch</span></a></li><li><a class="tocitem" href="#5.-Evaluate-the-attack"><span>5. Evaluate the attack</span></a></li><li><a class="tocitem" href="#6.-Visualization"><span>6. Visualization</span></a></li><li><a class="tocitem" href="#Common-edits-to-try"><span>Common edits to try</span></a></li></ul></li></ul></li><li><span class="tocitem">Developer Documentation</span><ul><li><a class="tocitem" href="../../attack_interface/">Attack Interface</a></li><li><a class="tocitem" href="../../FGSM/">FGSM (White-Box)</a></li><li><a class="tocitem" href="../../BasicRandomSearch/">BasicRandomSearch (Black-Box)</a></li><li><a class="tocitem" href="../../evaluation/">Robustness Evaluation Suite</a></li><li><a class="tocitem" href="../../interface/">Interface</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials &amp; Examples</a></li><li class="is-active"><a href>Black-Box – Basic Random Search (DecisionTree, Iris)</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Black-Box – Basic Random Search (DecisionTree, Iris)</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/shnaky/AdversarialAttacks.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/shnaky/AdversarialAttacks.jl/blob/main/examples/blackbox_basicrandomsearch_decisiontree_iris.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Black-Box-Basic-Random-Search-Attack-on-Iris-(DecisionTree)"><a class="docs-heading-anchor" href="#Black-Box-Basic-Random-Search-Attack-on-Iris-(DecisionTree)">Black-Box Basic Random Search Attack on Iris (DecisionTree)</a><a id="Black-Box-Basic-Random-Search-Attack-on-Iris-(DecisionTree)-1"></a><a class="docs-heading-anchor-permalink" href="#Black-Box-Basic-Random-Search-Attack-on-Iris-(DecisionTree)" title="Permalink"></a></h1><p>This tutorial demonstrates how to perform a <strong>black-box adversarial attack</strong> using Basic Random Search (a SimBA-style algorithm) against a Decision Tree classifier trained on the Iris dataset.</p><p><strong>What you will learn:</strong></p><ul><li>How to train a DecisionTree classifier on Iris</li><li>How to construct a <code>BasicRandomSearch</code> attack with <code>AdversarialAttacks.jl</code></li><li>How to evaluate whether the attack succeeded</li><li>How to visualize original vs adversarial samples in feature space</li></ul><h2 id="Prerequisites"><a class="docs-heading-anchor" href="#Prerequisites">Prerequisites</a><a id="Prerequisites-1"></a><a class="docs-heading-anchor-permalink" href="#Prerequisites" title="Permalink"></a></h2><p>Make sure you have the following packages installed: <code>RDatasets</code>, <code>DecisionTree</code>, <code>Flux</code>, <code>OneHotArrays</code>, <code>Plots</code>, and <code>AdversarialAttacks</code>.</p><pre><code class="language-julia hljs">using Random
+using RDatasets
+using DecisionTree
+using Flux
+using OneHotArrays: OneHotVector
+using AdversarialAttacks
+using Plots
+
+Random.seed!(1234)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Random.TaskLocalRNG()</code></pre><h2 id="1.-Train-a-DecisionTree-on-Iris"><a class="docs-heading-anchor" href="#1.-Train-a-DecisionTree-on-Iris">1. Train a DecisionTree on Iris</a><a id="1.-Train-a-DecisionTree-on-Iris-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Train-a-DecisionTree-on-Iris" title="Permalink"></a></h2><p>We load the classic Iris dataset, extract features and labels, and fit a <code>DecisionTreeClassifier</code> with a maximum depth of 3.</p><pre><code class="language-julia hljs">iris = dataset(&quot;datasets&quot;, &quot;iris&quot;)
+X = Matrix{Float64}(iris[:, 1:4])
+y_str = String.(iris.Species)
+classes = [&quot;setosa&quot;, &quot;versicolor&quot;, &quot;virginica&quot;]
+
+dt_model = DecisionTreeClassifier(
+    max_depth = 3,
+    min_samples_leaf = 1,
+    min_samples_split = 2,
+    classes = classes,
+)
+fit!(dt_model, X, y_str)
+
+println(&quot;Trained DecisionTreeClassifier on Iris.&quot;)
+println(&quot;Classes = &quot;, dt_model.classes)
+
+# helper
+function predict_class_index(model::DecisionTreeClassifier, x::AbstractVector)
+    x_mat = reshape(Float64.(x), 1, :)
+    probs = DecisionTree.predict_proba(model, x_mat)
+    return argmax(probs)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">predict_class_index (generic function with 1 method)</code></pre><h2 id="2.-Pick-a-correctly-classified-demo-sample"><a class="docs-heading-anchor" href="#2.-Pick-a-correctly-classified-demo-sample">2. Pick a correctly classified demo sample</a><a id="2.-Pick-a-correctly-classified-demo-sample-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Pick-a-correctly-classified-demo-sample" title="Permalink"></a></h2><p>We search for the first correctly classified sample (starting from the versicolor class) to use as our attack target.</p><pre><code class="language-julia hljs">demo_idx = findfirst(==(&quot;versicolor&quot;), y_str)
+
+for i in 1:size(X, 1)
+    xi = X[i, :]
+    yi_str = y_str[i]
+    true_idx_i = findfirst(==(yi_str), classes)
+    pred_idx_i = predict_class_index(dt_model, xi)
+    if pred_idx_i == true_idx_i
+        global demo_idx = i
+        break
+    end
+end
+
+x0 = X[demo_idx, :]
+label_str = y_str[demo_idx]
+true_idx = findfirst(==(label_str), classes)
+
+println(&quot;\nChosen demo sample index: &quot;, demo_idx)
+println(&quot;Feature vector: &quot;, x0)
+println(&quot;True label string: &quot;, label_str, &quot; (index &quot;, true_idx, &quot;)&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+Chosen demo sample index: 51
+Feature vector: [7.0, 3.2, 4.7, 1.4]
+True label string: versicolor (index 2)</code></pre><h2 id="3.-Build-the-sample-NamedTuple"><a class="docs-heading-anchor" href="#3.-Build-the-sample-NamedTuple">3. Build the sample NamedTuple</a><a id="3.-Build-the-sample-NamedTuple-1"></a><a class="docs-heading-anchor-permalink" href="#3.-Build-the-sample-NamedTuple" title="Permalink"></a></h2><p>The attack interface expects a named tuple <code>(data=..., label=...)</code> where <code>label</code> is a one-hot encoded vector.</p><pre><code class="language-julia hljs">y0 = Flux.onehot(true_idx, 1:length(classes))
+sample = (data = Float32.(x0), label = y0)
+
+x0_mat = reshape(Float64.(x0), 1, :)
+orig_probs_vec = DecisionTree.predict_proba(dt_model, x0_mat)
+orig_true_prob = orig_probs_vec[true_idx]
+
+println(&quot;\nOriginal probabilities: &quot;, orig_probs_vec)
+println(&quot;Original predicted class index = &quot;, argmax(orig_probs_vec))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+Original probabilities: [0.0 0.9791666666666666 0.020833333333333332]
+Original predicted class index = CartesianIndex(1, 2)</code></pre><h2 id="4.-Run-BasicRandomSearch"><a class="docs-heading-anchor" href="#4.-Run-BasicRandomSearch">4. Run BasicRandomSearch</a><a id="4.-Run-BasicRandomSearch-1"></a><a class="docs-heading-anchor-permalink" href="#4.-Run-BasicRandomSearch" title="Permalink"></a></h2><p>We configure the attack with:</p><ul><li><code>epsilon = 0.3</code>: maximum perturbation per feature</li><li><code>bounds</code>: valid ranges for each Iris feature</li><li><code>max_iter = 100</code>: number of random search iterations</li></ul><p>The attack queries the model repeatedly with random perturbations and keeps the one that most reduces the true-class probability.</p><pre><code class="language-julia hljs">ε = 0.3f0
+atk = BasicRandomSearch(
+    epsilon = ε,
+    bounds = [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)],
+    max_iter = 100,
+)
+println(&quot;\nRunning BasicRandomSearch with epsilon = &quot;, ε, &quot; and max_iter = &quot;, atk.max_iter, &quot; ...&quot;)
+Random.seed!(42)
+
+x_adv = attack(atk, dt_model, sample)
+
+x_adv_mat = reshape(Float64.(x_adv), 1, :)
+adv_probs_vec = DecisionTree.predict_proba(dt_model, x_adv_mat)
+adv_true_prob = adv_probs_vec[true_idx]
+
+println(&quot;\nOriginal feature vector:     &quot;, sample.data)
+println(&quot;Adversarial feature vector: &quot;, x_adv)
+
+println(&quot;\nOriginal probs:     &quot;, orig_probs_vec)
+println(&quot;Adversarial probs: &quot;, adv_probs_vec)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+Running BasicRandomSearch with epsilon = 0.3 and max_iter = 100 ...
+
+Original feature vector:     Float32[7.0, 3.2, 4.7, 1.4]
+Adversarial feature vector: Float32[7.0, 3.2, 5.0, 1.4]
+
+Original probs:     [0.0 0.9791666666666666 0.020833333333333332]
+Adversarial probs: [0.0 0.3333333333333333 0.6666666666666666]</code></pre><h2 id="5.-Evaluate-the-attack"><a class="docs-heading-anchor" href="#5.-Evaluate-the-attack">5. Evaluate the attack</a><a id="5.-Evaluate-the-attack-1"></a><a class="docs-heading-anchor-permalink" href="#5.-Evaluate-the-attack" title="Permalink"></a></h2><p>We check whether the attack decreased the true-class confidence.</p><pre><code class="language-julia hljs">println(&quot;\nTrue-class probability before attack: &quot;, orig_true_prob)
+println(&quot;True-class probability after attack:  &quot;, adv_true_prob)
+
+if adv_true_prob &lt; orig_true_prob
+    println(&quot;\n[INFO] Attack decreased the true-class confidence (success).&quot;)
+else
+    println(&quot;\n[INFO] True-class confidence did not decrease.&quot;)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+True-class probability before attack: 0.9791666666666666
+True-class probability after attack:  0.3333333333333333
+
+[INFO] Attack decreased the true-class confidence (success).</code></pre><h2 id="6.-Visualization"><a class="docs-heading-anchor" href="#6.-Visualization">6. Visualization</a><a id="6.-Visualization-1"></a><a class="docs-heading-anchor-permalink" href="#6.-Visualization" title="Permalink"></a></h2><p>We create two scatter plots showing 2D projections of the Iris dataset (features 1 &amp; 2, and features 3 &amp; 4). The original sample is shown in black and the adversarial sample in orange.</p><pre><code class="language-julia hljs">idx_setosa = findall(==(&quot;setosa&quot;), y_str)
+idx_versicolor = findall(==(&quot;versicolor&quot;), y_str)
+idx_virginica = findall(==(&quot;virginica&quot;), y_str)
+
+# Plot 1: features 1 &amp; 2
+p12 = plot(
+    xlabel = &quot;SepalLength&quot;,
+    ylabel = &quot;SepalWidth&quot;,
+    title = &quot;Iris (features 1&amp;2)&quot;,
+    legend = false,
+)
+scatter!(p12, X[idx_setosa, 1], X[idx_setosa, 2], color = :blue, markershape = :circle)
+scatter!(
+    p12,
+    X[idx_versicolor, 1],
+    X[idx_versicolor, 2],
+    color = :green,
+    markershape = :utriangle,
+)
+scatter!(p12, X[idx_virginica, 1], X[idx_virginica, 2], color = :red, markershape = :square)
+scatter!(p12, [x0[1]], [x0[2]], markersize = 10, color = :black, label = &quot;&quot;)
+scatter!(p12, [x_adv[1]], [x_adv[2]], markersize = 10, color = :orange, label = &quot;&quot;)
+
+# Plot 2: features 3 &amp; 4
+orig_pred_class = classes[argmax(orig_probs_vec)[2]]
+adv_pred_class = classes[argmax(adv_probs_vec)[2]]
+p34 = plot(xlabel = &quot;PetalLength&quot;, ylabel = &quot;PetalWidth&quot;, title = &quot;Iris (features 3&amp;4)&quot;)
+scatter!(
+    p34,
+    X[idx_setosa, 3],
+    X[idx_setosa, 4],
+    color = :blue,
+    markershape = :circle,
+    label = &quot;setosa&quot;,
+)
+scatter!(
+    p34,
+    X[idx_versicolor, 3],
+    X[idx_versicolor, 4],
+    color = :green,
+    markershape = :utriangle,
+    label = &quot;versicolor&quot;,
+)
+scatter!(
+    p34,
+    X[idx_virginica, 3],
+    X[idx_virginica, 4],
+    color = :red,
+    markershape = :square,
+    label = &quot;virginica&quot;,
+)
+scatter!(p34, [x0[3]], [x0[4]], markersize = 10, color = :black, label = &quot;original&quot;)
+scatter!(
+    p34,
+    [x_adv[3]],
+    [x_adv[4]],
+    markersize = 10,
+    color = :orange,
+    label = &quot;adversarial&quot;,
+)
+
+annot_str = &quot;true: $label_str\norig: $orig_pred_class\nadv: $adv_pred_class&quot;
+annotate!(p34, x0[3] + 0.2, x0[4], text(annot_str, 8, :left))
+
+fig = plot(p12, p34, layout = (1, 2))</code></pre><img src="1605fab5.svg" alt="Example block output"/><h2 id="Common-edits-to-try"><a class="docs-heading-anchor" href="#Common-edits-to-try">Common edits to try</a><a id="Common-edits-to-try-1"></a><a class="docs-heading-anchor-permalink" href="#Common-edits-to-try" title="Permalink"></a></h2><ul><li>Increase <code>epsilon</code> to make perturbations stronger.</li><li>Increase <code>max_iter</code> to give the attack more search time.</li><li>Adjust <code>bounds</code> to constrain or widen the search domain.</li><li>Attack other samples by changing how <code>demo_idx</code> is chosen.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../whitebox_fgsm_flux_mnist/">« White-Box – FGSM (Flux, MNIST)</a><a class="docs-footer-nextpage" href="../../attack_interface/">Attack Interface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 29 January 2026 13:51">Thursday 29 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
