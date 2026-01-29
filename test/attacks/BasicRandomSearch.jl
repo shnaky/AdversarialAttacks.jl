@@ -254,7 +254,7 @@ end
     @test all(0 .<= adv .<= 1)
 end
 
-@testset "_basic_random_search_core returns detailed_result as namedtuple" begin
+@testset "_basic_random_search_core returns detailed result as namedtuple" begin
     Random.seed!(1234)
 
     model = x -> Float32[sum(x), 1.0f0 - sum(x)]
