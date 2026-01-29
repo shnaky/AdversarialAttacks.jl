@@ -1,8 +1,6 @@
 module Models
 
-using MLJFlux, Flux, Optimisers
-
-using MLJ
+using MLJ, MLJFlux, Flux, Optimisers, MLUtils
 using NearestNeighborModels
 
 export make_mnist_cnn, make_cifar_cnn
@@ -25,44 +23,30 @@ struct SimpleConvBuilder
     filter_size::Int
     channels1::Int
     channels2::Int
-    h::Int
-    w::Int
-end
-
-"""
-    FlattenLayer
-
-Named flatten layer for reliable serialization.
-Reshapes 4D image tensor (H, W, C, N) to 2D matrix (flat_dim, N).
-"""
-struct FlattenLayer end
-
-function (f::FlattenLayer)(x)
-    return reshape(x, :, size(x, ndims(x)))
+    channels3::Int
 end
 
 """
     MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
 
 Build small ConvNet for image classification.
-Assumes 28×28 input images.
 """
 function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
-    k, c1, c2 = b.filter_size, b.channels1, b.channels2
+    k, c1, c2, c3 = b.filter_size, b.channels1, b.channels2, b.channels3
     @assert isodd(k)
     p = div(k - 1, 2)
     init = Flux.glorot_uniform(rng)
-    h = b.h; w = b.w; h, w = div(h, 2), div(w, 2); h, w = div(h, 2), div(w, 2)
-    flat_dim = h * w * c2
-    return Chain(
+    front = Chain(
         Conv((k, k), n_channels => c1, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
         Conv((k, k), c1 => c2, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
-        FlattenLayer(),
-        Dense(flat_dim, 128, relu, init = init),
-        Dense(128, n_out, init = init)
+        Conv((k, k), c2 => c3, pad = (p, p), relu, init = init),
+        MaxPool((2, 2)),
+        MLUtils.flatten
     )
+    d = Flux.outputsize(front, (n_in..., n_channels, 1)) |> first
+    return Chain(front, Dense(d, n_out, init = init))
 end
 
 """
@@ -71,7 +55,7 @@ end
 Create MLJFlux ImageClassifier for MNIST.
 """
 function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64, kwargs...)
-    builder = SimpleConvBuilder(3, 16, 32, 28, 28)
+    builder = SimpleConvBuilder(3, 16, 32, 32)
 
     model = ImageClassifier(
         builder = builder,
@@ -108,7 +92,7 @@ function make_cifar_cnn(;
         loss = Flux.Losses.crossentropy,
         kwargs...
     )
-    builder = SimpleConvBuilder(3, 16, 32, 32, 32)
+    builder = SimpleConvBuilder(3, 16, 32, 32)
 
     return ImageClassifier(
         builder = builder,
