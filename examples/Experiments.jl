@@ -117,8 +117,9 @@ Flatten a vector of `RGB` images into a `DataFrame` with one row per
 image and 3×32×32 columns (channel-first after `channelview`).
 """
 function flatten_images_cifar(X_img::Vector{Matrix{RGB{Float32}}})
+    h, w, c = dataset_shapes[DATASET_CIFAR10]
     n = length(X_img)
-    d = 3 * 32 * 32
+    d = h * w * c
 
     Xmat = Array{Float32}(undef, n, d)
     for i in 1:n
