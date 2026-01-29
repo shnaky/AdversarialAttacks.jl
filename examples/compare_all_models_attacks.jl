@@ -155,8 +155,7 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
     test_idx = meta["test_idx"]
     y_test = meta["y_test"]
 
-    X_org_img, y_full = dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
-    X_img = use_flatten ? (dataset == DATASET_MNIST ? flatten_images(X_org_img) : flatten_images_cifar(X_org_img)) : X_org_img
+    X_img, y_full = load_data(dataset, use_flatten)
 
     label_levels = levels(y_test)  # CategoricalArray level order
 

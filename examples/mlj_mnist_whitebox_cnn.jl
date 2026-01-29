@@ -38,12 +38,12 @@ config = ExperimentConfig(
     force_retrain = false,
     split_ratio = 0.8,
     rng = 42,
-    model_hyperparams = (epochs = 5, batch_size = 64)
+    model_hyperparams = (epochs = 5, batch_size = 64),
 )
 
 # 1. Load data as images
 println("\n[1/4] Loading dataset...")
-X_img, y = config.dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
+X_img, y = load_data(config.dataset, config.use_flatten)
 
 # 2. Train MLJFlux ImageClassifier
 println("\n[2/4] Training MLJFlux CNN...")

@@ -26,7 +26,7 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 1] Loading/Training MLJFlux CNN ...")
 
-    dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+    dataset = DATASET_CIFAR10 # DATASET_MNIST, DATASET_CIFAR10
     N_SAMPLES = 100
 
     # ==========================================
@@ -72,7 +72,6 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 2] Preparing test samples...")
     X_img, y = config.dataset == DATASET_MNIST ? load_mnist_for_mlj() : load_cifar10_for_mlj()
-
     n_available = min(N_SAMPLES, length(test_idx))
     test_data = []
 
