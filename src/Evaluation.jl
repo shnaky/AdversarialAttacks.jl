@@ -360,7 +360,9 @@ println("Attack success rates: ", results[:attack_success_rate])
 ```
 
 """
-function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vector{Float64}, test_data; num_samples::Int = 100)
+function evaluation_curve(
+        model, atk_type::Type{<:AbstractAttack}, epsilons::Vector{Float64}, test_data; num_samples::Int = 100, seed = 1234
+    )
     results = Dict(
         :epsilons => Float64[],
         :clean_accuracy => Float64[],
@@ -375,9 +377,14 @@ function evaluation_curve(model, atk_type::Type{<:AbstractAttack}, epsilons::Vec
         :l1_norm_max => Float64[]
     )
 
+
     for epsilon in epsilons
-        # TODO: there should be a set rng parameter for BSR so it's ther results can be compared
-        atk = atk_type(epsilon)
+        if atk_type <: BasicRandomSearch
+            rng = Random.MersenneTwister(seed)
+            atk = atk_type(; epsilon = epsilon, rng = rng)
+        else
+            atk = atk_type(; epsilon = epsilon)
+        end
 
         report = evaluate_robustness(
             model,
