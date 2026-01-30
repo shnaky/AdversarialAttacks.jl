@@ -1,0 +1,6 @@
+[cifar10_model]
+git-tree-sha1 = "a242e206740c0836e5f81521128c10436e6cd674"
+
+    [[cifar10_model.download]]
+    url = "https://github.com/user-attachments/files/24946611/cifar10_model.tar.gz"
+    sha256 = "0e840c39321b1f9624215182e27436d64871d7036e0d76269124ab638512b8dd"

@@ -21,7 +21,13 @@ using ColorTypes: Color, Gray, RGB
 using Images: channelview
 using ScientificTypes: ColorImage, coerce, Multiclass
 
+import BSON
 using BSON: @save, load
+using Pkg.Artifacts
+using LazyArtifacts
+
+include("cifar10_model.jl")
+export load_pretrained_c10_model
 
 using CategoricalArrays: levelcode
 export levelcode
