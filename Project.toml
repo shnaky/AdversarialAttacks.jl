@@ -1,7 +1,7 @@
 name = "AdversarialAttacks"
 uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
 authors = ["Orestis Papandreou <orestis.papandreou@campus.tu-berlin.de>"]
-version = "1.0.0-DEV"
+version = "1.0.0"
 
 [deps]
 Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
