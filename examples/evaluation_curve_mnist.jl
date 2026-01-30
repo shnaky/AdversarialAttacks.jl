@@ -1,121 +1,142 @@
 # examples/evaluation_curve_mnist.jl
 
-include("Experiments.jl")
-using .Experiments: load_mnist_for_mlj, extract_flux_model, get_or_train, make_mnist_cnn, ExperimentConfig
+"""
+Plotting metrics on White-Box Attack on MLJFlux CNN
+
+Demonstrates an FGSM gradient-based attack on a CNN classifier.
+Uses `evaluation_curve()` to evaluate robustness across multiple
+perturbation magnitudes (ε values).
+
+Usage:
+    julia --project=examples examples/evaluation_curve_mnist.jl
+"""
+
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 using AdversarialAttacks
 using Flux
 using CategoricalArrays: levelcode
 using ImageCore: channelview
+using MLJ
 using Plots
 
-function run_eval_curve()
-    println("="^70)
-    println("Evaluation Curve on MNIST Dataset using FGSM Attack")
-    println("="^70)
+println("="^70)
+println("White-Box Attack on MLJFlux CNN")
+println("="^70)
 
-    # ==========================================================================
-    # [Step 1] Train/Load CNN Model
-    # ==========================================================================
-    println("\n[Step 1] Loading/Training MLJFlux CNN on MNIST...")
+dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
+N_SAMPLES = 100
 
-    mach, meta = get_or_train(
-        make_mnist_cnn,
-        "evaluation_curve_mnist",
-        force_retrain = false,
-        epochs = 10,
-        batch_size = 64,
-        use_flatten = false,
-    )
+config = ExperimentConfig(
+    exp_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox_exp" : "cifar_cnn_whitebox_exp",
+    model_file_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox" : "cifar_cnn_whitebox",
+    model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
+    dataset = dataset,
+    use_flatten = false,
+    force_retrain = false,
+    fraction_train = 0.8,
+    rng = 42,
+    model_hyperparams = (epochs = 5, batch_size = 64),
+)
 
-    raw_model = extract_flux_model(mach)
+# 1. Load data as images
+println("\n[1/5] Loading dataset...")
+X_img, y = load_data(config.dataset, config.use_flatten)
 
-    # Ensure model has softmax at the end
-    if raw_model isa Chain && raw_model.layers[end] != softmax
-        flux_model = Chain(raw_model, softmax)
-        println("  ✓ Added softmax to model")
-    else
-        flux_model = raw_model
-        println("  ✓ Model already has softmax")
+# 2. Train MLJFlux ImageClassifier
+println("\n[2/5] Training MLJFlux CNN...")
+mach, meta = get_or_train(config)
+
+acc_meta = meta["accuracy"]
+test_idx = meta["test_idx"]
+y_test = meta["y_test"]
+
+println("  • Experiment: ", config.exp_name)
+println("  • Clean accuracy: ", round(acc_meta * 100, digits = 2), "%")
+
+# 2.5 Recompute MLJ test predictions (optional but consistent)
+Xtest_img = X_img[test_idx]
+y_pred_test = predict_mode(mach, Xtest_img)
+
+# 3. Extract Flux model
+flux_model = extract_flux_model(mach)
+
+# 4. Prepare test samples
+println("\n[3/5] Preparing test samples...")
+
+label_levels = levels(y_test)
+n_available = min(N_SAMPLES, length(test_idx))
+test_data = []
+
+for i in 1:n_available
+    idx = test_idx[i]
+    x_img = X_img[idx]
+    true_label = y_test[i]
+
+    # Use precomputed MLJ prediction for this test index
+    y_mlj = y_pred_test[i]
+    if y_mlj != true_label
+        continue
     end
 
-    println("  • Clean accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
+    x_array = Float32.(channelview(x_img))
+    h, w, c = dataset_shapes[config.dataset]
+    x_flux = reshape(x_array, h, w, c, 1)
 
-    # ==========================================================================
-    # [Step 2] Prepare Test Samples
-    # ==========================================================================
-    println("\n[Step 2] Preparing test samples...")
+    true_label_idx = levelcode(true_label)
+    y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
 
-    X_img, y = load_mnist_for_mlj()
-    N_SAMPLES = 100
-
-    test_data = []
-
-    for i in 1:length(meta["test_idx"])
-        if length(test_data) >= N_SAMPLES
-            break
-        end
-
-        idx = meta["test_idx"][i]
-        x_img = X_img[idx]
-        true_label_idx = levelcode(meta["y_test"][i])
-
-        # Convert to Flux format (28×28×1×1)
-        x_array = Float32.(channelview(x_img))
-        x_flux = reshape(x_array, 28, 28, 1, 1)
-
-        # Check if correctly classified
-        pred = flux_model(x_flux)
-        pred_label = argmax(pred[:, 1])
-
-        if pred_label == true_label_idx
-            y_onehot = Flux.onehot(true_label_idx, 1:10)
-            push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
-        end
-    end
-
-    println("  • Selected $(length(test_data)) correctly classified samples")
-
-    # ==========================================================================
-    # [Step 3] White-Box Attack (FGSM)
-    # ==========================================================================
-    println("\n[Step 3] Running White-Box Attack FGSM with different ε...")
-
-    # TODO: list comperhesion
-    epsilons = [0.0, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0007, 0.0008, 0.0009, 0.001]
-    println("ε = ", epsilons, "\n")
-
-    fgsm = FGSM
-
-    # Evaluate using robustness report
-    wb_report = evaluation_curve(
-        flux_model,
-        fgsm,
-        epsilons,
-        test_data,
-        num_samples = length(test_data),
-    )
-
-    # ==========================================================================
-    # [Step 4] Plot Metrics
-    # ==========================================================================
-    println("Plotting Metrics...")
-    plot(
-        wb_report[:epsilons],
-        wb_report[:adv_accuracy],
-        label="Adversarial Accuracy",
-        linewidth=2,
-    )
-    plot!(
-        wb_report[:epsilons],
-        wb_report[:attack_success_rate],
-        label="Attack Success Rate",
-        linewidth=2,
-    )
-
-    xlabel!("ε")
-    ylabel!("Score")
-    title!("Metrics vs ε")
-
+    push!(test_data, (data = x_flux, label = y_onehot))
 end
 
-run_eval_curve()
+println("  • Selected $(length(test_data)) correctly classified samples")
+
+# 5. Run FGSM white-box attack
+println("\n[4/5] Running FGSM white-box attack with different ε...")
+
+epsilons = [i * 1e-4 for i in 0:10]
+println("ε = ", epsilons, "\n")
+
+fgsm = FGSM
+
+# Evaluate using robustness report
+wb_report = evaluation_curve(
+    flux_model,
+    fgsm,
+    epsilons,
+    test_data,
+    num_samples = length(test_data),
+)
+
+# 5. Plot metrics
+println("\n[5/5] Plot metrics...")
+eps = wb_report[:epsilons]
+
+p_metrics = plot(
+    eps,
+    wb_report[:adv_accuracy],
+    label="Adversarial Accuracy",
+    title="Metrics vs ε",
+    ylabel="Score",
+)
+
+plot!( p_metrics, eps, wb_report[:attack_success_rate], label="Attack Success Rate",)
+
+p1 = plot(eps, wb_report[:linf_norm_mean], label="L∞ mean", title="Mean norms")
+plot!(p1, eps, wb_report[:l2_norm_mean], label="L2 mean")
+plot!(p1, eps, wb_report[:l1_norm_mean], label="L1 mean")
+
+p2 = plot(eps, wb_report[:linf_norm_max], label="L∞ max", title="Max norms")
+plot!(p2, eps, wb_report[:l2_norm_max], label="L2 max")
+plot!(p2, eps, wb_report[:l1_norm_max], label="L1 max")
+
+plot(
+    p_metrics,
+    p1,
+    p2,
+    layout=(3,1),
+    xlabel="ε",
+    legendfontsize=8,
+    legend=:outerright,
+    linewidth=2,
+)
