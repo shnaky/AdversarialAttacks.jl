@@ -171,7 +171,7 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
 
             # For CNN: reshape to 4D array (28×28×1×1) or (32x32x3xN)
             x_array = Float32.(channelview(x_img))
-            h, w, c = dataset_shapes[dataset]
+            h, w, c = dataset_shape(Val(dataset))
             x_flux = reshape(x_array, h, w, c, 1)
 
             true_label_idx = levelcode(true_label)

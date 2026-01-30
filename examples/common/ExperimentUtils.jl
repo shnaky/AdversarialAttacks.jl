@@ -45,7 +45,7 @@ export ExperimentConfig, run_experiment
 export make_mnist_cnn, make_cifar_cnn, extract_flux_model
 export make_forest, make_tree, make_knn, make_logistic, make_xgboost
 export get_or_train
-export DatasetType, DATASET_MNIST, DATASET_CIFAR10, load_data, dataset_shapes
+export DatasetType, DATASET_MNIST, DATASET_CIFAR10, load_data, dataset_shape
 
 const MODELS_DIR = joinpath(@__DIR__, "..", "models")
 
@@ -92,15 +92,13 @@ Base.@kwdef struct ExperimentConfig
 end
 
 """
-    dataset_shapes
+    dataset_shape(::Val{dt}) where dt <: DatasetType -> NTuple{3,Int}
 
-Map from `DatasetType` to `(height, width, channels)` used when
-reshaping images into Flux tensors.
+Returns (height, width, channels) for given DatasetType.
+
 """
-dataset_shapes = Dict(
-    DATASET_MNIST => (28, 28, 1),
-    DATASET_CIFAR10 => (32, 32, 3),
-)
+dataset_shape(::Val{DATASET_MNIST}) = (28, 28, 1)
+dataset_shape(::Val{DATASET_CIFAR10}) = (32, 32, 3)
 
 # ------------------------------------------------------------------
 # Data loading utilities
@@ -132,7 +130,7 @@ Flatten a vector of `RGB` images into a `DataFrame` with one row per
 image and 3×32×32 columns (channel-first after `channelview`).
 """
 function flatten_images(X_img::Vector{<:AbstractMatrix{<:RGB}})
-    h, w, c = dataset_shapes[DATASET_CIFAR10]
+    h, w, c = dataset_shape(Val(DATASET_CIFAR10))
     n = length(X_img)
     d = h * w * c
 

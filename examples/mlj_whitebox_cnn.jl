@@ -80,7 +80,7 @@ for i in 1:n_available
     end
 
     x_array = Float32.(channelview(x_img))
-    h, w, c = dataset_shapes[config.dataset]
+    h, w, c = dataset_shape(Val(dataset))
     x_flux = reshape(x_array, h, w, c, 1)
 
     true_label_idx = levelcode(true_label)
