@@ -129,7 +129,7 @@ println("  • Selected $(length(test_data)) correctly classified samples")
 # attack success rate, perturbation norms) as a function of ε.
 println("\n[4/5] Running FGSM white-box attack with different ε...")
 
-epsilons = [i * 1e-4 for i in 0:10]
+epsilons = [i * 1.0e-4 for i in 0:10]
 println("ε = ", epsilons, "\n")
 
 fgsm = FGSM
@@ -160,28 +160,28 @@ eps = wb_report[:epsilons]
 p_metrics = plot(
     eps,
     wb_report[:adv_accuracy],
-    label="Adversarial Accuracy",
-    title="Metrics vs ε",
-    ylabel="Score",
+    label = "Adversarial Accuracy",
+    title = "Metrics vs ε",
+    ylabel = "Score",
 )
 
-plot!( p_metrics, eps, wb_report[:attack_success_rate], label="Attack Success Rate",)
+plot!(p_metrics, eps, wb_report[:attack_success_rate], label = "Attack Success Rate")
 
-p1 = plot(eps, wb_report[:linf_norm_mean], label="L∞ mean", title="Mean norms")
-plot!(p1, eps, wb_report[:l2_norm_mean], label="L2 mean")
-plot!(p1, eps, wb_report[:l1_norm_mean], label="L1 mean")
+p1 = plot(eps, wb_report[:linf_norm_mean], label = "L∞ mean", title = "Mean norms")
+plot!(p1, eps, wb_report[:l2_norm_mean], label = "L2 mean")
+plot!(p1, eps, wb_report[:l1_norm_mean], label = "L1 mean")
 
-p2 = plot(eps, wb_report[:linf_norm_max], label="L∞ max", title="Max norms")
-plot!(p2, eps, wb_report[:l2_norm_max], label="L2 max")
-plot!(p2, eps, wb_report[:l1_norm_max], label="L1 max")
+p2 = plot(eps, wb_report[:linf_norm_max], label = "L∞ max", title = "Max norms")
+plot!(p2, eps, wb_report[:l2_norm_max], label = "L2 max")
+plot!(p2, eps, wb_report[:l1_norm_max], label = "L1 max")
 
 plot(
     p_metrics,
     p1,
     p2,
-    layout=(3,1),
-    xlabel="ε",
-    legendfontsize=8,
-    legend=:outerright,
-    linewidth=2,
+    layout = (3, 1),
+    xlabel = "ε",
+    legendfontsize = 8,
+    legend = :outerright,
+    linewidth = 2,
 )
