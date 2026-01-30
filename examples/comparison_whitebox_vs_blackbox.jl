@@ -127,7 +127,8 @@ function run_comparison()
             pred_clean = flux_model(sample.data)
             clean_conf = pred_clean[sample.true_idx, 1]
 
-            x_adv = attack(fgsm, flux_model, sample)
+            attack_results = attack(fgsm, flux_model, sample, detailed_result = true)
+            x_adv = attack_results.x_adv
 
             pred_adv = flux_model(x_adv)
             adv_conf = pred_adv[sample.true_idx, 1]
@@ -168,7 +169,7 @@ function run_comparison()
             pred_clean = flux_model(sample.data)
             clean_conf = pred_clean[sample.true_idx, 1]
 
-            x_adv = attack(brs, flux_model, sample)
+            x_adv = attack(brs, flux_model, sample, detailed_result = true)
 
             pred_adv = flux_model(x_adv)
             adv_conf = pred_adv[sample.true_idx, 1]

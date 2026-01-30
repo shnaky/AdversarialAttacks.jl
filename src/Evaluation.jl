@@ -292,7 +292,8 @@ function evaluate_robustness(
 
             if is_clean_correct
                 # adversarial output
-                adv_data = attack(atk, model, sample)
+                attack_results = attack(atk, model, sample, detailed_result = true)
+                adv_data = attack_results.x_adv
                 adv_pred = predict_fn(adv_data)
                 adv_label = argmax(vec(adv_pred))
                 is_adv_correct = (adv_label == true_label)
