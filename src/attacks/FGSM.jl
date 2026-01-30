@@ -18,7 +18,7 @@ FGSM(; epsilon::Real = 0.1) = FGSM(epsilon)
 default_loss(m, x, y) = crossentropy(m(x), y)
 
 """
-    attack(atk::FGSM, model, sample)
+    attack(atk::FGSM, model, sample; loss, detailed_result)
 
 Perform a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the given `model` using the provided `sample`.
 
@@ -26,18 +26,37 @@ Perform a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the g
 - `atk::FGSM`: An instance of the `FGSM`.
 - `model::FluxModel`: The machine learning (deep learning) model to be attacked.
 - `sample`: Input sample as a named tuple with `data` and `label`.
+- `loss`: Loss function with signature `loss(model, x, y)`. Defaults to `default_loss`, i.e. cross-entropy.
+- `detailed_result::Bool=false`: Return format control
+  - `false` (default): Returns adversarial example only (Array)
+  - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
 
 # Returns
-- Adversarial example (same type and shape as `sample.data`).
+- If `detailed_result=false`:
+    - Adversarial example (same type and shape as `sample.data`).
+- If `detailed_result=true`:
+    - NamedTuple with fields:
+        - `x_adv`: Adversarial example.
+        - `queries_used::Int`: Number of gradient evaluations (FGSM = 1).
 """
-function attack(atk::FGSM, model::Chain, sample; loss = default_loss)
+function attack(atk::FGSM, model::Chain, sample; loss = default_loss, detailed_result = false)
     x = sample.data
     y = sample.label
     ε = convert(eltype(x), atk.epsilon)
+
     # Compute gradient of loss w.r.t. input x
     grads = gradient(xx -> loss(model, xx, y), x)[1]
+
     # FGSM perturbation: ε · sign(∇_x L(x, y))
     perturbation = ε .* sign.(grads)
-    adversarial_example = x .+ perturbation
-    return adversarial_example
+    x_adv = x .+ perturbation
+
+    if detailed_result
+        return (
+            x_adv = x_adv,
+            queries_used = 1, # 1 gradient step
+        )
+    else
+        return x_adv
+    end
 end

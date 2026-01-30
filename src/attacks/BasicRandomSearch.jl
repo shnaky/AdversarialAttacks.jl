@@ -43,7 +43,10 @@ function _basic_random_search_core(
         max_iter::Int,
         rng::AbstractRNG;
         bounds = nothing,
+        detailed_result = false,
     )
+    queries_used = 0
+
     # Work in flattened space for coordinate-wise updates
     x_flat = vec(Float32.(x0))
     ndims = length(x_flat)
@@ -65,7 +68,12 @@ function _basic_random_search_core(
 
     # Initial probability of the true class
     probs = predict_proba_fn(x_flat)
+    queries_used += 1  # Query: Initial prediction
+
+    initial_label = argmax(probs)
+
     last_prob = probs[true_label]
+    current_label = initial_label
 
     # Iterate through permuted coordinates, repeat when max_iter exceeds ndims
     for i in 1:max_iter
@@ -76,39 +84,61 @@ function _basic_random_search_core(
         # Left direction
         x_left = clamp.(x_flat .- diff, lb, ub)
         probs_left = predict_proba_fn(x_left)
+        queries_used += 1  # Query: Left direction test
+
         left_prob = probs_left[true_label]
+        left_label = argmax(probs_left)
 
         if left_prob < last_prob
             last_prob = left_prob
             x_flat = x_left
+            current_label = left_label
+
             # Early stopping if misclassified
-            if argmax(probs_left) != true_label
+            if left_label != true_label
                 break
             end
         else
             # Right direction
             x_right = clamp.(x_flat .+ diff, lb, ub)
             probs_right = predict_proba_fn(x_right)
+            queries_used += 1  # Query: Left direction test
+
             right_prob = probs_right[true_label]
+            right_label = argmax(probs_right)
 
             if right_prob < last_prob
                 last_prob = right_prob
                 x_flat = x_right
+                current_label = right_label
+
                 # Early stopping if misclassified
-                if argmax(probs_right) != true_label
+                if right_label != true_label
                     break
                 end
             end
         end
     end
 
-    # Reshape back to original shape of x0
-    return reshape(x_flat, size(x0))
+    x_adv = reshape(x_flat, size(x0))        # Reshape back to original shape of x0
+    success = (current_label != true_label)
+
+    if detailed_result
+        return (
+            x_adv = x_adv,
+            success = success,
+            queries_used = queries_used,
+            final_label = current_label,
+        )
+    else
+        return x_adv
+    end
+
 end
 
 
 """
-    attack(atk::BasicRandomSearch, model::Chain, sample)
+    attack(atk::BasicRandomSearch, model::Chain, sample; detailed_result)
 
 Perform a black-box adversarial attack on the given model using the provided sample using the Basic Random Search variant SimBA.
 
@@ -116,11 +146,20 @@ Perform a black-box adversarial attack on the given model using the provided sam
 - atk::BasicRandomSearch: An instance of the BasicRandomSearch (BlackBox) attack.
 - model::Chain: The machine learning (deep learning, classical machine learning) model to be attacked.
 - sample: The input sample to be changed.
+- `detailed_result::Bool=false`: Return format control
+  - `false` (default): Returns adversarial example only (Array)
+  - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
 
 # Returns
-- Adversarial example (same type and shape as `sample.data`).
+- If `detailed_result=false`: Adversarial example (same type as `sample.data`)
+- If `detailed_result=true`: NamedTuple containing:
+  - `x_adv`: Adversarial example
+  - `success::Bool`: Whether attack succeeded
+  - `queries_used::Int`: Number of model queries
+  - `final_label::Int`: Final predicted class
+  
 """
-function attack(atk::BasicRandomSearch, model::Chain, sample)
+function attack(atk::BasicRandomSearch, model::Chain, sample; detailed_result = false)
     x = sample.data
     y = sample.label
 
@@ -144,11 +183,12 @@ function attack(atk::BasicRandomSearch, model::Chain, sample)
         atk.max_iter,
         atk.rng;
         bounds = atk.bounds,
+        detailed_result,
     )
 end
 
 """
-    attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
+    attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample; detailed_result)
 
 Perform a black-box adversarial attack on a DecisionTreeClassifier using BasicRandomSearch (SimBA).
 
@@ -156,11 +196,20 @@ Perform a black-box adversarial attack on a DecisionTreeClassifier using BasicRa
 - `atk::BasicRandomSearch`: Attack instance with `epsilon` and optional `bounds`.
 - `model::DecisionTreeClassifier`: DecisionTree.jl classifier to attack.
 - `sample`: NamedTuple with `data` and `label` fields.
+- `detailed_result::Bool=false`: Return format control
+  - `false` (default): Returns adversarial example only (Array)
+  - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
 
 # Returns
-- Adversarial example (same shape as `sample.data`).
+- If `detailed_result=false`: Adversarial example (same type as `sample.data`)
+- If `detailed_result=true`: NamedTuple containing:
+  - `x_adv`: Adversarial example
+  - `success::Bool`: Whether attack succeeded
+  - `queries_used::Int`: Number of model queries
+  - `final_label::Int`: Final predicted class
+
 """
-function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
+function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample; detailed_result = false)
     x = sample.data
     y = sample.label
 
@@ -183,6 +232,7 @@ function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample)
         atk.max_iter,
         atk.rng;
         bounds = atk.bounds,
+        detailed_result,
     )
 end
 
@@ -195,10 +245,20 @@ using BasicRandomSearch (SimBA), via `predict`.
 - `atk::BasicRandomSearch`: Attack instance with `epsilon` and `max_iter`.
 - `mach::Machine`: Trained MLJ machine with probabilistic predictions.
 - `sample`: NamedTuple with `data` (feature vector) and `label` (true class index, 1-based).
+- `detailed_result::Bool=false`: Return format control
+  - `false` (default): Returns adversarial example only (Array)
+  - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
 
-Returns an adversarial example with the same shape as `sample.data`.
+# Returns
+- If `detailed_result=false`: Adversarial example (same type as `sample.data`)
+- If `detailed_result=true`: NamedTuple containing:
+  - `x_adv`: Adversarial example
+  - `success::Bool`: Whether attack succeeded
+  - `queries_used::Int`: Number of model queries
+  - `final_label::Int`: Final predicted class
+
 """
-function attack(atk::BasicRandomSearch, mach::Machine, sample)
+function attack(atk::BasicRandomSearch, mach::Machine, sample; detailed_result = false)
     x = sample.data
     y = sample.label
     ε = convert(eltype(x), atk.epsilon)
@@ -222,5 +282,6 @@ function attack(atk::BasicRandomSearch, mach::Machine, sample)
         atk.max_iter,
         atk.rng;
         bounds = atk.bounds,
+        detailed_result,
     )
 end
