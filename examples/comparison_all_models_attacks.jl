@@ -5,53 +5,136 @@ Comprehensive adversarial attack comparison across all integrated models.
 
 Uses ExperimentConfig for unified configuration.
 
-Usage:
+# Usage
     julia --project=examples examples/comparison_all_models_attacks.jl
+
+# With CLI options
+julia --project=examples examples/comparison_all_models_attacks.jl -n 100 -d mnist
+
+# Options
+-n, --num-attack-samples  Number of attack target samples (default: 100)
+-d, --dataset             Dataset (mnist/cifar10) (default: mnist)  
+-f, --force-retrain       Force model retraining (ignore cache)
 """
+
+# ================================================================================
+# 📊 SUMMARY with MNIST Dataset
+# ================================================================================
+
+# 🎯 FGSM_eps0.1
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_mnist_cnn        94.7%        99.0%         1.0%
+
+#    🏆 Most Robust: comparison_mnist_cnn (1.0%)
+
+# 🎯 FGSM_eps0.3
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_mnist_cnn        94.7%        99.0%         1.0%
+
+#    🏆 Most Robust: comparison_mnist_cnn (1.0%)
+
+# 🎯 BasicRandomSearch_eps0.1
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_mnist_xgboost        97.0%         5.1%        94.9%
+# comparison_mnist_forest        96.2%         9.4%        90.6%
+# comparison_mnist_tree        86.5%        26.7%        73.3%
+# comparison_mnist_knn        96.6%       100.0%         0.0%
+# comparison_mnist_logistic        54.2%       100.0%         0.0%
+
+#    🏆 Most Robust: comparison_mnist_xgboost (94.9%)
+
+# 🎯 BasicRandomSearch_eps0.3
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_mnist_forest        96.2%         7.3%        92.7%
+# comparison_mnist_xgboost        97.0%         8.2%        91.8%
+# comparison_mnist_tree        86.5%        42.2%        57.8%
+# comparison_mnist_knn        96.6%       100.0%         0.0%
+# comparison_mnist_logistic        54.2%       100.0%         0.0%
+
+#    🏆 Most Robust: comparison_mnist_forest (92.7%)
+
+# ================================================================================
+
+
+# ================================================================================
+# 📊 SUMMARY with Cifar10
+# ================================================================================
+
+# 🎯 FGSM_eps0.1
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_cifar_cnn        65.0%        83.3%        16.7%
+
+#    🏆 Most Robust: comparison_cifar_cnn (16.7%)
+
+# 🎯 FGSM_eps0.3
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_cifar_cnn        65.0%       100.0%         0.0%
+
+#    🏆 Most Robust: comparison_cifar_cnn (0.0%)
+
+# 🎯 BasicRandomSearch_eps0.1
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_cifar_knn        33.1%         0.0%       100.0%
+# comparison_cifar_tree        28.4%         2.8%        97.2%
+# comparison_cifar_forest        42.9%         4.4%        95.6%
+# comparison_cifar_xgboost        50.5%         6.1%        93.9%
+# comparison_cifar_logistic        41.0%        25.0%        75.0%
+
+#    🏆 Most Robust: comparison_cifar_knn (100.0%)
+
+# 🎯 BasicRandomSearch_eps0.3
+# --------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness
+# --------------------------------------------------------------------------------
+# comparison_cifar_knn        33.1%         0.0%       100.0%
+# comparison_cifar_tree        28.4%         5.6%        94.4%
+# comparison_cifar_xgboost        50.5%        18.4%        81.6%
+# comparison_cifar_forest        42.9%        20.0%        80.0%
+# comparison_cifar_logistic        41.0%        60.4%        39.6%
+
+#    🏆 Most Robust: comparison_cifar_knn (100.0%)
+
+# ================================================================================
 
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
 
-using AdversarialAttacks
-using MLJ
-using Flux
-using Printf
-using Dates
-using CategoricalArrays: levelcode
-using Images: channelview
-
 # =========================
 # Experiment Configurations
 # =========================
+args = parse_common_args()
+arg_num_attack_samples = args["num-attack-samples"]
+arg_dataset = dataset_from_string(args["dataset"])
+arg_force_retrain = args["force-retrain"]
+
+NUM_ATTACK_SAMPLES = arg_num_attack_samples # default: 100
+dataset = arg_dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
+force_retrain = arg_force_retrain # default: false
 
 exp_name = "comparison_all"
-dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
-num_of_samples = 10
 
 attackConfigs_FGSM = [
-    (FGSM(epsilon = 0.1f0), num_of_samples),
-    (FGSM(epsilon = 0.3f0), num_of_samples),
+    (FGSM(epsilon = 0.1f0), NUM_ATTACK_SAMPLES),
+    (FGSM(epsilon = 0.3f0), NUM_ATTACK_SAMPLES),
 ]
 attackConfigs_BSR = [
-    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), num_of_samples),
-    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), num_of_samples),
+    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), NUM_ATTACK_SAMPLES),
+    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), NUM_ATTACK_SAMPLES),
 ]
-
-# ==========================================
-# 📦 Loaded cached comparison_mnist_cnn (Acc: 96.1%)
-# 📦 Loaded cached comparison_mnist_tree (Acc: 86.5%)
-# 📦 Loaded cached comparison_mnist_forest (Acc: 96.2%)
-# 📦 Loaded cached comparison_mnist_knn (Acc: 96.6%)
-# 📦 Loaded cached comparison_mnist_xgboost (Acc: 97.0%)
-# 📦 Loaded cached comparison_mnist_logistic (Acc: 54.2%)
-# ==========================================
-# 📦 Loaded cached comparison_cifar_cnn (Acc: 65.4%)
-# 📦 Loaded cached comparison_cifar_tree (Acc: 28.4%)
-# 📦 Loaded cached comparison_cifar_forest (Acc: 42.8%)
-# 📦 Loaded cached comparison_cifar_knn (Acc: 33.1%)
-# 📦 Loaded cached comparison_cifar_xgboost (Acc: 50.5%)
-# 📦 Loaded cached comparison_cifar_logistic (Acc: 41.0%)
-# ==========================================
 
 const ALL_CONFIGS = [
     (
@@ -61,7 +144,7 @@ const ALL_CONFIGS = [
             model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
             dataset = dataset,
             use_flatten = false,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (epochs = 5,),
@@ -75,7 +158,7 @@ const ALL_CONFIGS = [
             model_factory = make_tree,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (max_depth = 10,)
@@ -89,7 +172,7 @@ const ALL_CONFIGS = [
             model_factory = make_forest,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (n_trees = 50,)
@@ -103,7 +186,7 @@ const ALL_CONFIGS = [
             model_factory = make_knn,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (K = 10,)
@@ -117,7 +200,7 @@ const ALL_CONFIGS = [
             model_factory = make_xgboost,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (num_round = 50, max_depth = 6)
@@ -132,7 +215,7 @@ const ALL_CONFIGS = [
             model_factory = make_logistic,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = NamedTuple()  # default
@@ -179,11 +262,11 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
 
             # For CNN: reshape to 4D array (28×28×1×1) or (32x32x3xN)
             x_array = Float32.(channelview(x_img))
-            h, w, c = dataset_shapes[dataset]
+            h, w, c = dataset_shape(Val(dataset))
             x_flux = reshape(x_array, h, w, c, 1)
 
             true_label_idx = levelcode(true_label)
-            y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+            y_onehot = onehot(true_label_idx, 1:length(label_levels))
 
             push!(test_data, (data = x_flux, label = y_onehot))
         else
@@ -196,7 +279,7 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
             pred_label = mode(pred_prob)
 
             if pred_label == true_label_obj
-                y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+                y_onehot = onehot(true_label_idx, 1:length(label_levels))
                 push!(test_data, (data = x_flat, label = y_onehot, true_idx = true_label_idx))
             end
         end
@@ -274,39 +357,38 @@ function evaluate_single_model(exp_config::ExperimentConfig, attack_configs)
     println("="^70)
 
     mach, meta = get_or_train(exp_config)
-    println("✓ Loaded (Clean Acc: $(round(meta["accuracy"] * 100, digits = 1))%)")
 
-    # Get model in correct format
-    is_cnn = (exp_config.model_file_name == "comparison_mnist_cnn" || exp_config.model_file_name == "comparison_cifar_cnn")
+    clean_acc_model = meta["accuracy"]
+    println("✓ Model test accuracy: $(round(clean_acc_model * 100, digits = 1))%")
+
+    is_cnn = (
+        exp_config.model_file_name == "comparison_mnist_cnn" ||
+            exp_config.model_file_name == "comparison_cifar_cnn"
+    )
     model = get_model_for_evaluation(mach, is_cnn)
 
-    # Run all attacks
-    results = []
+    results = NamedTuple[]
     for (attack, n_samples) in attack_configs
         attack_name = "$(typeof(attack).name.name)_eps$(attack.epsilon)"
-
         println("\n⚔️  Attack: $attack_name, Samples: $n_samples")
 
         try
-            # Prepare test data with correct format for model type
-            test_samples = prepare_test_samples(mach, meta, n_samples, exp_config.use_flatten, is_cnn, exp_config.dataset)
-
-            println("length(test_samples)", length(test_samples))
-            # Run evaluation using built-in function
-            report = evaluate_robustness(
-                model, attack, test_samples,
-                num_samples = length(test_samples)
+            test_samples = prepare_test_samples(
+                mach, meta, n_samples,
+                exp_config.use_flatten, is_cnn, exp_config.dataset
             )
-            println(report)
 
-            # Extract metrics safely
+            report = evaluate_robustness(
+                model, attack, test_samples;
+                num_samples = length(test_samples),
+            )
+
             metrics = extract_metrics_from_report(report)
 
-            # Create result tuple
             result = (
                 model = exp_config.model_file_name,
                 attack = attack_name,
-                clean_acc = metrics.clean_acc,
+                clean_acc = clean_acc_model,      # ★ all test accuracy
                 asr = metrics.asr,
                 robustness = metrics.robustness,
                 linf_mean = metrics.linf_mean,
@@ -315,15 +397,13 @@ function evaluate_single_model(exp_config::ExperimentConfig, attack_configs)
 
             push!(results, result)
 
-            # Print concise summary
             println(
                 "   ✓ ASR: $(round(result.asr * 100, digits = 1))% | " *
-                    "Robust: $(round(result.robustness * 100, digits = 1))%"
+                    "Robust: $(round(result.robustness * 100, digits = 1))% | " *
+                    "Clean test acc: $(round(result.clean_acc * 100, digits = 1))%"
             )
-
         catch e
             println("   ❌ Error: $e")
-            # Print stack trace for debugging
             println(stacktrace(catch_backtrace()))
         end
     end
@@ -340,7 +420,7 @@ function run_full_comparison()
     println("\n" * "🚀"^35)
     println("ADVERSARIAL ROBUSTNESS COMPARISON")
     println("🚀"^35)
-    println("Started: $(Dates.format(now(), "HH:MM:SS"))")
+    println("Started: $(format(now(), "HH:MM:SS"))")
 
     all_results = []
 
@@ -397,7 +477,7 @@ function generate_summary_report(results)
     end
 
     println("\n" * "="^80)
-    println("Completed: $(Dates.format(now(), "HH:MM:SS"))")
+    println("Completed: $(format(now(), "HH:MM:SS"))")
     return println("Total Evaluations: $(length(results))")
 end
 

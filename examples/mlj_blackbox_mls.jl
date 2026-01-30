@@ -1,4 +1,4 @@
-# examples/mlj_baseline.jl
+# examples/mlj_blackbox_mls.jl
 
 """
 Black-Box Attack on Traditional ML model
@@ -7,19 +7,31 @@ Demonstrates query-based adversarial attacks on a traditional ML model
 using BasicRandomSearch. Unlike neural networks, decision trees have
 no gradients, making only black-box attacks feasible.
 
-Usage:
-    julia --project=examples examples/mlj_baseline.jl
+# Usage
+    julia --project=examples examples/mlj_blackbox_mls.jl
+
+# With CLI options
+    julia --project=examples examples/mlj_blackbox_mls.jl -n 100 -d mnist
+
+# Options
+-n, --num-attack-samples  Number of attack target samples (default: 100)
+-d, --dataset             Dataset (mnist/cifar10) (default: mnist)  
+-f, --force-retrain       Force model retraining (ignore cache)
 """
 
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
-using AdversarialAttacks
-using Flux
-using MLJ: mode, predict, table
-using CategoricalArrays: levelcode
-using Printf
 
 function main()
+    args = parse_common_args()
+    arg_num_attack_samples = args["num-attack-samples"]
+    arg_dataset = dataset_from_string(args["dataset"])
+    arg_force_retrain = args["force-retrain"]
+
+    NUM_ATTACK_SAMPLES = arg_num_attack_samples # default: 100
+    dataset = arg_dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
+    force_retrain = arg_force_retrain # default: false
+
     println("="^70)
     println("Black-Box Attack on Traditional ML model")
     println("="^70)
@@ -31,51 +43,41 @@ function main()
     # [Step 0] Config the Experiment
     # =========================================================================
 
-    N_SAMPLES = 100
+    attack_config = BasicRandomSearch(epsilon = 0.1f0, max_iter = 1000)
 
     # ==========================================
     #   • Experiment: baseline_mnist_forest_exp
     #   • Clean accuracy: 96.51%
     # ==========================================
+    #   • Experiment: baseline_cifar_forest_exp
+    #   • Clean accuracy: 46.03%
+    # ==========================================
     config = ExperimentConfig(
-        exp_name = "baseline_mnist_forest_exp",
-        model_file_name = "baseline_mnist_forest",
+        exp_name = dataset == DATASET_MNIST ? "baseline_mnist_forest_exp" : "baseline_cifar_forest_exp",
+        model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_forest" : "baseline_cifar_forest",
         model_factory = make_forest,
-        dataset = DATASET_MNIST,
+        dataset = dataset,
         use_flatten = true,
-        force_retrain = true,
+        force_retrain = force_retrain,
         fraction_train = 0.8,
         rng = 42,
         model_hyperparams = (n_trees = 200, max_depth = -1)
     )
 
     # ==========================================
-    #   • Experiment: baseline_cifar_forest_exp
-    #   • Clean accuracy: 46.03%
-    # ==========================================
-    # config = ExperimentConfig(
-    #     exp_name = "baseline_cifar_forest_exp",
-    #     model_file_name = "baseline_cifar_forest",
-    #     model_factory = make_forest,
-    #     dataset = DATASET_CIFAR10,
-    #     use_flatten = true,
-    #     force_retrain = false,
-    #     fraction_train = 0.8,
-    #     rng = 42,
-    #     model_hyperparams = (n_trees = 200, max_depth = -1)
-    # )
-
-    # ==========================================
     #   • Experiment: baseline_mnist_tree_exp
     #   • Clean accuracy: 86.48%
     # ==========================================
+    #   • Experiment: baseline_cifar_tree_exp
+    #   • Clean accuracy: 27.23%
+    # ==========================================
     # config = ExperimentConfig(
-    #     exp_name = "baseline_mnist_tree_exp",
-    #     model_file_name = "baseline_mnist_tree",
+    #     exp_name = dataset == DATASET_MNIST ? "baseline_mnist_tree_exp" : "baseline_cifar_tree_exp",
+    #     model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_tree" : "baseline_cifar_tree",
     #     model_factory = make_tree,
-    #     dataset = DATASET_MNIST,
+    #     dataset = dataset,
     #     use_flatten = true,
-    #     force_retrain = false,
+    #     force_retrain = force_retrain,
     #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (rng = 42, max_depth = 10)
@@ -86,12 +88,12 @@ function main()
     #   • Clean accuracy: 96.58%
     # ==========================================
     # config = ExperimentConfig(
-    #     exp_name = "baseline_mnist_knn_exp",
-    #     model_file_name = "baseline_mnist_knn",
+    #     exp_name = dataset == DATASET_MNIST ? "baseline_mnist_knn_exp" : "baseline_cifar_knn_exp",
+    #     model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_knn" : "baseline_cifar_knn",
     #     model_factory = make_knn,
-    #     dataset = DATASET_MNIST,
+    #     dataset = dataset,
     #     use_flatten = true,
-    #     force_retrain = false,
+    #     force_retrain = force_retrain,
     #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (K = 10,)
@@ -104,10 +106,12 @@ function main()
     # config = ExperimentConfig(
     #     exp_name = "baseline_mnist_xgboost_exp",
     #     model_file_name = "baseline_mnist_xgboost",
+    #     exp_name = dataset == DATASET_MNIST ? "baseline_mnist_xgboost_exp" : "baseline_cifar_xgboost_exp",
+    #     model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_xgboost" : "baseline_cifar_xgboost",
     #     model_factory = make_xgboost,
-    #     dataset = DATASET_MNIST,
+    #     dataset = dataset,
     #     use_flatten = true,
-    #     force_retrain = false,
+    #     force_retrain = force_retrain,
     #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = (num_round = 50,)
@@ -118,33 +122,16 @@ function main()
     #  • Clean accuracy: 54.2%
     # ==========================================
     # config = ExperimentConfig(
-    #     exp_name = "baseline_mnist_logistic_exp",
-    #     model_file_name = "baseline_mnist_logistic",
+    #     exp_name = dataset == DATASET_MNIST ? "baseline_mnist_logistic_exp" : "baseline_cifar_logistic_exp",
+    #     model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_logistic" : "baseline_cifar_logistic",
     #     model_factory = make_logistic,
-    #     dataset = DATASET_MNIST,
+    #     dataset = dataset,
     #     use_flatten = true,
-    #     force_retrain = false,
+    #     force_retrain = force_retrain,
     #     fraction_train = 0.8,
     #     rng = 42,
     #     model_hyperparams = NamedTuple()  # default
     # )
-
-    # ==========================================
-    #   • Experiment: baseline_cifar_tree_exp
-    #   • Clean accuracy: 27.23%
-    # ==========================================
-    # config = ExperimentConfig(
-    #     exp_name = "baseline_cifar_tree_exp",
-    #     model_file_name = "baseline_cifar_tree",
-    #     model_factory = make_tree,
-    #     dataset = DATASET_CIFAR10,
-    #     use_flatten = true,
-    #     force_retrain = false,
-    #     fraction_train = 0.8,
-    #     rng = 42,
-    #     model_hyperparams = (rng = 42, max_depth = 10)
-    # )
-
 
     # =========================================================================
     # [Step 1] Load and Prepare Data
@@ -173,7 +160,7 @@ function main()
     # =========================================================================
     println("\n[Step 3] Preparing test samples...")
 
-    n_available = min(N_SAMPLES, length(test_idx))
+    n_available = min(NUM_ATTACK_SAMPLES, length(test_idx))
     test_data = []
 
     for i in 1:n_available
@@ -190,7 +177,7 @@ function main()
         pred_label = mode(pred_prob)
 
         if pred_label == true_label
-            y_onehot = Flux.onehot(true_label_idx, 1:10)
+            y_onehot = onehot(true_label_idx, 1:10)
             push!(
                 test_data, (
                     data = x_flat,
@@ -208,8 +195,6 @@ function main()
     # [Step 4] Black-Box Attack Evaluation
     # =========================================================================
     println("\n[Step 4] Running Black-Box Attack (BasicRandomSearch with ε=0.1, 200 iter)...")
-
-    attack_config = BasicRandomSearch(epsilon = 0.1f0, max_iter = 200)
 
     bb_report = evaluate_robustness(
         mach,
@@ -268,43 +253,6 @@ function main()
 
     # =========================================================================
     # [Step 6] Key Insights
-    # =========================================================================
-    println("\n" * "="^70)
-    println("KEY INSIGHTS")
-    println("="^70)
-    @printf(
-        """
-        **Model Characteristics**:
-          • Single decision tree (max depth: 10)
-          • No gradients available → only black-box attacks feasible
-          • Clean accuracy: %.1f%%
-
-        **Attack Performance**:
-          • Black-box ASR: %.1f%% (%d/%d successful)
-          • Average perturbation: %.4f L∞ norm
-          • Queries per sample: 200
-
-        **Robustness**:
-          • Model robustness: %.1f%% (1 - ASR)
-          • Adversarial accuracy: %.1f%%
-
-        **Conclusion**:
-        Decision trees are vulnerable to black-box attacks despite lacking gradients.
-        Random search can find adversarial examples by exploring the feature space
-        through iterative querying. Single trees are typically less robust than
-        ensemble methods like RandomForest.
-        """,
-        accuracy * 100,
-        bb_report.attack_success_rate * 100,
-        bb_report.num_successful_attacks,
-        bb_report.num_clean_correct,
-        bb_report.linf_norm_mean,
-        bb_report.robustness_score * 100,
-        bb_report.adv_accuracy * 100
-    )
-
-    # =========================================================================
-    # [Step 7] Detailed Report
     # =========================================================================
     println("\n" * "="^70)
     println("DETAILED ROBUSTNESS REPORT")
