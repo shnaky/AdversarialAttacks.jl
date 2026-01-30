@@ -215,6 +215,20 @@ using CategoricalArrays: levels
         @test length(results[:linf_norm_mean]) == 2
     end
 
+    @testset "evaluate_robustness - evaluation_curve - BRS" begin
+        attack_type = BasicRandomSearch
+
+        epsilons = [0.05, 0.1]
+
+        results = evaluation_curve(model, attack_type, epsilons, test_data; num_samples = 5, seed = 42)
+
+        @test results isa Dict
+        @test results[:epsilons] == epsilons
+        @test length(results[:clean_accuracy]) == 2
+        @test length(results[:linf_norm_mean]) == 2
+    end
+
+
     @testset "make_prediction_function" begin
         @testset "Flux-like model branch" begin
             # Test Flux-style neural network prediction wrapper
