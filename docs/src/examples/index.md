@@ -7,7 +7,6 @@ The **Tutorials & Examples** section provides end‑to‑end, runnable scripts t
 - **White-box FGSM attack** against a small Flux CNN on MNIST — see the [tutorial](../tutorials/whitebox_fgsm_flux_mnist.md).
 - **Black-box Basic Random Search** (SimBA-style) attack against a DecisionTree classifier on the Iris dataset — see the [tutorial](../tutorials/blackbox_basicrandomsearch_decisiontree_iris.md).
 - **Black-box SimBA attack** on 2D spirals with decision boundary visualization — see the [tutorial](../tutorials/simba_spiral.md).
-- **White-box FGSM attack** on CIFAR-10 with pretrained model and image export — see the [tutorial](../tutorials/whitebox_cifar10.md).
 
 ## Running locally
 
