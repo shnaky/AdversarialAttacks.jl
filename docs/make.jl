@@ -16,9 +16,15 @@ DocMeta.setdocmeta!(
 EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 TUTORIALS_OUTPUT = joinpath(@__DIR__, "src", "tutorials")
 
+# Copy common/ so that `include("./common/…")` works inside @example blocks
+mkpath(TUTORIALS_OUTPUT)
+cp(joinpath(EXAMPLES_DIR, "common"), joinpath(TUTORIALS_OUTPUT, "common"); force = true)
+
 for filename in [
         "whitebox_fgsm_flux_mnist.jl",
         "blackbox_basicrandomsearch_decisiontree_iris.jl",
+        "simba_spiral.jl",
+        #= "whitebox_cifar10.jl", =#
     ]
     Literate.markdown(
         joinpath(EXAMPLES_DIR, filename),
@@ -44,6 +50,8 @@ makedocs(
             "Overview" => "examples/index.md",
             "White-Box – FGSM (Flux, MNIST)" => "tutorials/whitebox_fgsm_flux_mnist.md",
             "Black-Box – Basic Random Search (DecisionTree, Iris)" => "tutorials/blackbox_basicrandomsearch_decisiontree_iris.md",
+            "Black-Box – SimBA on 2D Spirals" => "tutorials/simba_spiral.md",
+            #= "White-Box – FGSM on CIFAR-10" => "tutorials/whitebox_cifar10.md", =#
         ],
         "Developer Documentation" => [
             "Attack Interface" => "attack_interface.md",

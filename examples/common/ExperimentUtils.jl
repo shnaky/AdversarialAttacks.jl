@@ -2,8 +2,8 @@ module ExperimentUtils
 
 include("Models.jl")
 
-using AdversarialAttacks: FGSM, BasicRandomSearch, evaluate_robustness, attack
-export FGSM, BasicRandomSearch, evaluate_robustness, attack
+using AdversarialAttacks: FGSM, BasicRandomSearch, evaluate_robustness, attack, evaluation_curve
+export FGSM, BasicRandomSearch, evaluate_robustness, attack, evaluation_curve
 
 using MLJ: partition, accuracy, machine, fit!, save
 using MLJ: mode, predict_mode, table, levels, predict

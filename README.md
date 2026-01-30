@@ -4,11 +4,11 @@
 [![Coverage](https://codecov.io/gh/shnaky/AdversarialAttacks.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/shnaky/AdversarialAttacks.jl)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**AdversarialAttacks.jl** is a lightweight Julia package for experimenting with adversarial attacks against neural networks and tree‑based models, focusing on FGSM (white‑box) and random‑search–based (black‑box) attacks.
+**AdversarialAttacks.jl** is a lightweight Julia package for experimenting with Adversarial Attacks against neural networks and tree‑based models, focusing on FGSM (White‑box) and random‑search–based (Black‑box) attacks.
 
 Currently, this package supports models implemented as Flux chains (neural networks), decision trees from the DecisionTree.jl package and models from the MLJ package. Support for other model types may be added in the future.
 
-Adversarial attacks manipulate data, most famously images, to exploit vulnerabilities in machine-learning models. Perturbations that are nearly imperceptible to the humans can cause models to misclassify inputs with high confidence. This package provides tools to generate adversarial examples and benchmark a model’s robustness against such attacks.
+Adversarial Attacks manipulate data, most famously images, to exploit vulnerabilities in machine-learning models. Perturbations that are nearly imperceptible to humans can cause models to misclassify inputs with high confidence. This package provides tools to generate adversarial examples and benchmark a model’s robustness against such attacks.
 
 ## Installation
 
@@ -16,7 +16,7 @@ You can install the package via the Julia package manager.
 In the Julia REPL, run:
 
 ```julia-repl
-julia> ]add https://github.com/shnaky/AdversarialAttacks.jl
+julia> using Pkg; Pkg.add("url=https://github.com/shnaky/AdversarialAttacks.jl")
 ```
 
 ## Examples
@@ -25,7 +25,7 @@ For comprehensive, executable tutorials with detailed explanations and visualiza
 
 The following example shows how to create an adversarial sample from a **single input sample** using the FGSM attack:
 
-### FGSM attack - Flux Integration (white-box)
+### FGSM attack - Flux Integration (White-box)
 
 ```julia-repl
 julia> using AdversarialAttacks
@@ -45,7 +45,7 @@ julia> sample = (data=rand(Float32, 2, 1), label=Flux.onehot(1, 1:2) )
 julia> adv_sample = attack(fgsm, model, sample)
 ```
 
-### BasicRandomSearch attack - DecisionTree integration (black-box)
+### SimBA (BasicRandomSearch) attack - DecisionTree integration (Black-box)
 
 ```julia-repl
 julia> using AdversarialAttacks
@@ -95,7 +95,7 @@ julia> adv_samples = attack(fgsm, model, tensor)
 ```
 
 ### Evaluation Example
-Get an evaluation report on your adversarial attack.
+Get an evaluation report on your Adversarial Attack.
 
 ```julia-repl
 julia> using AdversarialAttacks
@@ -115,18 +115,18 @@ julia> println(report)
 
 Dataset
   Total samples evaluated        : 10
-  Clean-correct samples          : 2 / 10
+  Clean-correct samples          : 6 / 10
 
 Clean Performance
-  Clean accuracy                 : 20.0%
+  Clean accuracy                 : 60.0%
 
 Adversarial Performance
-  Adversarial accuracy           : 50.0%
+  Adversarial accuracy           : 16.67%
 
 Attack Effectiveness
-  Successful attacks             : 1 / 2
-  Attack success rate (ASR)      : 50.0%
-  Robustness score (1 - ASR)     : 50.0%
+  Successful attacks             : 5 / 6
+  Attack success rate (ASR)      : 83.33%
+  Robustness score (1 - ASR)     : 16.67%
 
 Perturbation Analysis (Norms)
   L_inf Maximum perturbation     : 0.5
