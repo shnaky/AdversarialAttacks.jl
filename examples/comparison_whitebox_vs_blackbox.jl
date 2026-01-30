@@ -37,7 +37,7 @@ function run_comparison()
     arg_force_retrain = args["force-retrain"]
 
     NUM_ATTACK_SAMPLES = arg_num_attack_samples # default: 100
-    dataset = dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
+    dataset = arg_dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
     force_retrain = arg_force_retrain # default: false
 
     # ==========================================
