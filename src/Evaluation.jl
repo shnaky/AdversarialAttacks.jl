@@ -426,6 +426,7 @@ This is NOT passed to attack() - only used for getting predictions.
 This function handles different model types (Flux neural networks vs MLJ models)
 and input shapes (vectors vs matrices) to provide a consistent prediction interface.
 """
+
 function make_prediction_function(model::Machine)
     return function (x_data)
         if x_data isa AbstractVector
@@ -455,6 +456,7 @@ Flux model (Neural Network) version.
 # Returns
 - A function that takes input data and returns prediction vector.
 """
+
 function make_prediction_function(model)
     return function (x)
         output = model(x)
