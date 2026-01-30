@@ -45,7 +45,7 @@ julia> sample = (data=rand(Float32, 2, 1), label=Flux.onehot(1, 1:2) )
 julia> adv_sample = attack(fgsm, model, sample)
 ```
 
-### BasicRandomSearch attack - DecisionTree integration (black-box)
+### SimBA attack - DecisionTree integration (black-box)
 
 ```julia-repl
 julia> using AdversarialAttacks
@@ -115,18 +115,18 @@ julia> println(report)
 
 Dataset
   Total samples evaluated        : 10
-  Clean-correct samples          : 2 / 10
+  Clean-correct samples          : 6 / 10
 
 Clean Performance
-  Clean accuracy                 : 20.0%
+  Clean accuracy                 : 60.0%
 
 Adversarial Performance
-  Adversarial accuracy           : 50.0%
+  Adversarial accuracy           : 16.67%
 
 Attack Effectiveness
-  Successful attacks             : 1 / 2
-  Attack success rate (ASR)      : 50.0%
-  Robustness score (1 - ASR)     : 50.0%
+  Successful attacks             : 5 / 6
+  Attack success rate (ASR)      : 83.33%
+  Robustness score (1 - ASR)     : 16.67%
 
 Perturbation Analysis (Norms)
   L_inf Maximum perturbation     : 0.5
