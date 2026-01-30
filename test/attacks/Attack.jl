@@ -1,6 +1,5 @@
 using Test
 using AdversarialAttacks
-using Flux
 
 @testset "Attack abstractions" begin
     @testset "Abstract types" begin
@@ -90,13 +89,13 @@ using Flux
         model = Chain(Dense(2 => 2), softmax)
 
         # WhiteBox + Flux.Chain + NamedTuple
-        AdversarialAttacks.attack(::MockWB, m::Flux.Chain, sample::NamedTuple) = sample.data .* 2.0
+        AdversarialAttacks.attack(::MockWB, m::Chain, sample::NamedTuple) = sample.data .* 2.0
 
         sample_wb = (data = [1.0, 2.0], label = 1)
         @test attack(MockWB(), model, sample_wb) == [2.0, 4.0]
 
         # BlackBox + Flux.Chain + NamedTuple
-        AdversarialAttacks.attack(::MockBB, m::Flux.Chain, sample::NamedTuple) = sample.data .* 1.5
+        AdversarialAttacks.attack(::MockBB, m::Chain, sample::NamedTuple) = sample.data .* 1.5
 
         sample_bb = (data = [1.0, 2.0], label = 1)
         @test attack(MockBB(), model, sample_bb) == [1.5, 3.0]
@@ -110,9 +109,9 @@ using Flux
         model = Chain(x -> x)
 
         # attack for array samples
-        AdversarialAttacks.attack(::WBArrayAttack, ::Flux.Chain, sample::AbstractArray; kwargs...) =
+        AdversarialAttacks.attack(::WBArrayAttack, ::Chain, sample::AbstractArray; kwargs...) =
             sample .+ 10.0
-        AdversarialAttacks.attack(::BBArrayAttack, ::Flux.Chain, sample::AbstractArray; kwargs...) =
+        AdversarialAttacks.attack(::BBArrayAttack, ::Chain, sample::AbstractArray; kwargs...) =
             sample .* 2.0
 
         vec = [1.0, 2.0]
@@ -142,7 +141,7 @@ using Flux
         y = [1, 2]              # 1-based labels
 
         tree = DecisionTreeClassifier(; max_depth = 2)
-        DecisionTree.fit!(tree, X, y)
+        dt_fit!(tree, X, y)
 
         # Test AbstractArray sample
         raw_sample = [1.0, 2.0]
@@ -156,15 +155,12 @@ using Flux
     end
 
     @testset "TreeModel dispatch with NamedTuple" begin
-        import DecisionTree
-        using DecisionTree: DecisionTreeClassifier
-
         struct DummyBB2 <: BlackBoxAttack end
 
         X = [0.0 1.0; 1.0 0.0]
         y = [1, 2]
         tree = DecisionTreeClassifier(; max_depth = 2)
-        DecisionTree.fit!(tree, X, y)
+        dt_fit!(tree, X, y)
 
         AdversarialAttacks.attack(::DummyBB2, ::DecisionTreeClassifier, sample::AbstractArray) = sample .* 1.1
         AdversarialAttacks.attack(::DummyBB2, ::DecisionTreeClassifier, sample::NamedTuple) = sample.data .* 1.1

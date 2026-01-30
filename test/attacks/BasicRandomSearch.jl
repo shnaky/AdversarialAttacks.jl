@@ -1,21 +1,11 @@
-using Test
-using Random
-using Flux
-using DecisionTree
-using MLJ
-using MLJ: machine, table, predict
-using MLJDecisionTreeInterface: RandomForestClassifier
-using CategoricalArrays: levelcode, CategoricalArray
 using AdversarialAttacks
-
-const dt_fit! = DecisionTree.fit!
-const mlj_fit! = MLJ.fit!
+using Test
 
 # Shared dummy model for black-box attack tests
 struct DummyBlackBoxModel end
 
 @testset "BasicRandomSearch Struct" begin
-    Random.seed!(1234)  # Make tests deterministic
+    seed!(1234)  # Make tests deterministic
 
     # Test default constructor
     atk = BasicRandomSearch()
@@ -44,8 +34,7 @@ struct DummyBlackBoxModel end
     @test BasicRandomSearch <: AbstractAttack
 
     # Test for Flux model
-    sample = (data = Float32[1.0, 2.0, 3.0, 7.0], label = Flux.onehot(1, 1:2))
-    Random.seed!(1234)
+    sample = (data = Float32[1.0, 2.0, 3.0, 7.0], label = onehot(1, 1:2))
     model = Chain(Dense(4 => 2), softmax)
     x_copy = copy(sample.data)
 
@@ -57,8 +46,6 @@ struct DummyBlackBoxModel end
 end
 
 @testset "BasicRandomSearch with DecisionTreeClassifier" begin
-    Random.seed!(1234)
-
     classes = ["A", "B", "C"]
     labels = vcat(fill(classes[1], 8), fill(classes[2], 8), fill(classes[3], 8))
     features = rand(24, 4) .* 4
@@ -73,7 +60,7 @@ end
     @test all(0 .<= probs .<= 1)
 
     # Test attack with typed API
-    sample = (data = Float32[0.5, 0.8, 1.2, 1.0], label = Flux.onehot(1, 1:3))
+    sample = (data = Float32[0.5, 0.8, 1.2, 1.0], label = onehot(1, 1:3))
     atk = BasicRandomSearch(epsilon = 0.1f0)
     x_copy = copy(sample.data)
 
@@ -84,8 +71,6 @@ end
 end
 
 @testset "BasicRandomSearch SimBA core behavior" begin
-    Random.seed!(1234)
-
     ε = 0.1f0
     atk = BasicRandomSearch(epsilon = ε)
 
@@ -140,8 +125,6 @@ end
 end
 
 @testset "Custom Bounds Support" begin
-    Random.seed!(1234)
-
     # Iris-like bounds: per-feature [lb, ub]
     iris_bounds = [(4.3f0, 7.9f0), (2.0f0, 4.4f0), (1.0f0, 6.9f0), (0.1f0, 2.5f0)]
 
@@ -184,8 +167,6 @@ end
 end
 
 @testset "Custom Max Iterations" begin
-    Random.seed!(1234)
-
     # Dummy Flux model: output = [sum(x), 0.0]
     model = Chain(x -> Float32[sum(x), 0.0f0])
 
@@ -208,8 +189,6 @@ end
 end
 
 @testset "BasicRandomSearch with MLJ Machine (RandomForest)" begin
-    Random.seed!(1234)
-
     # Simple toy tabular data: 2 features, 2 classes
     X_mat = Float32[
         0.1 0.2
@@ -255,8 +234,6 @@ end
 end
 
 @testset "_basic_random_search_core returns detailed result as namedtuple" begin
-    Random.seed!(1234)
-
     model = x -> Float32[sum(x), 1.0f0 - sum(x)]
 
     x0 = Float32[0.5, 0.5, 0.5, 0.5]
