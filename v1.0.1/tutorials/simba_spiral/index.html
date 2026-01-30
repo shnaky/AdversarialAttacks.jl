@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Black-Box – SimBA on 2D Spirals · AdversarialAttacks.jl</title><meta name="title" content="Black-Box – SimBA on 2D Spirals · AdversarialAttacks.jl"/><meta property="og:title" content="Black-Box – SimBA on 2D Spirals · AdversarialAttacks.jl"/><meta property="twitter:title" content="Black-Box – SimBA on 2D Spirals · AdversarialAttacks.jl"/><meta name="description" content="Documentation for AdversarialAttacks.jl."/><meta property="og:description" content="Documentation for AdversarialAttacks.jl."/><meta property="twitter:description" content="Documentation for AdversarialAttacks.jl."/><meta property="og:url" content="https://shnaky.github.io/AdversarialAttacks.jl/tutorials/simba_spiral/"/><meta property="twitter:url" content="https://shnaky.github.io/AdversarialAttacks.jl/tutorials/simba_spiral/"/><link rel="canonical" href="https://shnaky.github.io/AdversarialAttacks.jl/tutorials/simba_spiral/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">AdversarialAttacks.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Getting Started</a></li><li><span class="tocitem">Tutorials &amp; Examples</span><ul><li><a class="tocitem" href="../../examples/">Overview</a></li><li><a class="tocitem" href="../whitebox_fgsm_flux_mnist/">White-Box – FGSM (Flux, MNIST)</a></li><li><a class="tocitem" href="../blackbox_basicrandomsearch_decisiontree_iris/">Black-Box – Basic Random Search (DecisionTree, Iris)</a></li><li class="is-active"><a class="tocitem" href>Black-Box – SimBA on 2D Spirals</a><ul class="internal"><li><a class="tocitem" href="#Prerequisites"><span>Prerequisites</span></a></li><li><a class="tocitem" href="#1.-Create-2D-spiral-dataset"><span>1. Create 2D spiral dataset</span></a></li><li><a class="tocitem" href="#2.-Train-simple-neural-network"><span>2. Train simple neural network</span></a></li><li><a class="tocitem" href="#3.-Visualization-helpers"><span>3. Visualization helpers</span></a></li><li><a class="tocitem" href="#4.-Run-attack-and-visualize"><span>4. Run attack and visualize</span></a></li><li><a class="tocitem" href="#5.-Compare-different-epsilon-values"><span>5. Compare different epsilon values</span></a></li><li><a class="tocitem" href="#Common-edits-to-try"><span>Common edits to try</span></a></li></ul></li></ul></li><li><span class="tocitem">Developer Documentation</span><ul><li><a class="tocitem" href="../../attack_interface/">Attack Interface</a></li><li><a class="tocitem" href="../../FGSM/">FGSM (White-Box)</a></li><li><a class="tocitem" href="../../BasicRandomSearch/">BasicRandomSearch (Black-Box)</a></li><li><a class="tocitem" href="../../evaluation/">Robustness Evaluation Suite</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials &amp; Examples</a></li><li class="is-active"><a href>Black-Box – SimBA on 2D Spirals</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Black-Box – SimBA on 2D Spirals</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/shnaky/AdversarialAttacks.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/shnaky/AdversarialAttacks.jl/blob/main/examples/simba_spiral.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Black-Box-SimBA-Attack-on-2D-Spirals"><a class="docs-heading-anchor" href="#Black-Box-SimBA-Attack-on-2D-Spirals">Black-Box SimBA Attack on 2D Spirals</a><a id="Black-Box-SimBA-Attack-on-2D-Spirals-1"></a><a class="docs-heading-anchor-permalink" href="#Black-Box-SimBA-Attack-on-2D-Spirals" title="Permalink"></a></h1><p>This tutorial demonstrates how to perform a <strong>black-box adversarial attack</strong> using SimBA (Simple Black-box Attack) on a 2D spiral classification problem. BasicRandomSearch is our implementation of the SimBA algorithm.</p><p><strong>What you will learn:</strong></p><ul><li>How to create and train a model on a 2D spiral dataset</li><li>How to visualize decision boundaries and adversarial perturbations</li><li>How to use BasicRandomSearch (SimBA) for black-box attacks</li><li>How attack success varies with different epsilon values</li></ul><h2 id="Prerequisites"><a class="docs-heading-anchor" href="#Prerequisites">Prerequisites</a><a id="Prerequisites-1"></a><a class="docs-heading-anchor-permalink" href="#Prerequisites" title="Permalink"></a></h2><p>Make sure you have the following packages installed: <code>Flux</code>, <code>AdversarialAttacks</code>, <code>Plots</code>, <code>Statistics</code>, and <code>LinearAlgebra</code>.</p><pre><code class="language-julia hljs">using Random
+using Flux
+using AdversarialAttacks
+using Plots
+using Statistics
+using LinearAlgebra: norm
+
+Random.seed!(42)
+println(&quot;=== SimBA Attack Demo ===\n&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">=== SimBA Attack Demo ===</code></pre><h2 id="1.-Create-2D-spiral-dataset"><a class="docs-heading-anchor" href="#1.-Create-2D-spiral-dataset">1. Create 2D spiral dataset</a><a id="1.-Create-2D-spiral-dataset-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Create-2D-spiral-dataset" title="Permalink"></a></h2><p>We generate a synthetic two-class dataset where each class forms a spiral pattern. This provides a challenging non-linear classification boundary that makes for interesting visualizations of adversarial perturbations.</p><pre><code class="language-julia hljs">function make_spirals(n_points = 100; noise = 0.3)
+    t = range(0, 4π, length = n_points)
+
+    # Class 1: spiral going one way
+    x1 = t .* cos.(t) .+ noise .* randn(n_points)
+    y1 = t .* sin.(t) .+ noise .* randn(n_points)
+
+    # Class 2: spiral going the other way
+    x2 = t .* cos.(t .+ π) .+ noise .* randn(n_points)
+    y2 = t .* sin.(t .+ π) .+ noise .* randn(n_points)
+
+    X = hcat(vcat(x1, x2), vcat(y1, y2))&#39;  # 2 x 2n
+    y = vcat(ones(Int, n_points), 2 * ones(Int, n_points))
+
+    # Normalize
+    X = (X .- mean(X, dims = 2)) ./ std(X, dims = 2)
+
+    return Float32.(X), y
+end
+
+println(&quot;Generating spiral dataset...&quot;)
+X, y = make_spirals(150; noise = 0.4)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(Float32[-0.021510817 0.04206322 … -2.3728077 -2.280824; 0.0125411535 0.022647996 … 0.1679076 -0.05869015], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1  …  2, 2, 2, 2, 2, 2, 2, 2, 2, 2])</code></pre><h2 id="2.-Train-simple-neural-network"><a class="docs-heading-anchor" href="#2.-Train-simple-neural-network">2. Train simple neural network</a><a id="2.-Train-simple-neural-network-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Train-simple-neural-network" title="Permalink"></a></h2><p>We train a small feedforward neural network (2→16→16→2) on the spiral data. The model learns to separate the two spirals using ReLU activations and cross-entropy loss.</p><pre><code class="language-julia hljs">function train_model(X, y; epochs = 500)
+    model = Chain(
+        Dense(2 =&gt; 16, relu),
+        Dense(16 =&gt; 16, relu),
+        Dense(16 =&gt; 2),
+    )
+
+    Y_onehot = Flux.onehotbatch(y, 1:2)
+    opt = Flux.setup(Adam(0.01), model)
+
+    for epoch in 1:epochs
+        loss, grads = Flux.withgradient(model) do m
+            Flux.logitcrossentropy(m(X), Y_onehot)
+        end
+        Flux.update!(opt, model, grads[1])
+
+        if epoch % 100 == 0
+            acc = mean(Flux.onecold(model(X)) .== y)
+            println(&quot;Epoch $epoch: loss = $(round(loss, digits = 4)), acc = $(round(acc, digits = 3))&quot;)
+        end
+    end
+
+    return model
+end
+
+println(&quot;\nTraining neural network...&quot;)
+model = train_model(X, y; epochs = 500)
+
+final_acc = mean(Flux.onecold(model(X)) .== y)
+println(&quot;Final accuracy: $(round(100 * final_acc, digits = 1))%&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+Training neural network...
+Epoch 100: loss = 0.5588, acc = 0.627
+Epoch 200: loss = 0.4764, acc = 0.783
+Epoch 300: loss = 0.0963, acc = 0.987
+Epoch 400: loss = 0.0414, acc = 0.99
+Epoch 500: loss = 0.0312, acc = 0.99
+Final accuracy: 99.0%</code></pre><h2 id="3.-Visualization-helpers"><a class="docs-heading-anchor" href="#3.-Visualization-helpers">3. Visualization helpers</a><a id="3.-Visualization-helpers-1"></a><a class="docs-heading-anchor-permalink" href="#3.-Visualization-helpers" title="Permalink"></a></h2><p>These functions help us visualize the decision boundary and attack results. The <code>plot_decision_boundary!</code> function creates a contour plot showing which regions the model predicts as class 1 vs class 2.</p><pre><code class="language-julia hljs">function plot_decision_boundary!(plt, model; resolution = 100, alpha = 0.3)
+    xs = range(-3, 3, length = resolution)
+    ys = range(-3, 3, length = resolution)
+
+    Z = zeros(resolution, resolution)
+    for (i, x) in enumerate(xs), (j, y) in enumerate(ys)
+        pred = model(Float32[x, y])
+        Z[j, i] = sign(pred[1] - pred[2])
+    end
+
+    # Replace NaN values to prevent plotting errors
+    replace!(Z, NaN =&gt; 0.0)
+
+    return contourf!(
+        plt, xs, ys, Z, levels = [-1, 0, 1],
+        c = cgrad([:lightblue, :lightsalmon]), alpha = alpha,
+        linewidth = 0, colorbar = false
+    )
+end
+
+function plot_attack_results(X, y, model, atk; n_samples = 20)
+    indices = randperm(size(X, 2))[1:n_samples]
+
+    plt = plot(
+        size = (800, 700), title = &quot;SimBA Attack (ε=$(atk.epsilon))&quot;,
+        xlabel = &quot;x₁&quot;, ylabel = &quot;x₂&quot;, legend = :topright
+    )
+    plot_decision_boundary!(plt, model)
+
+    successful_attacks = 0
+    total_perturbation = 0.0
+
+    # Track which legend entries we&#39;ve added
+    shown_class1 = false
+    shown_class2 = false
+    shown_success = false
+    shown_fail = false
+
+    for idx in indices
+        x_orig = X[:, idx]
+        label_onehot = Flux.onehot(y[idx], 1:2)
+        sample = (data = x_orig, label = label_onehot)
+
+        x_adv = attack(atk, model, sample)
+
+        # Skip if attack produced NaN or Inf values
+        if any(isnan.(x_adv)) || any(isinf.(x_adv))
+            continue
+        end
+
+        pred_orig = argmax(model(x_orig))
+        pred_adv = argmax(model(x_adv))
+
+        success = pred_orig != pred_adv
+        if success
+            successful_attacks += 1
+        end
+        total_perturbation += norm(x_adv - x_orig)
+
+        # Plot original point
+        color = y[idx] == 1 ? :blue : :red
+        show_label = (y[idx] == 1 &amp;&amp; !shown_class1) || (y[idx] == 2 &amp;&amp; !shown_class2)
+        scatter!(
+            plt, [x_orig[1]], [x_orig[2]],
+            color = color, markersize = 8, markerstrokewidth = 2,
+            label = show_label ? &quot;Original (class $(y[idx]))&quot; : &quot;&quot;
+        )
+        if y[idx] == 1
+            shown_class1 = true
+        else
+            shown_class2 = true
+        end
+
+        # Plot adversarial point
+        if success
+            scatter!(
+                plt, [x_adv[1]], [x_adv[2]],
+                color = :black, marker = :x, markersize = 10, markerstrokewidth = 3,
+                label = !shown_success ? &quot;Successful attack&quot; : &quot;&quot;
+            )
+            shown_success = true
+        else
+            scatter!(
+                plt, [x_adv[1]], [x_adv[2]],
+                color = :gray, marker = :circle, markersize = 5, alpha = 0.5,
+                label = !shown_fail ? &quot;Failed attack&quot; : &quot;&quot;
+            )
+            shown_fail = true
+        end
+
+        # Draw arrow from original to adversarial
+        arrow_color = success ? :black : :gray
+        plot!(
+            plt, [x_orig[1], x_adv[1]], [x_orig[2], x_adv[2]],
+            color = arrow_color, alpha = 0.5, linewidth = 1, arrow = true, label = &quot;&quot;
+        )
+    end
+
+    attack_rate = round(100 * successful_attacks / n_samples, digits = 1)
+    avg_pert = round(total_perturbation / n_samples, digits = 3)
+    annotate!(plt, -2.8, 2.8, text(&quot;Attack success: $attack_rate%\nAvg perturbation: $avg_pert&quot;, 10, :left))
+
+    return plt
+end
+
+function compare_epsilons(X, y, model; epsilons = [0.02, 0.05, 0.1, 0.3], n_samples = 30)
+    plots = []
+
+    bounds = [(-3.5, 3.5), (-3.5, 3.5)]
+
+    for ε in epsilons
+        atk = BasicRandomSearch(epsilon = Float32(ε), max_iter = 20, bounds = bounds)
+        plt = plot_attack_results(X, y, model, atk; n_samples = n_samples)
+        title!(plt, &quot;ε = $ε&quot;)
+        push!(plots, plt)
+    end
+
+    combined = plot(plots..., layout = (2, 2), size = (1200, 1100))
+    return combined
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">compare_epsilons (generic function with 1 method)</code></pre><h2 id="4.-Run-attack-and-visualize"><a class="docs-heading-anchor" href="#4.-Run-attack-and-visualize">4. Run attack and visualize</a><a id="4.-Run-attack-and-visualize-1"></a><a class="docs-heading-anchor-permalink" href="#4.-Run-attack-and-visualize" title="Permalink"></a></h2><p>We run the BasicRandomSearch attack with ε=0.1 and visualize the results. The attack tries to find small perturbations that cause misclassification by randomly probing the input space. Original points are shown in their class color (blue/red), successful adversarial examples as black X markers, and failed attacks as gray circles.</p><pre><code class="language-julia hljs">println(&quot;\nRunning SimBA attack visualization...&quot;)
+bounds = [(-3.5, 3.5), (-3.5, 3.5)]  # Set bounds for normalized data
+atk = BasicRandomSearch(epsilon = 0.1f0, max_iter = 20, bounds = bounds)
+p1 = plot_attack_results(X, y, model, atk; n_samples = 25)</code></pre><img src="1ddf1376.svg" alt="Example block output"/><h2 id="5.-Compare-different-epsilon-values"><a class="docs-heading-anchor" href="#5.-Compare-different-epsilon-values">5. Compare different epsilon values</a><a id="5.-Compare-different-epsilon-values-1"></a><a class="docs-heading-anchor-permalink" href="#5.-Compare-different-epsilon-values" title="Permalink"></a></h2><p>We compare attack success rates across different perturbation budgets (ε). Larger ε values allow stronger perturbations, making attacks more likely to succeed but also more visible. The grid layout shows how attack effectiveness scales with perturbation budget.</p><pre><code class="language-julia hljs">println(&quot;\nComparing different epsilon values...&quot;)
+p2 = compare_epsilons(X, y, model; epsilons = [0.02, 0.05, 0.1, 0.3], n_samples = 25)</code></pre><img src="94ca421c.svg" alt="Example block output"/><h2 id="Common-edits-to-try"><a class="docs-heading-anchor" href="#Common-edits-to-try">Common edits to try</a><a id="Common-edits-to-try-1"></a><a class="docs-heading-anchor-permalink" href="#Common-edits-to-try" title="Permalink"></a></h2><ul><li>Change <code>epsilon</code> values to see how perturbation budget affects attack success</li><li>Adjust <code>max_iter</code> to give the attack more or fewer queries</li><li>Modify <code>noise</code> in <code>make_spirals()</code> to change problem difficulty</li><li>Try different network architectures by changing the Dense layer sizes</li><li>Change <code>n_samples</code> to attack more or fewer points</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../blackbox_basicrandomsearch_decisiontree_iris/">« Black-Box – Basic Random Search (DecisionTree, Iris)</a><a class="docs-footer-nextpage" href="../../attack_interface/">Attack Interface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 30 January 2026 22:09">Friday 30 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
