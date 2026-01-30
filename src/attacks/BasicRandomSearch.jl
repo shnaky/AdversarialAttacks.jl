@@ -268,9 +268,9 @@ function attack(atk::BasicRandomSearch, mach::Machine, sample; detailed_result =
 
     predict_proba_fn = function (x_flat)
         # Treat x_flat as a single-row table for MLJ
-        x_row = permutedims(x_flat)      
-        X_tbl = table(x_row)             
-        probs = predict(mach, X_tbl)[1]  
+        x_row = permutedims(x_flat)
+        X_tbl = table(x_row)
+        probs = predict(mach, X_tbl)[1]
         return collect(pdf.(probs, levels(probs)))
     end
 
