@@ -18,15 +18,15 @@ using .ExperimentUtils
 
 exp_name = "comparison_all"
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
-num_of_samples = 10
+NUM_ATTACK_SAMPLES = 10
 
 attackConfigs_FGSM = [
-    (FGSM(epsilon = 0.1f0), num_of_samples),
-    (FGSM(epsilon = 0.3f0), num_of_samples),
+    (FGSM(epsilon = 0.1f0), NUM_ATTACK_SAMPLES),
+    (FGSM(epsilon = 0.3f0), NUM_ATTACK_SAMPLES),
 ]
 attackConfigs_BSR = [
-    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), num_of_samples),
-    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), num_of_samples),
+    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), NUM_ATTACK_SAMPLES),
+    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), NUM_ATTACK_SAMPLES),
 ]
 
 # ==========================================

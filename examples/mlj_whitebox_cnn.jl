@@ -18,7 +18,7 @@ println("White-Box Attack on MLJFlux CNN")
 println("="^70)
 
 dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
-N_SAMPLES = 100
+NUM_ATTACK_SAMPLES = 100
 
 # ==========================================
 #   • Experiment: mnist_cnn_whitebox_exp
@@ -65,7 +65,7 @@ flux_model = extract_flux_model(mach)
 println("\n[3/4] Preparing test samples...")
 
 label_levels = levels(y_test)
-n_available = min(N_SAMPLES, length(test_idx))
+n_available = min(NUM_ATTACK_SAMPLES, length(test_idx))
 test_data = []
 
 for i in 1:n_available

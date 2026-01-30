@@ -26,7 +26,7 @@ function main()
     # [Step 0] Config the Experiment
     # =========================================================================
 
-    N_SAMPLES = 100
+    NUM_ATTACK_SAMPLES = 100
     attack_config = BasicRandomSearch(epsilon = 0.1f0, max_iter = 1000)
 
     # ==========================================
@@ -169,7 +169,7 @@ function main()
     # =========================================================================
     println("\n[Step 3] Preparing test samples...")
 
-    n_available = min(N_SAMPLES, length(test_idx))
+    n_available = min(NUM_ATTACK_SAMPLES, length(test_idx))
     test_data = []
 
     for i in 1:n_available

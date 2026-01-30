@@ -24,7 +24,7 @@ function run_comparison()
     println("\n[Step 1] Loading/Training MLJFlux CNN ...")
 
     dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
-    N_SAMPLES = 200
+    NUM_ATTACK_SAMPLES = 200
 
     # ==========================================
     # ✅ comparison_wb_bb_mnist complete: 97.2%
@@ -72,7 +72,7 @@ function run_comparison()
     Xtest_img = X_img[test_idx]
     y_pred_test = predict_mode(mach, Xtest_img)
 
-    n_available = min(N_SAMPLES, length(test_idx))
+    n_available = min(NUM_ATTACK_SAMPLES, length(test_idx))
     test_data = []
 
     for i in 1:n_available
