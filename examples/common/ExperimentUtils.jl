@@ -38,6 +38,9 @@ export @printf
 using Dates: now, format
 export now, format
 
+using ArgParse
+export parse_common_args, dataset_from_string
+
 # ------------------------------------------------------------------
 # Public API
 # ------------------------------------------------------------------
@@ -410,6 +413,81 @@ function get_or_train(config::ExperimentConfig)
     )
 
     return (result.mach, meta)
+end
+
+"""
+    dataset_from_string(s::String) -> DatasetType
+
+Convert dataset string identifier to `DatasetType` enum.
+
+# Arguments
+- `s::String`: Dataset name ("mnist" or "cifar10")
+
+# Returns
+- `DatasetType`: Corresponding enum value
+
+# Examples
+```julia
+dataset_from_string("mnist")    # → DATASET_MNIST
+dataset_from_string("cifar10")  # → DATASET_CIFAR10
+```
+"""
+
+dataset_from_string(s::String) = s == "cifar10" ? DATASET_CIFAR10 : DATASET_MNIST
+
+
+"""
+    parse_common_args(description="Adversarial Attacks Experiments") -> Dict{String,Any}
+
+Parse common command-line arguments for adversarial attack experiments.
+
+# Arguments
+
+- `description::String`: Help message description (default: "Adversarial Attacks Experiments")
+
+
+# Returns
+
+- `Dict{String,Any}`: Parsed arguments with defaults
+
+
+# Common Arguments
+`--num-attack-samples` | `-n` | Number of attack target samples | `100` | `Int` |
+`--dataset` | `-d` | Dataset name | `"mnist"` | `String` |
+`--force-retrain` | `-f` | Force model retraining | `false` | `Bool` |
+
+# Usage Examples
+
+```julia
+# Default settings
+args = parse_common_args()
+
+# Custom description
+args = parse_common_args("Black-Box ML Attack Demo")
+
+# Command line usage:
+# julia script.jl                    # defaults
+# julia script.jl -n 50 -d cifar10 -f
+```
+"""
+function parse_common_args()
+    s = ArgParseSettings(description = "Adversarial Attacks Experiments")
+
+    @add_arg_table s begin
+        "--num-attack-samples", "-n"
+        help = "Number of attack target samples"
+        arg_type = Int
+        default = 100
+        "--dataset", "-d"
+        help = "Dataset (mnist/cifar10)"
+        arg_type = String
+        default = "mnist"
+        "--force-retrain", "-f"
+        help = "Force retrain (ignore cache)"
+        action = :store_true
+    end
+
+    return parse_args(s)
 end
 
 end

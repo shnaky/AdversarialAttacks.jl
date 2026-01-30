@@ -6,8 +6,16 @@ White-Box Attack on MLJFlux CNN
 Demonstrates FGSM gradient-based attack on a CNN classifier.
 Uses evaluate_robustness() to assess attack effectiveness across multiple samples.
 
-Usage:
+# Usage
     julia --project=examples examples/mlj_whitebox_cnn.jl
+
+# With CLI options
+    julia --project=examples examples/mlj_whitebox_cnn.jl -n 100 -d mnist
+
+# Options
+-n, --num-attack-samples  Number of attack target samples (default: 100)
+-d, --dataset             Dataset (mnist/cifar10) (default: mnist)  
+-f, --force-retrain       Force model retraining (ignore cache)
 """
 
 include("./common/ExperimentUtils.jl")
@@ -17,8 +25,14 @@ println("="^70)
 println("White-Box Attack on MLJFlux CNN")
 println("="^70)
 
-dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
-NUM_ATTACK_SAMPLES = 100
+args = parse_common_args()
+arg_num_attack_samples = args["num-attack-samples"]
+arg_dataset = dataset_from_string(args["dataset"])
+arg_forceretrain = args["force-retrain"]
+
+NUM_ATTACK_SAMPLES = arg_num_attack_samples # default: 100
+dataset = arg_dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
+force_retrain = arg_forceretrain # default: false
 
 # ==========================================
 #   • Experiment: mnist_cnn_whitebox_exp
@@ -33,7 +47,7 @@ config = ExperimentConfig(
     model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
     dataset = dataset,
     use_flatten = false,
-    force_retrain = false,
+    force_retrain = force_retrain,
     fraction_train = 0.8,
     rng = 42,
     model_hyperparams = (epochs = 5, batch_size = 64),
