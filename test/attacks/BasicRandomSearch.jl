@@ -253,3 +253,41 @@ end
     # Optional sanity: adversarial example stays within default [0,1] bounds
     @test all(0 .<= adv .<= 1)
 end
+
+@testset "_basic_random_search_core returns detailed result as namedtuple" begin
+    Random.seed!(1234)
+
+    model = x -> Float32[sum(x), 1.0f0 - sum(x)]
+
+    x0 = Float32[0.5, 0.5, 0.5, 0.5]
+    true_label = 1
+
+    predict_proba_fn = x_flat -> model(x_flat)
+
+    ε = 0.1f0
+    max_iter = 5
+    rng = MersenneTwister(42)
+
+    res = AdversarialAttacks._basic_random_search_core(
+        x0,
+        true_label,
+        predict_proba_fn,
+        ε,
+        max_iter,
+        rng;
+        bounds = nothing,
+        detailed_result = true,
+    )
+
+    @test res isa NamedTuple
+    @test haskey(res, :x_adv)
+    @test haskey(res, :success)
+    @test haskey(res, :queries_used)
+    @test haskey(res, :final_label)
+
+    @test res.x_adv isa Vector{Float32}
+    @test size(res.x_adv) == size(x0)
+    @test res.queries_used >= 1
+    @test res.final_label in 1:2
+    @test res.success == (res.final_label != true_label)
+end
