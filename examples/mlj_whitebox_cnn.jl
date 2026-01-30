@@ -25,7 +25,7 @@ N_SAMPLES = 100
 #   • Clean accuracy: 96.14%
 # ==========================================
 #   • Experiment: cifar_cnn_whitebox_exp
-#   • Clean accuracy: 65.5%
+#   • Clean accuracy: 71.54%
 # ==========================================
 config = ExperimentConfig(
     exp_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox_exp" : "cifar_cnn_whitebox_exp",
