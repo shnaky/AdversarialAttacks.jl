@@ -52,17 +52,17 @@ function main()
     #   • Experiment: baseline_cifar_forest_exp
     #   • Clean accuracy: 46.03%
     # ==========================================
-    # config = ExperimentConfig(
-    #     exp_name = dataset == DATASET_MNIST ? "baseline_mnist_forest_exp" : "baseline_cifar_forest_exp",
-    #     model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_forest" : "baseline_cifar_forest",
-    #     model_factory = make_forest,
-    #     dataset = dataset,
-    #     use_flatten = true,
-    #     force_retrain = force_retrain,
-    #     fraction_train = 0.8,
-    #     rng = 42,
-    #     model_hyperparams = (n_trees = 200, max_depth = -1)
-    # )
+    config = ExperimentConfig(
+        exp_name = dataset == DATASET_MNIST ? "baseline_mnist_forest_exp" : "baseline_cifar_forest_exp",
+        model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_forest" : "baseline_cifar_forest",
+        model_factory = make_forest,
+        dataset = dataset,
+        use_flatten = true,
+        force_retrain = force_retrain,
+        fraction_train = 0.8,
+        rng = 42,
+        model_hyperparams = (n_trees = 200, max_depth = -1)
+    )
 
     # ==========================================
     #   • Experiment: baseline_mnist_tree_exp
@@ -87,17 +87,17 @@ function main()
     #   • Experiment: baseline_mnist_knn_exp
     #   • Clean accuracy: 96.58%
     # ==========================================
-    config = ExperimentConfig(
-        exp_name = dataset == DATASET_MNIST ? "baseline_mnist_knn_exp" : "baseline_cifar_knn_exp",
-        model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_knn" : "baseline_cifar_knn",
-        model_factory = make_knn,
-        dataset = dataset,
-        use_flatten = true,
-        force_retrain = force_retrain,
-        fraction_train = 0.8,
-        rng = 42,
-        model_hyperparams = (K = 10,)
-    )
+    # config = ExperimentConfig(
+    #     exp_name = dataset == DATASET_MNIST ? "baseline_mnist_knn_exp" : "baseline_cifar_knn_exp",
+    #     model_file_name = dataset == DATASET_MNIST ? "baseline_mnist_knn" : "baseline_cifar_knn",
+    #     model_factory = make_knn,
+    #     dataset = dataset,
+    #     use_flatten = true,
+    #     force_retrain = force_retrain,
+    #     fraction_train = 0.8,
+    #     rng = 42,
+    #     model_hyperparams = (K = 10,)
+    # )
 
     # ==========================================
     #   • Experiment: baseline_mnist_xgboost_exp
@@ -253,43 +253,6 @@ function main()
 
     # =========================================================================
     # [Step 6] Key Insights
-    # =========================================================================
-    println("\n" * "="^70)
-    println("KEY INSIGHTS")
-    println("="^70)
-    @printf(
-        """
-        **Model Characteristics**:
-          • Single decision tree (max depth: 10)
-          • No gradients available → only black-box attacks feasible
-          • Clean accuracy: %.1f%%
-
-        **Attack Performance**:
-          • Black-box ASR: %.1f%% (%d/%d successful)
-          • Average perturbation: %.4f L∞ norm
-          • Queries per sample: 200
-
-        **Robustness**:
-          • Model robustness: %.1f%% (1 - ASR)
-          • Adversarial accuracy: %.1f%%
-
-        **Conclusion**:
-        Decision trees are vulnerable to black-box attacks despite lacking gradients.
-        Random search can find adversarial examples by exploring the feature space
-        through iterative querying. Single trees are typically less robust than
-        ensemble methods like RandomForest.
-        """,
-        accuracy * 100,
-        bb_report.attack_success_rate * 100,
-        bb_report.num_successful_attacks,
-        bb_report.num_clean_correct,
-        bb_report.linf_norm_mean,
-        bb_report.robustness_score * 100,
-        bb_report.adv_accuracy * 100
-    )
-
-    # =========================================================================
-    # [Step 7] Detailed Report
     # =========================================================================
     println("\n" * "="^70)
     println("DETAILED ROBUSTNESS REPORT")
