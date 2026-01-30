@@ -2,8 +2,8 @@
     FGSM(; epsilon=0.1)
 
 Subtype of `WhiteBoxAttack`. A struct that can be used to create a White-box Adversarial Attack using the Fast Gradient Sign Method.
-Based on Goodfellow, I. J., Shlens, J., & Szegedy, C. (2014). Explaining and harnessing adversarial examples. arXiv preprint arXiv:1412.6572.
-(https://arxiv.org/abs/1412.6572)
+Based on Goodfellow, I. J., Shlens, J., & Szegedy, C. (2014). [Explaining and harnessing adversarial examples](https://arxiv.org/abs/1412.6572). arXiv preprint arXiv:1412.6572.
+
 
 
 # Arguments
