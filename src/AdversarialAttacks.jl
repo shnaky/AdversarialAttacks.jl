@@ -20,11 +20,8 @@ export FGSM, BasicRandomSearch, SquareAttack
 # Export attack interface functions
 export name, attack
 
-# Export model interface functions
-export predict, loss, params
-
 # Export evaluation functions
 export RobustnessReport
-export evaluate_robustness, make_prediction_function, evaluation_curve, benchmark
+export evaluate_robustness, make_prediction_function, evaluation_curve
 
 end
