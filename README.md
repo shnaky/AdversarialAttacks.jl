@@ -8,7 +8,7 @@
 
 Currently, this package supports models implemented as Flux chains (neural networks), decision trees from the DecisionTree.jl package and models from the MLJ package. Support for other model types may be added in the future.
 
-Adversarial attacks manipulate data, most famously images, to exploit vulnerabilities in machine-learning models. Perturbations that are nearly imperceptible to the humans can cause models to misclassify inputs with high confidence. This package provides tools to generate adversarial examples and benchmark a model’s robustness against such attacks.
+Adversarial attacks manipulate data, most famously images, to exploit vulnerabilities in machine-learning models. Perturbations that are nearly imperceptible to humans can cause models to misclassify inputs with high confidence. This package provides tools to generate adversarial examples and benchmark a model’s robustness against such attacks.
 
 ## Installation
 
@@ -16,7 +16,7 @@ You can install the package via the Julia package manager.
 In the Julia REPL, run:
 
 ```julia-repl
-julia> ]add https://github.com/shnaky/AdversarialAttacks.jl
+julia> using Pkg; Pkg.add("url=https://github.com/shnaky/AdversarialAttacks.jl")
 ```
 
 ## Examples
