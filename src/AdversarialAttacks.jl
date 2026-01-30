@@ -15,7 +15,7 @@ include("Evaluation.jl")
 
 # Export attack types
 export AbstractAttack, WhiteBoxAttack, BlackBoxAttack
-export FGSM, BasicRandomSearch, SquareAttack
+export FGSM, BasicRandomSearch
 
 # Export attack interface functions
 export name, attack
