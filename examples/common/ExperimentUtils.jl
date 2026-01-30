@@ -105,13 +105,13 @@ dataset_shape(::Val{DATASET_CIFAR10}) = (32, 32, 3)
 # ------------------------------------------------------------------
 
 """
-    flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
+    flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:Gray}})
 
 Convert a vector of H×W×C image arrays into a `DataFrame` suitable for
 tabular MLJ models (trees, linear models, etc.). Each pixel becomes one
 feature column (e.g. `x1, x2, ...`).
 """
-function flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
+function flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:Gray}})
     n = length(X_img)
     d = length(vec(X_img[1]))
 
@@ -124,13 +124,13 @@ function flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
 end
 
 """
-    flatten_images(X_img::Vector{<:AbstractMatrix{<:RGB}})
+    flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:RGB}})
 
 Flatten a vector of `RGB` images into a `DataFrame` with one row per
 image and 3×32×32 columns (channel-first after `channelview`).
 """
-function flatten_images(X_img::Vector{<:AbstractMatrix{<:RGB}})
-    h, w, c = dataset_shape(Val(DATASET_CIFAR10))
+function flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:RGB}})
+    h, w, c = dataset_shape(Val(dataset))
     n = length(X_img)
     d = h * w * c
 
@@ -215,7 +215,7 @@ to tabular features if `use_flatten == true`.
 function load_data(dataset::DatasetType, use_flatten::Bool)
     X_img, y = load_dataset_for_mlj(Val(dataset))
 
-    X = use_flatten ? flatten_images(X_img) : X_img
+    X = use_flatten ? flatten_images(dataset, X_img) : X_img
 
     return X, y
 end
