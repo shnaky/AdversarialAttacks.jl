@@ -1,5 +1,5 @@
 """
-    Robustness evaluation suite for adversarial attacks.
+    Robustness evaluation suite for Adversarial Attacks.
 
     This module provides functions to evaluate model robustness
     by measuring attack success rates on multiple samples.
@@ -8,7 +8,7 @@
 """
     RobustnessReport
 
-Report on model robustness against an adversarial attack.
+Report on model robustness against an Adversarial Attack.
 Printing a `RobustnessReport` (via `println(report)`) displays a nicely formatted summary
 including clean/adversarial accuracy, attack success rate, and robustness score.
 
@@ -138,11 +138,11 @@ Compute accuracy, attack success, robustness, and perturbation norm statistics
 for adversarial evaluation.
 
 # Arguments
-- `n_test`: Number of test samples.
-- `num_clean_correct`: Number of correctly classified clean samples.
-- `num_adv_correct`: Number of correctly classified adversarial samples.
-- `num_successful_attacks`: Number of successful adversarial attacks.
-- `l_norms`: Dictionary containing perturbation norm arrays with keys `:linf`, `:l2`, and `:l1`.
+- `n_test`: Number of test samples
+- `num_clean_correct`: Number of correctly classified clean samples
+- `num_adv_correct`: Number of correctly classified adversarial samples
+- `num_successful_attacks`: Number of successful adversarial attacks
+- `l_norms`: Dictionary containing perturbation norm arrays with keys `:linf`, `:l2`, and `:l1`
 
 # Returns
 - A `RobustnessReport` containing accuracy, robustness, and norm summary metrics
@@ -226,7 +226,7 @@ end
 """
     evaluate_robustness(model, atk, test_data; num_samples=100)
 
-Evaluate model robustness by running attack on multiple samples.
+Evaluate model robustness by running `attack` on multiple samples.
 
 For each sample, computes clean and adversarial predictions, tracks attack success,
 and calculates perturbation norms (L∞, L2, and L1).
@@ -331,7 +331,7 @@ robustness score, and perturbation norms (L∞, L2, and L1).
 
 # Arguments
 - `model`: Model to be evaluated.
-- `atk_type`: Adversarial attack type.
+- `atk_type`: Adversarial Attack type.
 - `epsilons`: Vector of attack strengths.
 - `test_data`: Test dataset.
 
@@ -342,14 +342,14 @@ robustness score, and perturbation norms (L∞, L2, and L1).
 # Returns
 
 - A dictionary containing evaluation metrics for each epsilon value:
-    - `:epsilons`: Attack strength values
-    - `:clean_accuracy`: Clean accuracy for each epsilon
-    - `:adv_accuracy`: Adversarial accuracy for each epsilon
-    - `:attack_success_rate`: Attack success rate for each epsilon
-    - `:robustness_score`: Robustness score (1 - ASR) for each epsilon
-    - `:linf_norm_mean`, `:linf_norm_max`: L∞ norm statistics
-    - `:l2_norm_mean`, `:l2_norm_max`: L2 norm statistics
-    - `:l1_norm_mean`, `:l1_norm_max`: L1 norm statistics
+    - `:epsilons`: Attack strength values.
+    - `:clean_accuracy`: Clean accuracy for each epsilon.
+    - `:adv_accuracy`: Adversarial accuracy for each epsilon.
+    - `:attack_success_rate`: Attack success rate for each epsilon.
+    - `:robustness_score`: Robustness score (1 - ASR) for each epsilon.
+    - `:linf_norm_mean`, `:linf_norm_max`: L∞ norm statistics.
+    - `:l2_norm_mean`, `:l2_norm_max`: L2 norm statistics.
+    - `:l1_norm_mean`, `:l1_norm_max`: L1 norm statistics.
 
 
 # Example
@@ -424,7 +424,6 @@ This is NOT passed to attack() - only used for getting predictions.
 This function handles different model types (Flux neural networks vs MLJ models)
 and input shapes (vectors vs matrices) to provide a consistent prediction interface.
 """
-
 function make_prediction_function(model)
     if model isa Machine
         return function (x_data)
@@ -448,24 +447,4 @@ function make_prediction_function(model)
             return vec(output)
         end
     end
-end
-
-"""
-    benchmark(atk::AbstractAttack, model, dataset, metric::Function; kwargs...)
-
-Evaluate attack performance on a dataset with labels using a given metric.
-
-# Arguments
-- `atk::AbstractAttack`: Attack algorithm
-- `model`: Target model to attack
-- `dataset`: Dataset with samples and labels
-- `metric::Function`: Evaluation metric with signature `metric(model, adv_samples, labels)`
-
-# Returns
-- Scalar metric value representing attack performance
-"""
-function benchmark(atk::AbstractAttack, model, dataset, metric::Function; kwargs...)
-    adv_samples = [attack(atk, model, x; kwargs...) for (x, _) in dataset]
-    labels = [y for (_, y) in dataset]
-    return metric(model, adv_samples, labels)
 end

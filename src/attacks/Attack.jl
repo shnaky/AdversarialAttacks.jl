@@ -1,5 +1,5 @@
 """
-Abstract supertype for all adversarial attacks.
+Abstract supertype for all Adversarial Attacks.
 
 Expected interface (to be implemented per concrete attack):
 - `name(::AbstractAttack)::String`
@@ -8,7 +8,7 @@ Expected interface (to be implemented per concrete attack):
 abstract type AbstractAttack end
 
 """
-Abstract type for white-box adversarial attacks.
+Abstract type for White-box Adversarial Attacks.
 
 White-box attacks have full access to the model's internals, including gradients,
 weights, and architecture. This enables the use of gradient-based optimization
@@ -21,7 +21,7 @@ parameters and computations. If only input-output access is available, use
 abstract type WhiteBoxAttack <: AbstractAttack end
 
 """
-Abstract type for black-box adversarial attacks.
+Abstract type for Black-box Adversarial Attacks.
 
 Black-box attacks only have access to the model's input-output behavior, without knowledge of the model's internals, gradients, or architecture.
 These attacks typically rely on query-based methods (e.g., optimization via repeated queries) or transferability from surrogate models.
@@ -47,20 +47,20 @@ name(atk::AbstractAttack)::String = string(typeof(atk))
 Generate an adversarial example by applying the attack to a sample.
 
 # Arguments
-- `atk::AbstractAttack`: Attack configuration and algorithm
-- `model`: Target model to attack
-- `sample`: Input sample to perturb (e.g., image, text)
+- `atk::AbstractAttack`: Attack configuration and algorithm.
+- `model`: Target model to attack.
+- `sample`: Input sample to perturb (e.g., image, text). Usually a NamedTuple(data,label).
 - `detailed_result::Bool=false`: 
-  - `false` (default): Returns adversarial example only (backward compatible)
-  - `true`: Returns `AttackResult` with metrics
+  - `false` (default): Returns adversarial example only (backward compatible).
+  - `true`: Returns `AttackResult` with metrics.
 
 # Returns
-- `detailed_result=false`: adversarial example only
+- `detailed_result=false`: adversarial example only.
 - `detailed_result=true`: NamedTuple with fields:
-  - `x_adv`: Adversarial example
-  - `success`: Attack succeeded
-  - `queries_used`: Number of model queries
-  - `final_label`: Final prediction
+  - `x_adv`: Adversarial example.
+  - `success`: Attack succeeded.
+  - `queries_used`: Number of model queries.
+  - `final_label`: Final prediction.
 
 """
 function attack(atk::AbstractAttack, model, sample; detailed_result::Bool = false)
