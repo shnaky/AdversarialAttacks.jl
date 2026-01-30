@@ -2,22 +2,44 @@ module ExperimentUtils
 
 include("Models.jl")
 
-using MLJ
-using MLJ: partition, accuracy
-using MLJFlux
-using Flux
-using Optimisers
+using AdversarialAttacks: FGSM, BasicRandomSearch, evaluate_robustness, attack
+export FGSM, BasicRandomSearch, evaluate_robustness, attack
 
-using MLDatasets
-using DataFrames
+using MLJ: partition, accuracy, machine, fit!, save
+using MLJ: mode, predict_mode, table, levels, predict
+export mode, predict_mode, table, levels, predict
+
+using Flux: onehot, Chain, softmax
+export onehot, Chain, softmax
+
+using MLDatasets: MNIST, CIFAR10
 using StatsBase: mode
+
+using DataFrames: DataFrame
 
 using ColorTypes: Color, Gray, RGB
 using Images: channelview
-using ScientificTypes: ColorImage
+using ScientificTypes: ColorImage, coerce, Multiclass
 
-using BSON
-using Dates
+using BSON: @save, load
+
+using CategoricalArrays: levelcode
+export levelcode
+
+using ImageCore: channelview
+export channelview
+
+using Statistics: mean
+export mean
+
+using Printf: @printf
+export @printf
+
+using Dates: now, format
+export now, format
+
+using ArgParse
+export parse_common_args, dataset_from_string
 
 # ------------------------------------------------------------------
 # Public API
@@ -25,8 +47,8 @@ using Dates
 export ExperimentConfig, run_experiment
 export make_mnist_cnn, make_cifar_cnn, extract_flux_model
 export make_forest, make_tree, make_knn, make_logistic, make_xgboost
-export save_experiment_result, load_experiment_result, get_or_train
-export DatasetType, DATASET_MNIST, DATASET_CIFAR10, load_data, dataset_shapes
+export get_or_train
+export DatasetType, DATASET_MNIST, DATASET_CIFAR10, load_data, dataset_shape
 
 const MODELS_DIR = joinpath(@__DIR__, "..", "models")
 
@@ -73,28 +95,26 @@ Base.@kwdef struct ExperimentConfig
 end
 
 """
-    dataset_shapes
+    dataset_shape(::Val{dt}) where dt <: DatasetType -> NTuple{3,Int}
 
-Map from `DatasetType` to `(height, width, channels)` used when
-reshaping images into Flux tensors.
+Returns (height, width, channels) for given DatasetType.
+
 """
-dataset_shapes = Dict(
-    DATASET_MNIST => (28, 28, 1),
-    DATASET_CIFAR10 => (32, 32, 3),
-)
+dataset_shape(::Val{DATASET_MNIST}) = (28, 28, 1)
+dataset_shape(::Val{DATASET_CIFAR10}) = (32, 32, 3)
 
 # ------------------------------------------------------------------
 # Data loading utilities
 # ------------------------------------------------------------------
 
 """
-    flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
+    flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:Gray}})
 
 Convert a vector of H×W×C image arrays into a `DataFrame` suitable for
 tabular MLJ models (trees, linear models, etc.). Each pixel becomes one
 feature column (e.g. `x1, x2, ...`).
 """
-function flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
+function flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:Gray}})
     n = length(X_img)
     d = length(vec(X_img[1]))
 
@@ -107,13 +127,13 @@ function flatten_images(X_img::Vector{<:AbstractMatrix{<:Gray}})
 end
 
 """
-    flatten_images(X_img::Vector{<:AbstractMatrix{<:RGB}})
+    flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:RGB}})
 
 Flatten a vector of `RGB` images into a `DataFrame` with one row per
 image and 3×32×32 columns (channel-first after `channelview`).
 """
-function flatten_images(X_img::Vector{<:AbstractMatrix{<:RGB}})
-    h, w, c = dataset_shapes[DATASET_CIFAR10]
+function flatten_images(dataset::DatasetType, X_img::Vector{<:AbstractMatrix{<:RGB}})
+    h, w, c = dataset_shape(Val(dataset))
     n = length(X_img)
     d = h * w * c
 
@@ -138,7 +158,7 @@ Returns:
 """
 function load_dataset_for_mlj(::Val{DATASET_MNIST}; n_train::Int = 60000)
     # images: 28×28×N UInt8, labels: Vector{Int}
-    images, labels = MLDatasets.MNIST(split = :train)[:]
+    images, labels = MNIST(split = :train)[:]
     images = images[:, :, 1:n_train]
     labels = labels[1:n_train]
 
@@ -163,7 +183,7 @@ Returns:
 - `y`: `CategoricalVector` with `Multiclass{10}` scitype
 """
 function load_dataset_for_mlj(::Val{DATASET_CIFAR10}; n_train::Int = 50000)
-    dataset = MLDatasets.CIFAR10(split = :train)
+    dataset = CIFAR10(split = :train)
 
     # raw 4D array: 32×32×3×N (HWC layout)
     images = dataset.features[:, :, :, 1:n_train]
@@ -198,7 +218,7 @@ to tabular features if `use_flatten == true`.
 function load_data(dataset::DatasetType, use_flatten::Bool)
     X_img, y = load_dataset_for_mlj(Val(dataset))
 
-    X = use_flatten ? flatten_images(X_img) : X_img
+    X = use_flatten ? flatten_images(dataset, X_img) : X_img
 
     return X, y
 end
@@ -215,7 +235,7 @@ Partition indices `1:n` into `(train, test)` using MLJ's `partition`.
 - `fraction_train`: fraction of observations for the training set
 - `rng`           : integer seed for reproducible shuffling
 """
-function train_test_split(n::Integer; fraction_train::Float64, rng::Int)
+function train_test_split(n::Integer; fraction_train::Float64 = 0.8, rng::Int = 42)
     train, test = partition(1:n, fraction_train, shuffle = true, rng = rng)
     return train, test
 end
@@ -243,9 +263,13 @@ function run_experiment(model, X, y; config::ExperimentConfig)
     n = length(y)
     train, test = train_test_split(n; fraction_train = config.fraction_train, rng = config.rng)
 
-    # For DataFrame inputs we must use two-dimensional indexing
-    Xtrain = X isa DataFrame ? X[train, :] : X[train]
-    Xtest = X isa DataFrame ? X[test, :] : X[test]
+    if X isa DataFrame
+        Xtrain = view(X, train, :)
+        Xtest = view(X, test, :)
+    else
+        Xtrain = ndims(X) == 1 ? view(X, train) : view(X, train, :)
+        Xtest = ndims(X) == 1 ? view(X, test) : view(X, test, :)
+    end
 
     mach = machine(model, Xtrain, y[train])
     fit!(mach, verbosity = 1)
@@ -289,7 +313,7 @@ function save_experiment_result(result, name::String)
     meta_path = joinpath(MODELS_DIR, "$(name)_meta.bson")
 
     # Save the trained machine (uses JLD2 under the hood)
-    MLJ.save(model_path, result.mach)
+    save(model_path, result.mach)
 
     metadata = Dict(
         "test_idx" => result.test_idx,
@@ -297,7 +321,7 @@ function save_experiment_result(result, name::String)
         "accuracy" => result.report.accuracy,
         "trained_at" => now(),
     )
-    BSON.@save meta_path metadata
+    @save meta_path metadata
 
     println("✓ Model saved:")
     println("  • Machine:  $model_path")
@@ -328,8 +352,8 @@ function load_experiment_result(name::String)
     println("📦 Loading saved model: $name")
 
     # Reconstruct the MLJ machine from the serialized object
-    mach = MLJ.machine(model_path)
-    meta = BSON.load(meta_path)[:metadata]
+    mach = machine(model_path)
+    meta = load(meta_path)[:metadata]
 
     println("✓ Model loaded:")
     println("  • Accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")
@@ -389,6 +413,81 @@ function get_or_train(config::ExperimentConfig)
     )
 
     return (result.mach, meta)
+end
+
+"""
+    dataset_from_string(s::String) -> DatasetType
+
+Convert dataset string identifier to `DatasetType` enum.
+
+# Arguments
+- `s::String`: Dataset name ("mnist" or "cifar10")
+
+# Returns
+- `DatasetType`: Corresponding enum value
+
+# Examples
+```julia
+dataset_from_string("mnist")    # → DATASET_MNIST
+dataset_from_string("cifar10")  # → DATASET_CIFAR10
+```
+"""
+
+dataset_from_string(s::String) = s == "cifar10" ? DATASET_CIFAR10 : DATASET_MNIST
+
+
+"""
+    parse_common_args(description="Adversarial Attacks Experiments") -> Dict{String,Any}
+
+Parse common command-line arguments for adversarial attack experiments.
+
+# Arguments
+
+- `description::String`: Help message description (default: "Adversarial Attacks Experiments")
+
+
+# Returns
+
+- `Dict{String,Any}`: Parsed arguments with defaults
+
+
+# Common Arguments
+`--num-attack-samples` | `-n` | Number of attack target samples | `100` | `Int` |
+`--dataset` | `-d` | Dataset name | `"mnist"` | `String` |
+`--force-retrain` | `-f` | Force model retraining | `false` | `Bool` |
+
+# Usage Examples
+
+```julia
+# Default settings
+args = parse_common_args()
+
+# Custom description
+args = parse_common_args("Black-Box ML Attack Demo")
+
+# Command line usage:
+# julia script.jl                    # defaults
+# julia script.jl -n 50 -d cifar10 -f
+```
+"""
+function parse_common_args()
+    s = ArgParseSettings(description = "Adversarial Attacks Experiments")
+
+    @add_arg_table s begin
+        "--num-attack-samples", "-n"
+        help = "Number of attack target samples"
+        arg_type = Int
+        default = 100
+        "--dataset", "-d"
+        help = "Dataset (mnist/cifar10)"
+        arg_type = String
+        default = "mnist"
+        "--force-retrain", "-f"
+        help = "Force retrain (ignore cache)"
+        action = :store_true
+    end
+
+    return parse_args(s)
 end
 
 end

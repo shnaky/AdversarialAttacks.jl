@@ -5,36 +5,42 @@ Comprehensive adversarial attack comparison across all integrated models.
 
 Uses ExperimentConfig for unified configuration.
 
-Usage:
+# Usage
     julia --project=examples examples/comparison_all_models_attacks.jl
+
+# With CLI options
+julia --project=examples examples/comparison_all_models_attacks.jl -n 100 -d mnist
+
+# Options
+-n, --num-attack-samples  Number of attack target samples (default: 100)
+-d, --dataset             Dataset (mnist/cifar10) (default: mnist)  
+-f, --force-retrain       Force model retraining (ignore cache)
 """
 
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
 
-using AdversarialAttacks
-using MLJ
-using Flux
-using Printf
-using Dates
-using CategoricalArrays: levelcode
-using Images: channelview
-
 # =========================
 # Experiment Configurations
 # =========================
+args = parse_common_args()
+arg_num_attack_samples = args["num-attack-samples"]
+arg_dataset = dataset_from_string(args["dataset"])
+arg_force_retrain = args["force-retrain"]
+
+NUM_ATTACK_SAMPLES = arg_num_attack_samples # default: 100
+dataset = arg_dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
+force_retrain = arg_force_retrain # default: false
 
 exp_name = "comparison_all"
-dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
-num_of_samples = 10
 
 attackConfigs_FGSM = [
-    (FGSM(epsilon = 0.1f0), num_of_samples),
-    (FGSM(epsilon = 0.3f0), num_of_samples),
+    (FGSM(epsilon = 0.1f0), NUM_ATTACK_SAMPLES),
+    (FGSM(epsilon = 0.3f0), NUM_ATTACK_SAMPLES),
 ]
 attackConfigs_BSR = [
-    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), num_of_samples),
-    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), num_of_samples),
+    (BasicRandomSearch(epsilon = 0.1f0, max_iter = 50), NUM_ATTACK_SAMPLES),
+    (BasicRandomSearch(epsilon = 0.3f0, max_iter = 50), NUM_ATTACK_SAMPLES),
 ]
 
 # ==========================================
@@ -61,7 +67,7 @@ const ALL_CONFIGS = [
             model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
             dataset = dataset,
             use_flatten = false,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (epochs = 5,),
@@ -75,7 +81,7 @@ const ALL_CONFIGS = [
             model_factory = make_tree,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (max_depth = 10,)
@@ -89,7 +95,7 @@ const ALL_CONFIGS = [
             model_factory = make_forest,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (n_trees = 50,)
@@ -103,7 +109,7 @@ const ALL_CONFIGS = [
             model_factory = make_knn,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (K = 10,)
@@ -117,7 +123,7 @@ const ALL_CONFIGS = [
             model_factory = make_xgboost,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = (num_round = 50, max_depth = 6)
@@ -132,7 +138,7 @@ const ALL_CONFIGS = [
             model_factory = make_logistic,
             dataset = dataset,
             use_flatten = true,
-            force_retrain = false,
+            force_retrain = force_retrain,
             fraction_train = 0.8,
             rng = 42,
             model_hyperparams = NamedTuple()  # default
@@ -179,11 +185,11 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
 
             # For CNN: reshape to 4D array (28×28×1×1) or (32x32x3xN)
             x_array = Float32.(channelview(x_img))
-            h, w, c = dataset_shapes[dataset]
+            h, w, c = dataset_shape(Val(dataset))
             x_flux = reshape(x_array, h, w, c, 1)
 
             true_label_idx = levelcode(true_label)
-            y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+            y_onehot = onehot(true_label_idx, 1:length(label_levels))
 
             push!(test_data, (data = x_flux, label = y_onehot))
         else
@@ -196,7 +202,7 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
             pred_label = mode(pred_prob)
 
             if pred_label == true_label_obj
-                y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+                y_onehot = onehot(true_label_idx, 1:length(label_levels))
                 push!(test_data, (data = x_flat, label = y_onehot, true_idx = true_label_idx))
             end
         end
@@ -340,7 +346,7 @@ function run_full_comparison()
     println("\n" * "🚀"^35)
     println("ADVERSARIAL ROBUSTNESS COMPARISON")
     println("🚀"^35)
-    println("Started: $(Dates.format(now(), "HH:MM:SS"))")
+    println("Started: $(format(now(), "HH:MM:SS"))")
 
     all_results = []
 
@@ -397,7 +403,7 @@ function generate_summary_report(results)
     end
 
     println("\n" * "="^80)
-    println("Completed: $(Dates.format(now(), "HH:MM:SS"))")
+    println("Completed: $(format(now(), "HH:MM:SS"))")
     return println("Total Evaluations: $(length(results))")
 end
 

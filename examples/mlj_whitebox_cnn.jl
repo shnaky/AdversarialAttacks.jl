@@ -6,31 +6,40 @@ White-Box Attack on MLJFlux CNN
 Demonstrates FGSM gradient-based attack on a CNN classifier.
 Uses evaluate_robustness() to assess attack effectiveness across multiple samples.
 
-Usage:
+# Usage
     julia --project=examples examples/mlj_whitebox_cnn.jl
+
+# With CLI options
+    julia --project=examples examples/mlj_whitebox_cnn.jl -n 100 -d mnist
+
+# Options
+-n, --num-attack-samples  Number of attack target samples (default: 100)
+-d, --dataset             Dataset (mnist/cifar10) (default: mnist)  
+-f, --force-retrain       Force model retraining (ignore cache)
 """
 
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
-using AdversarialAttacks
-using Flux
-using CategoricalArrays: levelcode
-using ImageCore: channelview
-using MLJ
 
 println("="^70)
 println("White-Box Attack on MLJFlux CNN")
 println("="^70)
 
-dataset = DATASET_MNIST # DATASET_MNIST, DATASET_CIFAR10
-N_SAMPLES = 100
+args = parse_common_args()
+arg_num_attack_samples = args["num-attack-samples"]
+arg_dataset = dataset_from_string(args["dataset"])
+arg_forceretrain = args["force-retrain"]
+
+NUM_ATTACK_SAMPLES = arg_num_attack_samples # default: 100
+dataset = arg_dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
+force_retrain = arg_forceretrain # default: false
 
 # ==========================================
 #   • Experiment: mnist_cnn_whitebox_exp
 #   • Clean accuracy: 96.14%
 # ==========================================
 #   • Experiment: cifar_cnn_whitebox_exp
-#   • Clean accuracy: 65.5%
+#   • Clean accuracy: 71.54%
 # ==========================================
 config = ExperimentConfig(
     exp_name = dataset == DATASET_MNIST ? "mnist_cnn_whitebox_exp" : "cifar_cnn_whitebox_exp",
@@ -38,7 +47,7 @@ config = ExperimentConfig(
     model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
     dataset = dataset,
     use_flatten = false,
-    force_retrain = false,
+    force_retrain = force_retrain,
     fraction_train = 0.8,
     rng = 42,
     model_hyperparams = (epochs = 5, batch_size = 64),
@@ -70,7 +79,7 @@ flux_model = extract_flux_model(mach)
 println("\n[3/4] Preparing test samples...")
 
 label_levels = levels(y_test)
-n_available = min(N_SAMPLES, length(test_idx))
+n_available = min(NUM_ATTACK_SAMPLES, length(test_idx))
 test_data = []
 
 for i in 1:n_available
@@ -85,11 +94,11 @@ for i in 1:n_available
     end
 
     x_array = Float32.(channelview(x_img))
-    h, w, c = dataset_shapes[config.dataset]
+    h, w, c = dataset_shape(Val(dataset))
     x_flux = reshape(x_array, h, w, c, 1)
 
     true_label_idx = levelcode(true_label)
-    y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+    y_onehot = onehot(true_label_idx, 1:length(label_levels))
 
     push!(test_data, (data = x_flux, label = y_onehot))
 end

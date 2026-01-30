@@ -1,14 +1,14 @@
-using MLJ
-using MLJFlux
-using Flux
-using Optimisers
-using MLUtils
-using NearestNeighborModels
+using MLJ: @load, fitted_params
+import MLJFlux: build # build must be explicitly imported
+using MLJFlux: ImageClassifier
+using Flux: glorot_uniform, outputsize, Conv, Chain, Dense, MaxPool, relu, crossentropy, BatchNorm, Dropout
+using Optimisers: Adam
+using NearestNeighborModels: KNNKernel, Uniform
+using MLUtils: flatten
 
 # ------------------------------------------------------------------
 # Public API
 # ------------------------------------------------------------------
-export SimpleConvBuilder
 export make_mnist_cnn, make_cifar_cnn
 export make_forest, make_tree, make_knn, make_logistic, make_xgboost
 export extract_flux_model
@@ -18,12 +18,9 @@ export extract_flux_model
 # ------------------------------------------------------------------
 const DecisionTreeClassifier = @load DecisionTreeClassifier pkg = DecisionTree
 const RandomForestClassifier = @load RandomForestClassifier pkg = DecisionTree
-const KNNClassifier = @load KNNClassifier         pkg = NearestNeighborModels
-const LogisticClassifier = @load LogisticClassifier    pkg = MLJLinearModels
-const XGBoostClassifier = @load XGBoostClassifier     pkg = XGBoost
-
-# For convenience, keep a local alias
-const ImageClassifier = MLJFlux.ImageClassifier
+const KNNClassifier = @load KNNClassifier pkg = NearestNeighborModels
+const LogisticClassifier = @load LogisticClassifier pkg = MLJLinearModels
+const XGBoostClassifier = @load XGBoostClassifier pkg = XGBoost
 
 # ------------------------------------------------------------------
 # Convolutional builders (white-box models)
@@ -43,6 +40,7 @@ struct SimpleConvBuilder
     channels2::Int
     channels3::Int
 end
+SimpleConvBuilder() = SimpleConvBuilder(3, 16, 32, 32)
 
 """
     MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
@@ -57,12 +55,12 @@ The resulting architecture is:
 
 Conv -> MaxPool -> Conv -> MaxPool -> Conv -> MaxPool -> Flatten -> Dense
 """
-function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
+function build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
     k, c1, c2, c3 = b.filter_size, b.channels1, b.channels2, b.channels3
     @assert isodd(k) "filter_size must be odd to keep spatial dimensions aligned"
 
-    p = div(k - 1, 2)                 # symmetric padding
-    init = Flux.glorot_uniform(rng)      # deterministic initializer
+    p = div(k - 1, 2)
+    init = glorot_uniform(rng)
 
     front = Chain(
         Conv((k, k), n_channels => c1, pad = (p, p), relu, init = init),
@@ -71,14 +69,71 @@ function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
         MaxPool((2, 2)),
         Conv((k, k), c2 => c3, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
-        MLUtils.flatten,
+        flatten,
     )
 
-    # `Flux.outputsize` returns a tuple of sizes for a single sample.
-    # For image classifiers we only need the feature dimension.
-    d = first(Flux.outputsize(front, (n_in..., n_channels, 1)))
+    d = first(outputsize(front, (n_in..., n_channels, 1)))
 
     return Chain(front, Dense(d, n_out, init = init))
+end
+
+"""
+    CifarConvBuilder
+
+AI-assisted configuration for CIFAR-10 ConvNet (slightly tuned channels/depth).
+
+Construct via `CifarConvBuilder(3, 32, 64, 128, 0.25f0)`.
+"""
+struct CifarConvBuilder
+    filter_size::Int
+    channels1::Int
+    channels2::Int
+    channels3::Int
+    dropout::Float32
+end
+CifarConvBuilder() = CifarConvBuilder(3, 32, 64, 128, 0.25f0)
+
+"""
+    MLJFlux.build(b::CifarConvBuilder, rng, n_in, n_out, n_channels)
+
+Builds CIFAR-10 optimized convolutional classifier for 32×32×3 RGB images.
+
+Architecture: Conv-BN-MP ×3 → Flatten → Dropout → Dense(256) → Dropout → Dense(n_out)
+
+- `n_in`: `(32, 32)`
+- `n_channels`: `3` (RGB)
+- BatchNorm/Dropout for regularization and training stability
+
+Returns `Flux.Chain` compatible with `MLJFlux.ImageClassifier`.
+"""
+function build(b::CifarConvBuilder, rng, n_in, n_out, n_channels)
+    k, c1, c2, c3 = b.filter_size, b.channels1, b.channels2, b.channels3
+
+    p = div(k - 1, 2)
+    init = glorot_uniform(rng)
+
+    conv_layers = Chain(
+        Conv((k, k), n_channels => c1, pad = (p, p), relu, init = init),
+        BatchNorm(c1),
+        MaxPool((2, 2)),
+        Conv((k, k), c1 => c2, pad = (p, p), relu, init = init),
+        BatchNorm(c2),
+        MaxPool((2, 2)),
+        Conv((k, k), c2 => c3, pad = (p, p), relu, init = init),
+        BatchNorm(c3),
+        MaxPool((2, 2)),
+        flatten,
+    )
+    d_conv = first(outputsize(conv_layers, (n_in..., n_channels, 1)))
+
+    front = Chain(
+        conv_layers,
+        Dropout(b.dropout),
+        Dense(d_conv, 256, relu),
+        Dropout(b.dropout)
+    )
+
+    return Chain(front, Dense(256, n_out, init = init))
 end
 
 # ------------------------------------------------------------------
@@ -93,22 +148,24 @@ Construct an `MLJFlux.ImageClassifier` configured for MNIST-like data
 
 Additional keyword arguments are forwarded to `ImageClassifier`.
 """
-function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64, kwargs...)
+function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64, loss = crossentropy, optimiser = Adam(0.001), lambda = 1.0e-4, kwargs...)
     builder = SimpleConvBuilder(3, 16, 32, 32)
 
     return ImageClassifier(
         builder = builder,
-        loss = Flux.Losses.crossentropy,
-        optimiser = Optimisers.Adam(0.001),
+        loss = loss,
+        optimiser = optimiser,
         epochs = epochs,
         batch_size = batch_size,
         rng = rng,
+        lambda = lambda,
         kwargs...,
     )
 end
 
+
 """
-    make_cifar_cnn(; epochs=10, batch_size=64, optimiser=Adam(), loss=crossentropy, kwargs...)
+    make_cifar_cnn(; epochs=50, batch_size=128, optimiser=Adam(), loss=crossentropy, lambda = 5.0e-4, kwargs...)
 
 Construct an `MLJFlux.ImageClassifier` for CIFAR-10-like data
 (3-channel 32×32 images) using the same ConvNet recipe as for MNIST,
@@ -117,19 +174,21 @@ but with typically more training epochs.
 All hyperparameters can be overridden via keywords.
 """
 function make_cifar_cnn(;
-        epochs::Int = 10,
-        batch_size::Int = 64,
-        optimiser = Adam(),
-        loss = Flux.Losses.crossentropy,
+        epochs::Int = 50,
+        batch_size::Int = 128,
+        optimiser = Adam(0.001),
+        loss = crossentropy,
+        lambda = 5.0e-4,
         kwargs...,
     )
-    builder = SimpleConvBuilder(3, 16, 32, 32)
+    builder = CifarConvBuilder(3, 32, 64, 128, 0.25)
 
     return ImageClassifier(
         builder = builder,
         epochs = epochs,
         batch_size = batch_size,
         optimiser = optimiser,
+        lambda = lambda,
         loss = loss,
         kwargs...,
     )
