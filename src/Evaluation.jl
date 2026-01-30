@@ -281,8 +281,6 @@ function evaluate_robustness(
         sample = test_data[i]
         true_label = argmax(sample.label)
 
-        println("  Sample $i/$n_test")
-
         try
             # clean output
             clean_pred = predict_fn(sample.data)
