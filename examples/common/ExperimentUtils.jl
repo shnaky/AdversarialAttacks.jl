@@ -232,7 +232,7 @@ Partition indices `1:n` into `(train, test)` using MLJ's `partition`.
 - `fraction_train`: fraction of observations for the training set
 - `rng`           : integer seed for reproducible shuffling
 """
-function train_test_split(n::Integer; fraction_train::Float64, rng::Int)
+function train_test_split(n::Integer; fraction_train::Float64 = 0.8, rng::Int = 42)
     train, test = partition(1:n, fraction_train, shuffle = true, rng = rng)
     return train, test
 end
@@ -260,9 +260,13 @@ function run_experiment(model, X, y; config::ExperimentConfig)
     n = length(y)
     train, test = train_test_split(n; fraction_train = config.fraction_train, rng = config.rng)
 
-    # For DataFrame inputs we must use two-dimensional indexing
-    Xtrain = X isa DataFrame ? X[train, :] : X[train]
-    Xtest = X isa DataFrame ? X[test, :] : X[test]
+    if X isa DataFrame
+        Xtrain = view(X, train, :)
+        Xtest = view(X, test, :)
+    else
+        Xtrain = ndims(X) == 1 ? view(X, train) : view(X, train, :)
+        Xtest = ndims(X) == 1 ? view(X, test) : view(X, test, :)
+    end
 
     mach = machine(model, Xtrain, y[train])
     fit!(mach, verbosity = 1)
