@@ -2,22 +2,41 @@ module ExperimentUtils
 
 include("Models.jl")
 
-using MLJ
-using MLJ: partition, accuracy
-using MLJFlux
-using Flux
-using Optimisers
+using AdversarialAttacks: FGSM, BasicRandomSearch, evaluate_robustness, attack
+export FGSM, BasicRandomSearch, evaluate_robustness, attack
 
-using MLDatasets
-using DataFrames
+using MLJ: partition, accuracy, machine, fit!, save
+using MLJ: mode, predict_mode, table, levels, predict
+export mode, predict_mode, table, levels, predict
+
+using Flux: onehot, Chain, softmax
+export onehot, Chain, softmax
+
+using MLDatasets: MNIST, CIFAR10
 using StatsBase: mode
+
+using DataFrames: DataFrame
 
 using ColorTypes: Color, Gray, RGB
 using Images: channelview
-using ScientificTypes: ColorImage
+using ScientificTypes: ColorImage, coerce, Multiclass
 
-using BSON
-using Dates
+using BSON: @save, load
+
+using CategoricalArrays: levelcode
+export levelcode
+
+using ImageCore: channelview
+export channelview
+
+using Statistics: mean
+export mean
+
+using Printf: @printf
+export @printf
+
+using Dates: now, format
+export now, format
 
 # ------------------------------------------------------------------
 # Public API
@@ -25,7 +44,7 @@ using Dates
 export ExperimentConfig, run_experiment
 export make_mnist_cnn, make_cifar_cnn, extract_flux_model
 export make_forest, make_tree, make_knn, make_logistic, make_xgboost
-export save_experiment_result, load_experiment_result, get_or_train
+export get_or_train
 export DatasetType, DATASET_MNIST, DATASET_CIFAR10, load_data, dataset_shapes
 
 const MODELS_DIR = joinpath(@__DIR__, "..", "models")
@@ -138,7 +157,7 @@ Returns:
 """
 function load_dataset_for_mlj(::Val{DATASET_MNIST}; n_train::Int = 60000)
     # images: 28×28×N UInt8, labels: Vector{Int}
-    images, labels = MLDatasets.MNIST(split = :train)[:]
+    images, labels = MNIST(split = :train)[:]
     images = images[:, :, 1:n_train]
     labels = labels[1:n_train]
 
@@ -163,7 +182,7 @@ Returns:
 - `y`: `CategoricalVector` with `Multiclass{10}` scitype
 """
 function load_dataset_for_mlj(::Val{DATASET_CIFAR10}; n_train::Int = 50000)
-    dataset = MLDatasets.CIFAR10(split = :train)
+    dataset = CIFAR10(split = :train)
 
     # raw 4D array: 32×32×3×N (HWC layout)
     images = dataset.features[:, :, :, 1:n_train]
@@ -289,7 +308,7 @@ function save_experiment_result(result, name::String)
     meta_path = joinpath(MODELS_DIR, "$(name)_meta.bson")
 
     # Save the trained machine (uses JLD2 under the hood)
-    MLJ.save(model_path, result.mach)
+    save(model_path, result.mach)
 
     metadata = Dict(
         "test_idx" => result.test_idx,
@@ -297,7 +316,7 @@ function save_experiment_result(result, name::String)
         "accuracy" => result.report.accuracy,
         "trained_at" => now(),
     )
-    BSON.@save meta_path metadata
+    @save meta_path metadata
 
     println("✓ Model saved:")
     println("  • Machine:  $model_path")
@@ -328,8 +347,8 @@ function load_experiment_result(name::String)
     println("📦 Loading saved model: $name")
 
     # Reconstruct the MLJ machine from the serialized object
-    mach = MLJ.machine(model_path)
-    meta = BSON.load(meta_path)[:metadata]
+    mach = machine(model_path)
+    meta = load(meta_path)[:metadata]
 
     println("✓ Model loaded:")
     println("  • Accuracy: ", round(meta["accuracy"] * 100, digits = 2), "%")

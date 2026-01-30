@@ -1,14 +1,14 @@
-using MLJ
-using MLJFlux
-using Flux
-using Optimisers
-using MLUtils
-using NearestNeighborModels
+using MLJ: @load, fitted_params
+import MLJFlux: build # build must be explicitly imported
+using MLJFlux: ImageClassifier
+using Flux: glorot_uniform, outputsize, Conv, Chain, Dense, MaxPool, glorot_uniform, relu, crossentropy
+using Optimisers: Adam
+using NearestNeighborModels: KNNKernel
+using MLUtils: flatten
 
 # ------------------------------------------------------------------
 # Public API
 # ------------------------------------------------------------------
-export SimpleConvBuilder
 export make_mnist_cnn, make_cifar_cnn
 export make_forest, make_tree, make_knn, make_logistic, make_xgboost
 export extract_flux_model
@@ -21,9 +21,6 @@ const RandomForestClassifier = @load RandomForestClassifier pkg = DecisionTree
 const KNNClassifier = @load KNNClassifier         pkg = NearestNeighborModels
 const LogisticClassifier = @load LogisticClassifier    pkg = MLJLinearModels
 const XGBoostClassifier = @load XGBoostClassifier     pkg = XGBoost
-
-# For convenience, keep a local alias
-const ImageClassifier = MLJFlux.ImageClassifier
 
 # ------------------------------------------------------------------
 # Convolutional builders (white-box models)
@@ -57,12 +54,12 @@ The resulting architecture is:
 
 Conv -> MaxPool -> Conv -> MaxPool -> Conv -> MaxPool -> Flatten -> Dense
 """
-function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
+function build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
     k, c1, c2, c3 = b.filter_size, b.channels1, b.channels2, b.channels3
     @assert isodd(k) "filter_size must be odd to keep spatial dimensions aligned"
 
     p = div(k - 1, 2)                 # symmetric padding
-    init = Flux.glorot_uniform(rng)      # deterministic initializer
+    init = glorot_uniform(rng)      # deterministic initializer
 
     front = Chain(
         Conv((k, k), n_channels => c1, pad = (p, p), relu, init = init),
@@ -71,12 +68,12 @@ function MLJFlux.build(b::SimpleConvBuilder, rng, n_in, n_out, n_channels)
         MaxPool((2, 2)),
         Conv((k, k), c2 => c3, pad = (p, p), relu, init = init),
         MaxPool((2, 2)),
-        MLUtils.flatten,
+        flatten,
     )
 
     # `Flux.outputsize` returns a tuple of sizes for a single sample.
     # For image classifiers we only need the feature dimension.
-    d = first(Flux.outputsize(front, (n_in..., n_channels, 1)))
+    d = first(outputsize(front, (n_in..., n_channels, 1)))
 
     return Chain(front, Dense(d, n_out, init = init))
 end
@@ -98,8 +95,8 @@ function make_mnist_cnn(; rng::Int = 42, epochs::Int = 5, batch_size::Int = 64, 
 
     return ImageClassifier(
         builder = builder,
-        loss = Flux.Losses.crossentropy,
-        optimiser = Optimisers.Adam(0.001),
+        loss = crossentropy,
+        optimiser = Adam(0.001),
         epochs = epochs,
         batch_size = batch_size,
         rng = rng,
@@ -120,7 +117,7 @@ function make_cifar_cnn(;
         epochs::Int = 10,
         batch_size::Int = 64,
         optimiser = Adam(),
-        loss = Flux.Losses.crossentropy,
+        loss = crossentropy,
         kwargs...,
     )
     builder = SimpleConvBuilder(3, 16, 32, 32)

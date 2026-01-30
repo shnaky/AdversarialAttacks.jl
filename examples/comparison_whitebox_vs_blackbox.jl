@@ -12,13 +12,6 @@ Usage:
 
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
-using AdversarialAttacks
-using Flux
-using CategoricalArrays: levelcode
-using ImageCore: channelview
-using Statistics: mean
-using Printf
-using MLJ
 
 function run_comparison()
     println("="^70)
@@ -98,7 +91,7 @@ function run_comparison()
         x_flux = reshape(x_array, h, w, c, 1)
 
         true_label_idx = levelcode(true_label)
-        y_onehot = Flux.onehot(true_label_idx, 1:length(levels(y_test)))
+        y_onehot = onehot(true_label_idx, 1:length(levels(y_test)))
 
         push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
     end

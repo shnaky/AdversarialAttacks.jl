@@ -13,11 +13,6 @@ Usage:
 
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
-using AdversarialAttacks
-using Flux
-using MLJ: mode, predict, table
-using CategoricalArrays: levelcode
-using Printf
 
 function main()
     println("="^70)
@@ -191,7 +186,7 @@ function main()
         pred_label = mode(pred_prob)
 
         if pred_label == true_label
-            y_onehot = Flux.onehot(true_label_idx, 1:10)
+            y_onehot = onehot(true_label_idx, 1:10)
             push!(
                 test_data, (
                     data = x_flat,

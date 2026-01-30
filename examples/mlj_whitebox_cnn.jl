@@ -12,11 +12,6 @@ Usage:
 
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
-using AdversarialAttacks
-using Flux
-using CategoricalArrays: levelcode
-using ImageCore: channelview
-using MLJ
 
 println("="^70)
 println("White-Box Attack on MLJFlux CNN")
@@ -89,7 +84,7 @@ for i in 1:n_available
     x_flux = reshape(x_array, h, w, c, 1)
 
     true_label_idx = levelcode(true_label)
-    y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+    y_onehot = onehot(true_label_idx, 1:length(label_levels))
 
     push!(test_data, (data = x_flux, label = y_onehot))
 end

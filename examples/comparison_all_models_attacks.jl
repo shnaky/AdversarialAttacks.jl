@@ -12,14 +12,6 @@ Usage:
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
 
-using AdversarialAttacks
-using MLJ
-using Flux
-using Printf
-using Dates
-using CategoricalArrays: levelcode
-using Images: channelview
-
 # =========================
 # Experiment Configurations
 # =========================
@@ -183,7 +175,7 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
             x_flux = reshape(x_array, h, w, c, 1)
 
             true_label_idx = levelcode(true_label)
-            y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+            y_onehot = onehot(true_label_idx, 1:length(label_levels))
 
             push!(test_data, (data = x_flux, label = y_onehot))
         else
@@ -196,7 +188,7 @@ function prepare_test_samples(mach, meta, n_samples::Int, use_flatten::Bool, is_
             pred_label = mode(pred_prob)
 
             if pred_label == true_label_obj
-                y_onehot = Flux.onehot(true_label_idx, 1:length(label_levels))
+                y_onehot = onehot(true_label_idx, 1:length(label_levels))
                 push!(test_data, (data = x_flat, label = y_onehot, true_idx = true_label_idx))
             end
         end
@@ -340,7 +332,7 @@ function run_full_comparison()
     println("\n" * "🚀"^35)
     println("ADVERSARIAL ROBUSTNESS COMPARISON")
     println("🚀"^35)
-    println("Started: $(Dates.format(now(), "HH:MM:SS"))")
+    println("Started: $(format(now(), "HH:MM:SS"))")
 
     all_results = []
 
@@ -397,7 +389,7 @@ function generate_summary_report(results)
     end
 
     println("\n" * "="^80)
-    println("Completed: $(Dates.format(now(), "HH:MM:SS"))")
+    println("Completed: $(format(now(), "HH:MM:SS"))")
     return println("Total Evaluations: $(length(results))")
 end
 
