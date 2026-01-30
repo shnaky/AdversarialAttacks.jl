@@ -56,7 +56,7 @@ train_loader = Flux.DataLoader(
 # =============================================================================
 println("\n[Step 2] Loading pretrained Flux Model...")
 
-model = Experiments.load_pretrained_c10_model()
+model = ExperimentUtils.load_pretrained_c10_model()
 
 function accuracy(model, x, y)
 

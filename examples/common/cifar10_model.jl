@@ -16,7 +16,7 @@ Loads the FluxModel state of a model trained on CIFAR-10 from Github and initial
 """
 function load_pretrained_c10_model()
 
-    artifact_toml = LazyArtifacts.find_artifacts_toml(normpath(@__DIR__, ".."))
+    artifact_toml = LazyArtifacts.find_artifacts_toml(normpath(@__DIR__, "..", ".."))
     _hash = artifact_hash("cifar10_model", artifact_toml)
 
     ensure_artifact_installed("cifar10_model", artifact_toml)
@@ -67,7 +67,7 @@ function load_pretrained_c10_model()
         Flux.flatten
     )
 
-    @load model_path model_state
+    BSON.@load model_path model_state
     Flux.loadmodel!(model, model_state)
     return model
 end

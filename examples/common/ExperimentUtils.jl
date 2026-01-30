@@ -21,6 +21,7 @@ using ColorTypes: Color, Gray, RGB
 using Images: channelview
 using ScientificTypes: ColorImage, coerce, Multiclass
 
+import BSON
 using BSON: @save, load
 using Pkg.Artifacts
 using LazyArtifacts
