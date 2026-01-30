@@ -1,15 +1,11 @@
 using Test
 using AdversarialAttacks
-using Flux
-using MLJ
-using MLJ: fit!
-using CategoricalArrays: levels
 
 @testset "Evaluation Suite" begin
     model = Chain(Dense(4, 3), softmax)
 
     test_data = [
-        (data = randn(Float32, 4), label = Flux.onehot(rand(1:3), 1:3))
+        (data = randn(Float32, 4), label = onehot(rand(1:3), 1:3))
             for _ in 1:10
     ]
     attack = FGSM(epsilon = 0.1)
@@ -245,7 +241,7 @@ using CategoricalArrays: levels
 
             Tree = @load DecisionTreeClassifier pkg = DecisionTree verbosity = 0
             model = Tree()
-            mach = machine(model, X, y) |> fit!
+            mach = machine(model, X, y) |> mlj_fit!
 
             # Test MLJ prediction wrapper with vector input
             f = AdversarialAttacks.make_prediction_function(mach)
@@ -266,7 +262,7 @@ using CategoricalArrays: levels
 
             Tree = @load DecisionTreeClassifier pkg = DecisionTree verbosity = 0
             model = Tree()
-            mach = machine(model, X, y) |> fit!
+            mach = machine(model, X, y) |> mlj_fit!
 
             f = AdversarialAttacks.make_prediction_function(mach)
 
