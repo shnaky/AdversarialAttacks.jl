@@ -65,4 +65,8 @@ makedocs(
 deploydocs(;
     repo = "github.com/shnaky/AdversarialAttacks.jl",
     devbranch = "main",
+    versions = [
+        "stable" => "v^",
+        "dev" => "main",
+    ],
 )
