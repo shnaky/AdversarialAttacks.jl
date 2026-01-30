@@ -4,11 +4,12 @@ White-Box attack on CIFAR10
 Demonstrates white-box adversarial attack on a Flux CNN trained on CIFAR10 and saves one adversarial example as an Image.
 """
 
-include("Experiments.jl")
-using .Experiments
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
+
 using AdversarialAttacks
 using Flux
-using MLDatasets  
+using MLDatasets
 using Images #, FileIO
 using Statistics
 using Printf
@@ -40,13 +41,14 @@ c10_train = CIFAR10(:train)
 c10_test = CIFAR10(:test)
 
 x_train, y_train = preprocess(c10_train)
-x_test, y_test = preprocess(c10_test) 
+x_test, y_test = preprocess(c10_test)
 
 batchsize = 256
 train_loader = Flux.DataLoader(
-    (x_train, y_train), 
-    batchsize=batchsize, 
-    shuffle=true);
+    (x_train, y_train),
+    batchsize = batchsize,
+    shuffle = true
+);
 
 
 # =============================================================================
@@ -54,14 +56,14 @@ train_loader = Flux.DataLoader(
 # =============================================================================
 println("\n[Step 2] Loading pretrained Flux Model...")
 
-model = Experiments.load_pretrained_c10_model() 
+model = Experiments.load_pretrained_c10_model()
 
 function accuracy(model, x, y)
 
     ŷ = model(x)
 
     ŷ_cpu = cpu(ŷ)
-    y_cpu  = cpu(y)
+    y_cpu = cpu(y)
 
     ŷ = Flux.onecold(ŷ_cpu)
     y_true = Flux.onecold(y_cpu)
@@ -82,14 +84,14 @@ println("  • Clean accuracy: ", round(acc, digits = 2), "%")
 println("\n[Step 3] Create Adversarial Test Image...")
 
 image_idx = 453
-x_example = Float32.(x_test[:, :, :, image_idx:image_idx])  
-y_example = y_test[:, image_idx] 
+x_example = Float32.(x_test[:, :, :, image_idx:image_idx])
+y_example = y_test[:, image_idx]
 
 loss_fn(m, x, y) = Flux.logitcrossentropy(m(x), y)
 
 fgsm = AdversarialAttacks.FGSM(epsilon = 0.02)
 
-sample = (data=x_example, label=y_example)
+sample = (data = x_example, label = y_example)
 println("\n Running attack...")
 adv_sample = AdversarialAttacks.attack(fgsm, model, sample, loss = loss_fn)
 
@@ -107,9 +109,9 @@ println("\nOriginal Prediction: $(class_names[original_class])")
 println("\nPrediction after AdversarialAttack: $(class_names[adv_class])")
 
 println("\nSaving adversarial example...")
-img = adv_sample[:, :, :, 1]  
+img = adv_sample[:, :, :, 1]
 # Ensure values are in [0,1]
-img_clamped = clamp.(img, 0f0, 1f0)
+img_clamped = clamp.(img, 0.0f0, 1.0f0)
 
 # Convert channel-last → RGB image
 img_rgb = colorview(RGB, permutedims(img_clamped, (3, 1, 2)))

@@ -8,8 +8,8 @@
 /.vscode
 /examples/Manifest*.toml
 .JuliaFormatter.toml
-.ipynb_checkpoints
-*.ipynb
+*.bson
+trained_model.bson
 /examples/models/
 .DS_Store
 /docs/src/tutorials/
