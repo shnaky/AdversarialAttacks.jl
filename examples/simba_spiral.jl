@@ -101,15 +101,15 @@ function plot_decision_boundary!(plt, model; resolution = 100, alpha = 0.3)
     Z = zeros(resolution, resolution)
     for (i, x) in enumerate(xs), (j, y) in enumerate(ys)
         pred = model(Float32[x, y])
-        Z[j, i] = pred[1] - pred[2]
+        Z[j, i] = sign(pred[1] - pred[2])
     end
 
-    ## Replace NaN/Inf values to prevent plotting errors
-    Z = replace(Z, NaN => 0.0, Inf => 10.0, -Inf => -10.0)
+    ## Replace NaN values to prevent plotting errors
+    replace!(Z, NaN => 0.0)
 
     return contourf!(
-        plt, xs, ys, Z, levels = [-10, 0, 10],
-        c = cgrad([:lightsalmon, :lightblue]), alpha = alpha,
+        plt, xs, ys, Z, levels = [-1, 0, 1],
+        c = cgrad([:lightblue, :lightsalmon]), alpha = alpha,
         linewidth = 0, colorbar = false
     )
 end
@@ -125,6 +125,12 @@ function plot_attack_results(X, y, model, atk; n_samples = 20)
 
     successful_attacks = 0
     total_perturbation = 0.0
+
+    ## Track which legend entries we've added
+    shown_class1 = false
+    shown_class2 = false
+    shown_success = false
+    shown_fail = false
 
     for idx in indices
         x_orig = X[:, idx]
@@ -149,25 +155,33 @@ function plot_attack_results(X, y, model, atk; n_samples = 20)
 
         ## Plot original point
         color = y[idx] == 1 ? :blue : :red
+        show_label = (y[idx] == 1 && !shown_class1) || (y[idx] == 2 && !shown_class2)
         scatter!(
             plt, [x_orig[1]], [x_orig[2]],
             color = color, markersize = 8, markerstrokewidth = 2,
-            label = (idx == indices[1] ? "Original (class $(y[idx]))" : "")
+            label = show_label ? "Original (class $(y[idx]))" : ""
         )
+        if y[idx] == 1
+            shown_class1 = true
+        else
+            shown_class2 = true
+        end
 
         ## Plot adversarial point
         if success
             scatter!(
                 plt, [x_adv[1]], [x_adv[2]],
                 color = :black, marker = :x, markersize = 10, markerstrokewidth = 3,
-                label = (successful_attacks == 1 ? "Adversarial (misclassified)" : "")
+                label = !shown_success ? "Successful attack" : ""
             )
+            shown_success = true
         else
             scatter!(
                 plt, [x_adv[1]], [x_adv[2]],
                 color = :gray, marker = :circle, markersize = 5, alpha = 0.5,
-                label = ""
+                label = !shown_fail ? "Failed attack" : ""
             )
+            shown_fail = true
         end
 
         ## Draw arrow from original to adversarial
@@ -185,13 +199,13 @@ function plot_attack_results(X, y, model, atk; n_samples = 20)
     return plt
 end
 
-function compare_epsilons(X, y, model; epsilons = [0.1, 0.3, 0.5, 1.0], n_samples = 30)
+function compare_epsilons(X, y, model; epsilons = [0.02, 0.05, 0.1, 0.3], n_samples = 30)
     plots = []
 
     bounds = [(-3.5, 3.5), (-3.5, 3.5)]
 
     for ε in epsilons
-        atk = BasicRandomSearch(epsilon = Float32(ε), max_iter = 100, bounds = bounds)
+        atk = BasicRandomSearch(epsilon = Float32(ε), max_iter = 20, bounds = bounds)
         plt = plot_attack_results(X, y, model, atk; n_samples = n_samples)
         title!(plt, "ε = $ε")
         push!(plots, plt)
@@ -203,14 +217,14 @@ end
 
 # ## 4. Run attack and visualize
 #
-# We run the BasicRandomSearch attack with ε=0.5 and visualize the results.
+# We run the BasicRandomSearch attack with ε=0.1 and visualize the results.
 # The attack tries to find small perturbations that cause misclassification
 # by randomly probing the input space. Original points are shown in their
 # class color (blue/red), successful adversarial examples as black X markers,
 # and failed attacks as gray circles.
 println("\nRunning SimBA attack visualization...")
 bounds = [(-3.5, 3.5), (-3.5, 3.5)]  # Set bounds for normalized data
-atk = BasicRandomSearch(epsilon = 0.5f0, max_iter = 100, bounds = bounds)
+atk = BasicRandomSearch(epsilon = 0.1f0, max_iter = 20, bounds = bounds)
 p1 = plot_attack_results(X, y, model, atk; n_samples = 25)
 
 savefig(p1, joinpath(@__DIR__, "simba_single.svg")) #hide
@@ -224,7 +238,7 @@ p1 #hide
 # scales with perturbation budget.
 
 println("\nComparing different epsilon values...")
-p2 = compare_epsilons(X, y, model; epsilons = [0.1, 0.3, 0.5, 1.0], n_samples = 25)
+p2 = compare_epsilons(X, y, model; epsilons = [0.02, 0.05, 0.1, 0.3], n_samples = 25)
 
 savefig(p2, joinpath(@__DIR__, "simba_epsilons.svg")) #hide
 p2 #hide
