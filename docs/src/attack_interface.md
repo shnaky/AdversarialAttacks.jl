@@ -38,7 +38,7 @@ fgsm = FGSM(epsilon = 0.01f0)
 brs = BasicRandomSearch(epsilon = 0.1f0, bounds = [(0f0, 1f0)], max_iter = 10)
 
 println("FGSM: ", name(fgsm))
-println("BSR:  ", name(bsr))
+println("BSR:  ", name(brs))
 
 # Run an attack
 model = Chain(
