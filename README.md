@@ -6,7 +6,9 @@
 
 **AdversarialAttacks.jl** is a lightweight Julia package for experimenting with adversarial attacks against neural networks and tree‑based models, focusing on FGSM (white‑box) and random‑search–based (black‑box) attacks.
 
-Currently, this package supports only models implemented as Flux chains (neural networks) and decision trees from the DecisionTree.jl package. Support for other model types may be added in the future.
+Currently, this package supports models implemented as Flux chains (neural networks), decision trees from the DecisionTree.jl package and models from the MLJ package. Support for other model types may be added in the future.
+
+Adversarial attacks manipulate data, most famously images, to exploit vulnerabilities in machine-learning models. Perturbations that are nearly imperceptible to the humans can cause models to misclassify inputs with high confidence. This package provides tools to generate adversarial examples and benchmark a model’s robustness against such attacks.
 
 ## Installation
 
@@ -18,6 +20,8 @@ julia> ]add https://github.com/shnaky/AdversarialAttacks.jl
 ```
 
 ## Examples
+
+For comprehensive, executable tutorials with detailed explanations and visualizations, see the [Tutorials & Examples](https://shnaky.github.io/AdversarialAttacks.jl/dev/examples/) section in the documentation.
 
 The following example shows how to create an adversarial sample from a **single input sample** using the FGSM attack:
 
@@ -111,22 +115,26 @@ julia> println(report)
 
 Dataset
   Total samples evaluated        : 10
-  Clean-correct samples          : 4 / 10
+  Clean-correct samples          : 2 / 10
 
 Clean Performance
-  Clean accuracy                 : 40.0%
+  Clean accuracy                 : 20.0%
 
 Adversarial Performance
-  Adversarial accuracy           : 0.0%
+  Adversarial accuracy           : 50.0%
 
 Attack Effectiveness
-  Successful attacks             : 4 / 4
-  Attack success rate (ASR)      : 100.0%
-  Robustness score (1 - ASR)     : 0.0%
+  Successful attacks             : 1 / 2
+  Attack success rate (ASR)      : 50.0%
+  Robustness score (1 - ASR)     : 50.0%
 
-Perturbation Analysis (L_inf norm)
-  Maximum perturbation           : 0.5
-  Mean perturbation              : 0.5
+Perturbation Analysis (Norms)
+  L_inf Maximum perturbation     : 0.5
+  L_inf Mean perturbation        : 0.5
+  L_2 Maximum perturbation       : 1.0
+  L_2 Mean perturbation          : 1.0
+  L_1 Maximum perturbation       : 2.0
+  L_1 Mean perturbation          : 2.0
 
 Notes
   • Attack success is counted only when:

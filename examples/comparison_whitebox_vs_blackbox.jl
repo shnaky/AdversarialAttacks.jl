@@ -5,16 +5,21 @@ White-Box vs Black-Box Attack Comparison on Neural Networks
 
 Demonstrates the efficiency and effectiveness differences between gradient-based
 (white-box) and query-based (black-box) adversarial attacks on the same CNN model.
+
+# Usage
+    julia --project=examples examples/comparison_whitebox_vs_blackbox.jl
+
+# With CLI options
+    julia --project=examples examples/comparison_whitebox_vs_blackbox.jl -n 100 -d mnist
+
+# Options
+-n, --num-attack-samples  Number of attack target samples (default: 100)
+-d, --dataset             Dataset (mnist/cifar10) (default: mnist)  
+-f, --force-retrain       Force model retraining (ignore cache)
 """
 
-include("Experiments.jl")
-using .Experiments
-using AdversarialAttacks
-using Flux
-using CategoricalArrays: levelcode
-using ImageCore: channelview
-using Statistics: mean
-using Printf
+include("./common/ExperimentUtils.jl")
+using .ExperimentUtils
 
 function run_comparison()
     println("="^70)
@@ -24,20 +29,37 @@ function run_comparison()
     # ==========================================================================
     # [Step 1] Train/Load CNN Model
     # ==========================================================================
-    println("\n[Step 1] Loading/Training MLJFlux CNN on MNIST...")
+    println("\n[Step 1] Loading/Training MLJFlux CNN ...")
 
-    config = ExperimentConfig("comparison_wb_bb", 0.8, 42)
+    args = parse_common_args()
+    arg_num_attack_samples = args["num-attack-samples"]
+    arg_dataset = dataset_from_string(args["dataset"])
+    arg_force_retrain = args["force-retrain"]
 
-    mach, meta = get_or_train(
-        make_mnist_cnn,
-        "comparison_wb_bb_final",
-        config = config,
-        force_retrain = false,
-        epochs = 10,
-        batch_size = 64,
+    NUM_ATTACK_SAMPLES = arg_num_attack_samples # default: 100
+    dataset = dataset # default: DATASET_MNIST , list: DATASET_MNIST, DATASET_CIFAR10
+    force_retrain = arg_force_retrain # default: false
+
+    # ==========================================
+    # ✅ comparison_wb_bb_mnist complete: 97.2%
+    #   • Clean accuracy: 97.21%
+    # ==========================================
+    # ✅ comparison_wb_bb_cifar complete: 67.5%
+    #   • Clean accuracy: 67.46%
+    # ==========================================
+    config = ExperimentConfig(
+        exp_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist_exp" : "comparison_wb_bb_cifar_exp",
+        model_file_name = dataset == DATASET_MNIST ? "comparison_wb_bb_mnist" : "comparison_wb_bb_cifar",
+        model_factory = dataset == DATASET_MNIST ? make_mnist_cnn : make_cifar_cnn,
+        dataset = dataset,
         use_flatten = false,
+        force_retrain = force_retrain,
+        fraction_train = 0.8,
+        rng = 42,
+        model_hyperparams = (epochs = 10, batch_size = 64)
     )
 
+    mach, meta = get_or_train(config)
     raw_model = extract_flux_model(mach)
 
     # Ensure model has softmax at the end
@@ -60,32 +82,32 @@ function run_comparison()
     # ==========================================================================
     println("\n[Step 2] Preparing test samples...")
 
-    X_img, y = load_mnist_for_mlj()
-    N_SAMPLES = 100
+    X_img, _ = load_data(config.dataset, config.use_flatten)
+    Xtest_img = X_img[test_idx]
+    y_pred_test = predict_mode(mach, Xtest_img)
 
+    n_available = min(NUM_ATTACK_SAMPLES, length(test_idx))
     test_data = []
 
-    for i in 1:length(test_idx)
-        if length(test_data) >= N_SAMPLES
-            break
-        end
-
+    for i in 1:n_available
         idx = test_idx[i]
         x_img = X_img[idx]
-        true_label_idx = levelcode(y_test[i])
+        true_label = y_test[i]
 
-        # Convert to Flux format (28×28×1×1)
-        x_array = Float32.(channelview(x_img))
-        x_flux = reshape(x_array, 28, 28, 1, 1)
-
-        # Check if correctly classified
-        pred = flux_model(x_flux)
-        pred_label = argmax(pred[:, 1])
-
-        if pred_label == true_label_idx
-            y_onehot = Flux.onehot(true_label_idx, 1:10)
-            push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
+        # Use precomputed MLJ prediction for this test index
+        y_mlj = y_pred_test[i]
+        if y_mlj != true_label
+            continue
         end
+
+        x_array = Float32.(channelview(x_img))
+        h, w, c = dataset_shape(Val(dataset))
+        x_flux = reshape(x_array, h, w, c, 1)
+
+        true_label_idx = levelcode(true_label)
+        y_onehot = onehot(true_label_idx, 1:length(levels(y_test)))
+
+        push!(test_data, (data = x_flux, label = y_onehot, true_idx = true_label_idx))
     end
 
     println("  • Selected $(length(test_data)) correctly classified samples")
@@ -97,29 +119,22 @@ function run_comparison()
 
     fgsm = FGSM(epsilon = 0.1f0)
 
-    wb_success = 0
     wb_perturbations = Float64[]
     wb_conf_drops = Float64[]
 
     wb_time = @elapsed begin
         for (i, sample) in enumerate(test_data)
             pred_clean = flux_model(sample.data)
-            clean_label = argmax(pred_clean[:, 1])
             clean_conf = pred_clean[sample.true_idx, 1]
 
             x_adv = attack(fgsm, flux_model, sample)
 
             pred_adv = flux_model(x_adv)
-            adv_label = argmax(pred_adv[:, 1])
             adv_conf = pred_adv[sample.true_idx, 1]
 
             linf = maximum(abs.(x_adv .- sample.data))
             push!(wb_perturbations, Float64(linf))
             push!(wb_conf_drops, Float64(clean_conf - adv_conf))
-
-            if clean_label == sample.true_idx && adv_label != sample.true_idx
-                wb_success += 1
-            end
 
             if i % 20 == 0
                 print("  Progress: $i/$(length(test_data)) samples\r")
@@ -145,29 +160,22 @@ function run_comparison()
 
     brs = BasicRandomSearch(epsilon = 0.2f0, max_iter = 100)
 
-    bb_success = 0
     bb_perturbations = Float64[]
     bb_conf_drops = Float64[]
 
     bb_time = @elapsed begin
         for (i, sample) in enumerate(test_data)
             pred_clean = flux_model(sample.data)
-            clean_label = argmax(pred_clean[:, 1])
             clean_conf = pred_clean[sample.true_idx, 1]
 
             x_adv = attack(brs, flux_model, sample)
 
             pred_adv = flux_model(x_adv)
-            adv_label = argmax(pred_adv[:, 1])
             adv_conf = pred_adv[sample.true_idx, 1]
 
             linf = maximum(abs.(x_adv .- sample.data))
             push!(bb_perturbations, Float64(linf))
             push!(bb_conf_drops, Float64(clean_conf - adv_conf))
-
-            if clean_label == sample.true_idx && adv_label != sample.true_idx
-                bb_success += 1
-            end
 
             if i % 20 == 0
                 print("  Progress: $i/$(length(test_data)) samples\r")
@@ -194,10 +202,9 @@ function run_comparison()
     println("="^70)
 
     n_samples = length(test_data)
+    bb_asr = bb_report.attack_success_rate * 100
+    wb_asr = wb_report.attack_success_rate * 100
 
-    # Manual calculations
-    wb_asr = (wb_success / n_samples) * 100
-    bb_asr = (bb_success / n_samples) * 100
 
     println("\n╔═════════════════════════════╦═══════════════╦═══════════════╗")
     println("║ Metric                      ║  White-Box    ║  Black-Box    ║")
@@ -205,57 +212,56 @@ function run_comparison()
     println("║ Attack Method               ║  FGSM         ║  RandomSearch ║")
     @printf(
         "║ Attack Success Rate (ASR)   ║   %5.1f%%      ║   %5.1f%%      ║\n",
-        wb_asr,
-        bb_asr
+        wb_report.attack_success_rate * 100,
+        bb_report.attack_success_rate * 100,
     )
     @printf(
         "║ Successful Attacks          ║   %3d/%3d      ║   %3d/%3d      ║\n",
-        wb_success,
-        n_samples,
-        bb_success,
-        n_samples
+        wb_report.num_successful_attacks,
+        wb_report.num_clean_correct,
+        bb_report.num_successful_attacks,
+        bb_report.num_clean_correct,
     )
     println("╠═════════════════════════════╬═══════════════╬═══════════════╣")
     @printf(
         "║ Clean Accuracy              ║   %5.1f%%      ║   %5.1f%%      ║\n",
         wb_report.clean_accuracy * 100,
-        bb_report.clean_accuracy * 100
+        bb_report.clean_accuracy * 100,
     )
     @printf(
         "║ Adversarial Accuracy        ║   %5.1f%%      ║   %5.1f%%      ║\n",
         wb_report.adv_accuracy * 100,
-        bb_report.adv_accuracy * 100
+        bb_report.adv_accuracy * 100,
     )
     @printf(
         "║ Robustness Score (1-ASR)    ║   %5.1f%%      ║   %5.1f%%      ║\n",
         wb_report.robustness_score * 100,
-        bb_report.robustness_score * 100
+        bb_report.robustness_score * 100,
     )
     println("╠═════════════════════════════╬═══════════════╬═══════════════╣")
     @printf(
         "║ Avg L∞ Perturbation         ║   %.4f      ║   %.4f      ║\n",
         wb_report.linf_norm_mean,
-        bb_report.linf_norm_mean
+        bb_report.linf_norm_mean,
     )
     @printf(
         "║ Max L∞ Perturbation         ║   %.4f      ║   %.4f      ║\n",
         wb_report.linf_norm_max,
-        bb_report.linf_norm_max
+        bb_report.linf_norm_max,
     )
     println("╠═════════════════════════════╬═══════════════╬═══════════════╣")
-    @printf("║ Queries per Sample          ║      1        ║    100        ║\n")
+    @printf("║ Queries per Sample          ║      1        ║    %3d        ║\n", brs.max_iter)
     @printf(
         "║ Total Time (s)              ║   %6.2f      ║   %6.2f      ║\n",
         wb_time,
-        bb_time
+        bb_time,
     )
     @printf(
         "║ Time per Sample (ms)        ║   %6.1f      ║   %6.1f      ║\n",
         (wb_time / n_samples) * 1000,
-        (bb_time / n_samples) * 1000
+        (bb_time / n_samples) * 1000,
     )
     println("╚═════════════════════════════╩═══════════════╩═══════════════╝")
-
     # ==========================================================================
     # [Step 6] Key Insights
     # ==========================================================================

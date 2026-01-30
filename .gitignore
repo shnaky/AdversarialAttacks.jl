@@ -12,4 +12,4 @@
 *.ipynb
 /examples/models/
 .DS_Store
-*.png
+/docs/src/tutorials/

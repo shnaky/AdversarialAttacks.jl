@@ -108,7 +108,7 @@ using CategoricalArrays: levels
             l_norms
         )
         @test metrics.clean_accuracy == num_clean_correct / n_test
-        @test metrics.adv_accuracy == num_adv_correct / n_test
+        @test metrics.adv_accuracy == num_adv_correct / num_clean_correct
         @test metrics.attack_success_rate == num_successful_attacks / num_clean_correct
         @test metrics.robustness_score == 1.0 - metrics.attack_success_rate
         @test metrics.linf_norm_max > 0.0 && metrics.linf_norm_mean > 0.0
@@ -283,5 +283,18 @@ using CategoricalArrays: levels
             probs_row = f(x_row)
             @test length(probs_row) == 3
         end
+    end
+
+    @testset "Benchmark" begin
+        struct BenchmarkDummyAttack <: AbstractAttack end
+        AdversarialAttacks.attack(::BenchmarkDummyAttack, model, sample; kwargs...) = sample .+ 1.0
+
+        dataset = [([1.0], 0), ([2.0], 1)]
+        function metric(model, adv_samples, labels)
+            @test length(adv_samples) == length(labels)
+            return length(adv_samples)
+        end
+        result = benchmark(BenchmarkDummyAttack(), Chain(x -> x), dataset, metric)
+        @test result == 2
     end
 end
