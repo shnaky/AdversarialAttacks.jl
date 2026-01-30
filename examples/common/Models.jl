@@ -3,7 +3,7 @@ import MLJFlux: build # build must be explicitly imported
 using MLJFlux: ImageClassifier
 using Flux: glorot_uniform, outputsize, Conv, Chain, Dense, MaxPool, relu, crossentropy, BatchNorm, Dropout
 using Optimisers: Adam
-using NearestNeighborModels: KNNKernel
+using NearestNeighborModels: KNNKernel, Uniform
 using MLUtils: flatten
 
 # ------------------------------------------------------------------
