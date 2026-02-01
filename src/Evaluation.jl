@@ -380,7 +380,7 @@ function evaluation_curve(
 
     for epsilon in epsilons
         if atk_type <: BasicRandomSearch
-            rng = Random.MersenneTwister(seed)
+            rng = MersenneTwister(seed)
             atk = atk_type(; epsilon = epsilon, rng = rng)
         else
             atk = atk_type(; epsilon = epsilon)

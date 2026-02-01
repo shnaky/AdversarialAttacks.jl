@@ -30,7 +30,7 @@ function BasicRandomSearch(;
         epsilon::Real = 0.1,
         max_iter::Int = 50,
         bounds = nothing,
-        rng::AbstractRNG = Random.default_rng(),
+        rng::AbstractRNG = default_rng(),
     )
     return BasicRandomSearch(epsilon, max_iter, bounds, rng)
 end
