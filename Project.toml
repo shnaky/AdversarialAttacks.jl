@@ -1,7 +1,7 @@
 name = "AdversarialAttacks"
 uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
-authors = ["Orestis Papandreou <orestis.papandreou@campus.tu-berlin.de>"]
 version = "1.0.0"
+authors = ["Orestis Papandreou <orestis.papandreou@campus.tu-berlin.de>"]
 
 [deps]
 Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -15,7 +15,7 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-Artifacts = "1.11.0"
+Artifacts = "1.11.0, 1"
 DecisionTree = "0.12.4"
 Distributions = "0.25.123"
 Downloads = "1.6.0"
