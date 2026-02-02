@@ -13,7 +13,7 @@ on MNIST digit classification, plotting accuracy degradation as attack strength
 increases.
 
 # Usage
-    julia --project=examples examples/evaluation_curve.mnist.jl
+    julia --project=examples examples/evaluation_curve_mnist.jl
 """
 
 include("./common/ExperimentUtils.jl")
