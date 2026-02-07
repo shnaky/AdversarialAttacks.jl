@@ -13,21 +13,23 @@ using AdversarialAttacks
     @testset "evaluate_robustness - basic functionality" begin
         result = evaluate_robustness(model, attack, test_data; num_samples = 5)
 
-        @test hasfield(RobustnessReport, :num_samples)
-        @test hasfield(RobustnessReport, :clean_accuracy)
-        @test hasfield(RobustnessReport, :adv_accuracy)
-        @test hasfield(RobustnessReport, :attack_success_rate)
-        @test hasfield(RobustnessReport, :robustness_score)
-        @test hasfield(RobustnessReport, :num_successful_attacks)
-        @test hasfield(RobustnessReport, :num_clean_correct)
+        @test hasfield(typeof(result), :num_samples)
+        @test hasfield(typeof(result), :clean_accuracy)
+        @test hasfield(typeof(result), :adv_accuracy)
+        @test hasfield(typeof(result), :attack_success_rate)
+        @test hasfield(typeof(result), :robustness_score)
+        @test hasfield(typeof(result), :num_successful_attacks)
+        @test hasfield(typeof(result), :num_clean_correct)
 
-        # L_inf norm fields
-        @test hasfield(RobustnessReport, :linf_norm_max)
-        @test hasfield(RobustnessReport, :linf_norm_mean)
-        @test hasfield(RobustnessReport, :l2_norm_max)
-        @test hasfield(RobustnessReport, :l2_norm_mean)
-        @test hasfield(RobustnessReport, :l1_norm_max)
-        @test hasfield(RobustnessReport, :l1_norm_mean)
+        @test hasfield(typeof(result), :linf_norm_max)
+        @test hasfield(typeof(result), :linf_norm_mean)
+        @test hasfield(typeof(result), :l2_norm_max)
+        @test hasfield(typeof(result), :l2_norm_mean)
+        @test hasfield(typeof(result), :l1_norm_max)
+        @test hasfield(typeof(result), :l1_norm_mean)
+
+        @test hasfield(typeof(result), :mean_queries_success)
+        @test hasfield(typeof(result), :mean_queries_all)
 
         @test result.linf_norm_max isa Float64
         @test result.linf_norm_mean isa Float64
@@ -63,34 +65,41 @@ using AdversarialAttacks
 
         # Test that success_rate and robustness_score sum to 1.0
         @test result.attack_success_rate + result.robustness_score ≈ 1.0
+
+        @test result.mean_queries_all isa Union{Int, Missing}
+        @test result.mean_queries_success isa Union{Int, Missing}
     end
 
     @testset "evaluate_robustness - calculate_metrics" begin
         n_test = 10
-        num_clean_correct = 0
         num_adv_correct = 5
         num_successful_attacks = 5
+        queries_all = [10, 20, 15, 5, 8]
+        queries_success = [10, 20, 15]
+
+        # no clean correct
+        num_clean_correct = 0
         l_norms = Dict(
             :linf => Float64[],
             :l2 => Float64[],
             :l1 => Float64[]
         )
+
         metrics = AdversarialAttacks.calculate_metrics(
             n_test,
             num_clean_correct,
             num_adv_correct,
             num_successful_attacks,
-            l_norms
+            l_norms,
         )
         @test metrics isa RobustnessReport
 
-        # else cases
         @test metrics.attack_success_rate == 0.0
         @test metrics.linf_norm_max == metrics.linf_norm_mean == 0.0
         @test metrics.l2_norm_max == metrics.l2_norm_mean == 0.0
         @test metrics.l1_norm_max == metrics.l1_norm_mean == 0.0
 
-        # if cases
+        # normal case
         num_clean_correct = 5
         l_norms[:linf] = [0.5]
         l_norms[:l2] = [0.5]
@@ -101,7 +110,9 @@ using AdversarialAttacks
             num_clean_correct,
             num_adv_correct,
             num_successful_attacks,
-            l_norms
+            l_norms,
+            queries_all,
+            queries_success,
         )
         @test metrics.clean_accuracy == num_clean_correct / n_test
         @test metrics.adv_accuracy == num_adv_correct / num_clean_correct
@@ -110,6 +121,11 @@ using AdversarialAttacks
         @test metrics.linf_norm_max > 0.0 && metrics.linf_norm_mean > 0.0
         @test metrics.l2_norm_max > 0.0 && metrics.l2_norm_mean > 0.0
         @test metrics.l1_norm_max > 0.0 && metrics.l1_norm_mean > 0.0
+
+        @test ismissing(metrics.mean_queries_all) ||
+            metrics.mean_queries_all == mean(queries_all)
+        @test ismissing(metrics.mean_queries_success) ||
+            metrics.mean_queries_success == mean(queries_success)
     end
 
     @testset "evaluate_robustness - compute_norm" begin
@@ -162,7 +178,9 @@ using AdversarialAttacks
             0.0,    # l2_norm_max
             0.0,    # l2_norm_mean
             0.0,    # l1_norm_max
-            0.0     # l1_norm_mean
+            0.0,    # l1_norm_mean
+            15.0,   # mean_queries_all
+            12.0    # mean_queries_success
         )
 
         # Capture output from Base.show
@@ -182,16 +200,47 @@ using AdversarialAttacks
         @test occursin("L_2 Mean perturbation", output)
         @test occursin("L_1 Maximum perturbation", output)
         @test occursin("L_1 Mean perturbation", output)
+
+        @test occursin("Mean queries (all)", output)
+        @test occursin("Mean queries (successful)", output)
+    end
+
+    @testset "RobustnessReport show - no query fields" begin
+        # dummy report
+        report = RobustnessReport(
+            1,      # n_test
+            0,      # num_clean_correct
+            0.0,    # clean_accuracy
+            0.0,    # adv_accuracy
+            0.0,    # attack_success_rate
+            1.0,    # robustness_score
+            0,      # num_successful_attacks
+            0.0,    # linf_norm_max
+            0.0,    # linf_norm_mean
+            0.0,    # l2_norm_max
+            0.0,    # l2_norm_mean
+            0.0,    # l1_norm_max
+            0.0,    # l1_norm_mean
+            missing, # mean_queries_all
+            missing  # mean_queries_success
+        )
+
+        io = IOBuffer()
+        show(io, report)
+        output = String(take!(io))
+
+        @test !occursin("Mean queries (all):", output)
+        @test !occursin("Mean queries (success):", output)
     end
 
     @testset "evaluate_robustness - L_inf norm correctness" begin
         # simple attack that adds a fixed perturbation
         struct TestLinfAttack end
-        AdversarialAttacks.attack(::TestLinfAttack, model, sample; detailed_result = true) = (x_adv = (sample.data .+ Float32[0.1, 0.5, 0.2, 0.3]),)
+        AdversarialAttacks.attack(::TestLinfAttack, model, sample) = sample.data .+ Float32[0.1, 0.5, 0.2, 0.3]
 
         # single test sample with an anonymous dummy function as model
-        test_data = [(data = Float32[1, 2, 3, 4], label = Flux.onehot(1, 1:3))]
-        result = evaluate_robustness(x -> Flux.onehot(1, 1:3), TestLinfAttack(), test_data; num_samples = 1)
+        test_data = [(data = Float32[1, 2, 3, 4], label = onehot(1, 1:3))]
+        result = evaluate_robustness(x -> onehot(1, 1:3), TestLinfAttack(), test_data; num_samples = 1)
 
         # check L_inf norms
         @test result.linf_norm_max == 0.5
