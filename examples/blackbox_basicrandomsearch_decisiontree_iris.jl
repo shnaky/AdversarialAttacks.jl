@@ -233,7 +233,8 @@ plot!(
 )
 
 fig = plot(p12, p34, layout = (1, 2), size = (1000, 400), margin = 5Plots.mm)
-savefig(fig, joinpath(@__DIR__, "iris_bsr.svg")) #hide
+mkpath("outputs")
+savefig(fig, joinpath(@__DIR__, "outputs", "iris_bsr.svg")) #hide
 fig #hide
 
 # ## Common edits to try
