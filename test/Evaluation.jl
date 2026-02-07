@@ -2,6 +2,8 @@ using Test
 using AdversarialAttacks
 
 @testset "Evaluation Suite" begin
+    seed!(42)
+
     model = Chain(Dense(4, 3), softmax)
 
     test_data = [
