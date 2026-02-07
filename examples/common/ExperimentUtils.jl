@@ -2,8 +2,8 @@ module ExperimentUtils
 
 include("Models.jl")
 
-using AdversarialAttacks: FGSM, BasicRandomSearch, evaluate_robustness, attack
-export FGSM, BasicRandomSearch, evaluate_robustness, attack
+using AdversarialAttacks: FGSM, BasicRandomSearch, evaluate_robustness, attack, evaluation_curve
+export FGSM, BasicRandomSearch, evaluate_robustness, attack, evaluation_curve
 
 using MLJ: partition, accuracy, machine, fit!, save
 using MLJ: mode, predict_mode, table, levels, predict
@@ -21,7 +21,13 @@ using ColorTypes: Color, Gray, RGB
 using Images: channelview
 using ScientificTypes: ColorImage, coerce, Multiclass
 
+import BSON
 using BSON: @save, load
+using Pkg.Artifacts
+using LazyArtifacts
+
+include("cifar10_model.jl")
+export load_pretrained_c10_model
 
 using CategoricalArrays: levelcode
 export levelcode

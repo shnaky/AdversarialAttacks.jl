@@ -2,7 +2,7 @@
 
 julia_version = "1.11.8"
 manifest_format = "2.0"
-project_hash = "a02712d51d7144d6f7422a7fe8262051fe93894f"
+project_hash = "1ee87bea03e444e01079b913305e8c0aaf34642a"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -73,7 +73,7 @@ weakdeps = ["SparseArrays", "StaticArrays"]
     AdaptStaticArraysExt = "StaticArrays"
 
 [[deps.AdversarialAttacks]]
-deps = ["DecisionTree", "Distributions", "Flux", "LinearAlgebra", "MLJ", "Random"]
+deps = ["Artifacts", "BSON", "DecisionTree", "Distributions", "Downloads", "Flux", "LazyArtifacts", "LinearAlgebra", "MLJ", "Pkg", "Random"]
 path = ".."
 uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
 version = "1.0.0-DEV"

@@ -4,6 +4,7 @@ using Flux
 using Random
 
 @testset "FGSM Struct" begin
+    seed!(1234)
 
     # Test default constructor
     atk = FGSM()
@@ -33,8 +34,6 @@ using Random
 end
 
 @testset "FGSM returns detailed result as namedtuple" begin
-    Random.seed!(1234)
-
     # Simple 2-class Flux model
     model = Chain(
         Dense(4 => 2),

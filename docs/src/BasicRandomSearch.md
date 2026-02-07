@@ -4,7 +4,7 @@
 CurrentModule = AdversarialAttacks
 ```
 
-This page documents the BasicRandomSearch algorithm (SimBA variant), a black-box adversarial attack that only requires query access to model predictions.
+This page documents the BasicRandomSearch algorithm ([SimBA](https://proceedings.mlr.press/v97/guo19a.html) variant), a Black-box Adversarial Attack that only requires query access to model predictions.
 
 ## BasicRandomSearch Implementation
 

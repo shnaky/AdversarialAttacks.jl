@@ -1,9 +1,9 @@
 """
     FGSM(; epsilon=0.1)
 
-Subtype of `WhiteBoxAttack`. A struct that can be used to create a white-box adversarial attack of type Fast Gradient Sign Method.
-Based on Goodfellow, I. J., Shlens, J., & Szegedy, C. (2014). Explaining and harnessing adversarial examples. arXiv preprint arXiv:1412.6572.
-(https://arxiv.org/abs/1412.6572)
+Subtype of `WhiteBoxAttack`. A struct that can be used to create a White-box Adversarial Attack using the Fast Gradient Sign Method.
+Based on Goodfellow, I. J., Shlens, J., & Szegedy, C. (2014). [Explaining and harnessing adversarial examples](https://arxiv.org/abs/1412.6572). arXiv preprint arXiv:1412.6572.
+
 
 
 # Arguments
@@ -20,16 +20,16 @@ default_loss(m, x, y) = crossentropy(m(x), y)
 """
     attack(atk::FGSM, model, sample; loss, detailed_result)
 
-Perform a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the given `model` using the provided `sample`.
+Perform a Fast Gradient Sign Method (FGSM) White-box Adversarial Attack on the given `model` using the provided `sample`.
 
 # Arguments
 - `atk::FGSM`: An instance of the `FGSM`.
 - `model::FluxModel`: The machine learning (deep learning) model to be attacked.
 - `sample`: Input sample as a named tuple with `data` and `label`.
 - `loss`: Loss function with signature `loss(model, x, y)`. Defaults to `default_loss`, i.e. cross-entropy.
-- `detailed_result::Bool=false`: Return format control
-  - `false` (default): Returns adversarial example only (Array)
-  - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label)
+- `detailed_result::Bool=false`: Return format control.
+  - `false` (default): Returns adversarial example only (Array).
+  - `true`: Returns NamedTuple with metrics (x_adv, success, queries_used, final_label).
 
 # Returns
 - If `detailed_result=false`:
@@ -37,7 +37,7 @@ Perform a Fast Gradient Sign Method (FGSM) white-box adversarial attack on the g
 - If `detailed_result=true`:
     - NamedTuple with fields:
         - `x_adv`: Adversarial example.
-        - `queries_used::Int`: Number of gradient evaluations (FGSM = 1).
+        - `queries_used::Int`: Number of gradient evaluations (for FGSM == 1).
 """
 function attack(atk::FGSM, model::Chain, sample; loss = default_loss, detailed_result = false)
     x = sample.data

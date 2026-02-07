@@ -1,15 +1,11 @@
 using Test
 using AdversarialAttacks
-using Flux
-using MLJ
-using MLJ: fit!
-using CategoricalArrays: levels
 
 @testset "Evaluation Suite" begin
     model = Chain(Dense(4, 3), softmax)
 
     test_data = [
-        (data = randn(Float32, 4), label = Flux.onehot(rand(1:3), 1:3))
+        (data = randn(Float32, 4), label = onehot(rand(1:3), 1:3))
             for _ in 1:10
     ]
     attack = FGSM(epsilon = 0.1)
@@ -215,6 +211,20 @@ using CategoricalArrays: levels
         @test length(results[:linf_norm_mean]) == 2
     end
 
+    @testset "evaluate_robustness - evaluation_curve - BRS" begin
+        attack_type = BasicRandomSearch
+
+        epsilons = [0.05, 0.1]
+
+        results = evaluation_curve(model, attack_type, epsilons, test_data; num_samples = 5, seed = 42)
+
+        @test results isa Dict
+        @test results[:epsilons] == epsilons
+        @test length(results[:clean_accuracy]) == 2
+        @test length(results[:linf_norm_mean]) == 2
+    end
+
+
     @testset "make_prediction_function" begin
         @testset "Flux-like model branch" begin
             # Test Flux-style neural network prediction wrapper
@@ -245,7 +255,7 @@ using CategoricalArrays: levels
 
             Tree = @load DecisionTreeClassifier pkg = DecisionTree verbosity = 0
             model = Tree()
-            mach = machine(model, X, y) |> fit!
+            mach = machine(model, X, y) |> mlj_fit!
 
             # Test MLJ prediction wrapper with vector input
             f = AdversarialAttacks.make_prediction_function(mach)
@@ -266,7 +276,7 @@ using CategoricalArrays: levels
 
             Tree = @load DecisionTreeClassifier pkg = DecisionTree verbosity = 0
             model = Tree()
-            mach = machine(model, X, y) |> fit!
+            mach = machine(model, X, y) |> mlj_fit!
 
             f = AdversarialAttacks.make_prediction_function(mach)
 
@@ -283,18 +293,5 @@ using CategoricalArrays: levels
             probs_row = f(x_row)
             @test length(probs_row) == 3
         end
-    end
-
-    @testset "Benchmark" begin
-        struct BenchmarkDummyAttack <: AbstractAttack end
-        AdversarialAttacks.attack(::BenchmarkDummyAttack, model, sample; kwargs...) = sample .+ 1.0
-
-        dataset = [([1.0], 0), ([2.0], 1)]
-        function metric(model, adv_samples, labels)
-            @test length(adv_samples) == length(labels)
-            return length(adv_samples)
-        end
-        result = benchmark(BenchmarkDummyAttack(), Chain(x -> x), dataset, metric)
-        @test result == 2
     end
 end

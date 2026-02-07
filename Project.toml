@@ -1,21 +1,33 @@
 name = "AdversarialAttacks"
 uuid = "0930d2b9-30a9-4ff9-b124-6eb7688acdd1"
-authors = ["Orestis Papandreou <orestis.papandreou@campus.tu-berlin.de>"]
-version = "1.0.0-DEV"
+authors = [
+  "Mathilda Buschmann <@m-buschmann>",
+  "Ezra Cerpac <@EzraCerpac>",
+  "Lea Emilia Friedemann <@escatay>",
+  "Hailey Gu <@hhggu>",
+  "Orestis Papandreou <@shnaky>",
+]
+version = "1.0.1"
 
 [deps]
+Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
+Artifacts = "1.11.0, 1"
 DecisionTree = "0.12.4"
 Distributions = "0.25.123"
+Downloads = "1.6.0"
 Flux = "0.16.7"
 LinearAlgebra = "1.11.0"
 MLJ = "0.22.0"
+Pkg = "1.11.0"
 Random = "1.11.0"
 julia = "1.11"
