@@ -253,7 +253,6 @@ and calculates perturbation norms (L∞, L2, and L1).
 - `num_samples::Int=100`: Number of samples to test. If more than available samples,
   uses all available samples.
 - `detailed_result::Bool=false`: Whether to return detailed attack results (including queries used) or just the adversarial example.
-- `detailed_result=true` will return a struct with both the adversarial example and the number of queries used, while `detailed_result=false` will return only the adversarial example.
 
 # Returns
 
