@@ -200,7 +200,8 @@ function main()
         mach,
         attack_config,
         test_data,
-        num_samples = length(test_data)
+        num_samples = length(test_data),
+        detailed_result = true
     )
 
     # =========================================================================
