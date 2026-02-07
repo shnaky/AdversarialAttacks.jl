@@ -233,6 +233,20 @@ using AdversarialAttacks
         @test !occursin("Mean queries (success):", output)
     end
 
+    @testset "evaluate_robustness - detailed_result integration" begin
+        model = Chain(Dense(4, 3), softmax)
+        test_data = [(data = randn(Float32, 4), label = onehot(1, 1:3)) for _ in 1:3]
+        fgsm_atk = FGSM(epsilon = 10.0f0)  # Large epsilon to ensure all attacks succeed
+
+        result_detailed = evaluate_robustness(model, fgsm_atk, test_data; num_samples = 3, detailed_result = true)
+
+        @test !ismissing(result_detailed.mean_queries_all)
+        @test result_detailed.mean_queries_all == 1.0
+        if !ismissing(result_detailed.mean_queries_success)
+            @test result_detailed.mean_queries_success == 1.0
+        end
+    end
+
     @testset "evaluate_robustness - L_inf norm correctness" begin
         # simple attack that adds a fixed perturbation
         struct TestLinfAttack end
