@@ -1,6 +1,3 @@
-using Test
-using AdversarialAttacks
-
 @testset "Attack abstractions" begin
     @testset "Abstract types" begin
         @test isabstracttype(AbstractAttack)

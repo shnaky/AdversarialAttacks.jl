@@ -1,8 +1,3 @@
-using Test
-using AdversarialAttacks
-using Flux
-using Random
-
 @testset "FGSM Struct" begin
     seed!(1234)
 
@@ -20,7 +15,7 @@ using Random
     @test FGSM <: WhiteBoxAttack
     @test FGSM <: AbstractAttack
 
-    sample = (data = Float32[1.0, 2.0, 3.0], label = Flux.onehot(1, 1:2))
+    sample = (data = Float32[1.0, 2.0, 3.0], label = onehot(1, 1:2))
     model = Chain(
         Dense(3 => 2),
         softmax,
@@ -41,7 +36,7 @@ end
     )
 
     x = Float32[1, 2, 3, 4]
-    y = Flux.onehot(1, 1:2)               # true label = 1
+    y = onehot(1, 1:2)               # true label = 1
     sample = (data = x, label = y)
 
     atk = FGSM(epsilon = 0.1f0)           # detailed_result default = false
