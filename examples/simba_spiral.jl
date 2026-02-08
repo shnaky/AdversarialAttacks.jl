@@ -227,6 +227,7 @@ bounds = [(-3.5, 3.5), (-3.5, 3.5)]  # Set bounds for normalized data
 atk = BasicRandomSearch(epsilon = 0.1f0, max_iter = 20, bounds = bounds)
 p1 = plot_attack_results(X, y, model, atk; n_samples = 25)
 OUTPUTS_DIR = joinpath(@__DIR__, "outputs")
+mkpath(OUTPUTS_DIR)
 savefig(p1, joinpath(OUTPUTS_DIR, "simba_single.svg")) #hide
 p1 #hide
 

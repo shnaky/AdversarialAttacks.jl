@@ -234,6 +234,7 @@ plot!(
 
 fig = plot(p12, p34, layout = (1, 2), size = (1000, 400), margin = 5Plots.mm)
 OUTPUTS_DIR = joinpath(@__DIR__, "outputs")
+mkpath(OUTPUTS_DIR)
 savefig(fig, joinpath(OUTPUTS_DIR, "iris_bsr.svg")) #hide
 fig #hide
 
