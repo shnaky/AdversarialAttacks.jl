@@ -226,8 +226,9 @@ println("\nRunning SimBA attack visualization...")
 bounds = [(-3.5, 3.5), (-3.5, 3.5)]  # Set bounds for normalized data
 atk = BasicRandomSearch(epsilon = 0.1f0, max_iter = 20, bounds = bounds)
 p1 = plot_attack_results(X, y, model, atk; n_samples = 25)
-
-savefig(p1, joinpath(@__DIR__, "simba_single.svg")) #hide
+OUTPUTS_DIR = joinpath(@__DIR__, "outputs")
+mkpath(OUTPUTS_DIR)
+savefig(p1, joinpath(OUTPUTS_DIR, "simba_single.svg")) #hide
 p1 #hide
 
 # ## 5. Compare different epsilon values
@@ -239,8 +240,7 @@ p1 #hide
 
 println("\nComparing different epsilon values...")
 p2 = compare_epsilons(X, y, model; epsilons = [0.02, 0.05, 0.1, 0.3], n_samples = 25)
-
-savefig(p2, joinpath(@__DIR__, "simba_epsilons.svg")) #hide
+savefig(p2, joinpath(OUTPUTS_DIR, "simba_epsilons.svg")) #hide
 p2 #hide
 
 # ## Common edits to try

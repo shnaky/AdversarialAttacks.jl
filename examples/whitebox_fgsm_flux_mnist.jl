@@ -199,7 +199,9 @@ p3 = heatmap(
 )
 
 fig = plot(p1, p2, p3, layout = (1, 3), size = (900, 300))
-savefig(fig, joinpath(@__DIR__, "mnist_fgsm.svg")) #hide
+OUTPUTS_DIR = joinpath(@__DIR__, "outputs")
+mkpath(OUTPUTS_DIR)
+savefig(fig, joinpath(OUTPUTS_DIR, "mnist_fgsm.svg")) #hide
 fig #hide
 
 # ## Common edits to try

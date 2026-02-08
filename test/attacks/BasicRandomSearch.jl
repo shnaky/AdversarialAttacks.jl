@@ -1,6 +1,3 @@
-using AdversarialAttacks
-using Test
-
 # Shared dummy model for black-box attack tests
 struct DummyBlackBoxModel end
 

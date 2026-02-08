@@ -1,6 +1,3 @@
-using Test
-using AdversarialAttacks
-
 @testset "Evaluation Suite" begin
     seed!(42)
 
