@@ -11,5 +11,6 @@
 *.bson
 trained_model.bson
 /examples/models/
+/examples/outputs/
 .DS_Store
 /docs/src/tutorials/
