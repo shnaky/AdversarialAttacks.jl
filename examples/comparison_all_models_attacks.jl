@@ -20,49 +20,51 @@ julia --project=examples examples/comparison_all_models_attacks.jl -n 100 -d mni
 # ================================================================================
 # 📊 SUMMARY with MNIST Dataset
 # ================================================================================
+# ==========================================================================================
+# 📊 SUMMARY
+# ==========================================================================================
 
 # 🎯 FGSM_eps0.1
-# --------------------------------------------------------------------------------
-# Model                   Clean Acc          ASR   Robustness
-# --------------------------------------------------------------------------------
-# comparison_mnist_cnn        94.7%        99.0%         1.0%
+# ------------------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness         Mean Queries Success/All
+# ------------------------------------------------------------------------------------------
+# comparison_mnist_cnn        94.7%        99.0%         1.0%         1.0/        1.0
 
 #    🏆 Most Robust: comparison_mnist_cnn (1.0%)
 
 # 🎯 FGSM_eps0.3
-# --------------------------------------------------------------------------------
-# Model                   Clean Acc          ASR   Robustness
-# --------------------------------------------------------------------------------
-# comparison_mnist_cnn        94.7%        99.0%         1.0%
+# ------------------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness         Mean Queries Success/All
+# ------------------------------------------------------------------------------------------
+# comparison_mnist_cnn        94.7%        99.0%         1.0%         1.0/        1.0
 
 #    🏆 Most Robust: comparison_mnist_cnn (1.0%)
 
 # 🎯 BasicRandomSearch_eps0.1
-# --------------------------------------------------------------------------------
-# Model                   Clean Acc          ASR   Robustness
-# --------------------------------------------------------------------------------
-# comparison_mnist_xgboost        97.0%         5.1%        94.9%
-# comparison_mnist_forest        96.2%         9.4%        90.6%
-# comparison_mnist_tree        86.5%        26.7%        73.3%
-# comparison_mnist_knn        96.6%       100.0%         0.0%
-# comparison_mnist_logistic        54.2%       100.0%         0.0%
+# ------------------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness         Mean Queries Success/All
+# ------------------------------------------------------------------------------------------
+# comparison_mnist_forest        96.2%         8.3%        91.7%        67.1/       95.8
+# comparison_mnist_xgboost        97.0%        10.2%        89.8%        58.6/       91.8
+# comparison_mnist_tree        86.5%        31.1%        68.9%        40.2/       82.0
+# comparison_mnist_logistic        54.2%        98.0%         2.0%        17.8/       19.3
+# comparison_mnist_knn        96.6%       100.0%         0.0%        14.7/       14.7
 
-#    🏆 Most Robust: comparison_mnist_xgboost (94.9%)
+#    🏆 Most Robust: comparison_mnist_forest (91.7%)
 
 # 🎯 BasicRandomSearch_eps0.3
-# --------------------------------------------------------------------------------
-# Model                   Clean Acc          ASR   Robustness
-# --------------------------------------------------------------------------------
-# comparison_mnist_forest        96.2%         7.3%        92.7%
-# comparison_mnist_xgboost        97.0%         8.2%        91.8%
-# comparison_mnist_tree        86.5%        42.2%        57.8%
-# comparison_mnist_knn        96.6%       100.0%         0.0%
-# comparison_mnist_logistic        54.2%       100.0%         0.0%
+# ------------------------------------------------------------------------------------------
+# Model                   Clean Acc          ASR   Robustness         Mean Queries Success/All
+# ------------------------------------------------------------------------------------------
+# comparison_mnist_forest        96.2%         5.2%        94.8%        44.0/       95.7
+# comparison_mnist_xgboost        97.0%         8.2%        91.8%        49.6/       91.8
+# comparison_mnist_tree        86.5%        30.0%        70.0%        54.9/       87.1
+# comparison_mnist_knn        96.6%       100.0%         0.0%         6.8/        6.8
+# comparison_mnist_logistic        54.2%       100.0%         0.0%        11.4/       11.4
 
-#    🏆 Most Robust: comparison_mnist_forest (92.7%)
+#    🏆 Most Robust: comparison_mnist_forest (94.8%)
 
-# ================================================================================
-
+# ==========================================================================================
 
 # ================================================================================
 # 📊 SUMMARY with Cifar10
@@ -381,6 +383,7 @@ function evaluate_single_model(exp_config::ExperimentConfig, attack_configs)
             report = evaluate_robustness(
                 model, attack, test_samples;
                 num_samples = length(test_samples),
+                detailed_result = true,
             )
 
             metrics = extract_metrics_from_report(report)
@@ -393,6 +396,8 @@ function evaluate_single_model(exp_config::ExperimentConfig, attack_configs)
                 robustness = metrics.robustness,
                 linf_mean = metrics.linf_mean,
                 linf_max = metrics.linf_max,
+                mean_queries_all = report.mean_queries_all,
+                mean_queries_success = report.mean_queries_success,
             )
 
             push!(results, result)
@@ -446,26 +451,26 @@ function generate_summary_report(results)
         return
     end
 
-    println("\n\n" * "="^80)
+    println("\n\n" * "="^90)
     println("📊 SUMMARY")
-    println("="^80)
+    println("="^90)
 
     # Group by attack epsilon
     attack_types = unique([r.attack for r in results])
 
     for attack_type in attack_types
         println("\n🎯 $attack_type")
-        println("-"^80)
-        @printf("%-20s %12s %12s %12s\n", "Model", "Clean Acc", "ASR", "Robustness")
-        println("-"^80)
+        println("-"^90)
+        @printf("%-20s %12s %12s %12s %32s\n", "Model", "Clean Acc", "ASR", "Robustness", "Mean Queries Success/All")
+        println("-"^90)
 
         attack_results = filter(r -> r.attack == attack_type, results)
         sort!(attack_results, by = r -> r.robustness, rev = true)
 
         for r in attack_results
             @printf(
-                "%-20s %11.1f%% %11.1f%% %11.1f%%\n",
-                r.model, r.clean_acc * 100, r.asr * 100, r.robustness * 100
+                "%-20s %11.1f%% %11.1f%% %11.1f%% %11.1f/%11.1f\n",
+                r.model, r.clean_acc * 100, r.asr * 100, r.robustness * 100, r.mean_queries_success, r.mean_queries_all
             )
         end
 
@@ -476,7 +481,7 @@ function generate_summary_report(results)
         end
     end
 
-    println("\n" * "="^80)
+    println("\n" * "="^90)
     println("Completed: $(format(now(), "HH:MM:SS"))")
     return println("Total Evaluations: $(length(results))")
 end

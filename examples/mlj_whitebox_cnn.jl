@@ -114,7 +114,8 @@ wb_report = evaluate_robustness(
     flux_model,
     fgsm,
     test_data,
-    num_samples = length(test_data)
+    num_samples = length(test_data),
+    detailed_result = true
 )
 
 println("\n" * "="^70)

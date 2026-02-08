@@ -18,6 +18,135 @@ Demonstrates the efficiency and effectiveness differences between gradient-based
 -f, --force-retrain       Force model retraining (ignore cache)
 """
 
+# ======================================================================
+# COMPARISON RESULTS
+# ======================================================================
+
+# ╔═════════════════════════════╦═══════════════╦═══════════════╗
+# ║ Metric                      ║  White-Box    ║  Black-Box    ║
+# ╠═════════════════════════════╬═══════════════╬═══════════════╣
+# ║ Attack Method               ║  FGSM         ║  RandomSearch ║
+# ║ Attack Success Rate (ASR)   ║    96.9%      ║    79.2%      ║
+# ║ Successful Attacks          ║    93/ 96      ║    76/ 96      ║
+# ╠═════════════════════════════╬═══════════════╬═══════════════╣
+# ║ Clean Accuracy              ║   100.0%      ║   100.0%      ║
+# ║ Adversarial Accuracy        ║     3.1%      ║    20.8%      ║
+# ║ Robustness Score (1-ASR)    ║     3.1%      ║    20.8%      ║
+# ╠═════════════════════════════╬═══════════════╬═══════════════╣
+# ║ Avg L∞ Perturbation         ║   0.1000      ║   0.1814      ║
+# ║ Max L∞ Perturbation         ║   0.1000      ║   0.2000      ║
+# ╠═════════════════════════════╬═══════════════╬═══════════════╣
+# ║ Queries                     ║  FGSM         ║  RandomSearch ║
+# ║ Success/All (mean)          ║   1.0/1.0      ║   3.3/3.2      ║
+# ║ Total Time (s)              ║     7.31      ║     0.24      ║
+# ║ Time per Sample (ms)        ║     76.1      ║      2.5      ║
+# ╚═════════════════════════════╩═══════════════╩═══════════════╝
+
+# ======================================================================
+# KEY INSIGHTS
+# ======================================================================
+# **Effectiveness**:
+#   • White-box is 1.2× more effective (96.9% vs 79.2% ASR)
+
+# **Efficiency**:
+#   • White-box is 100× more query-efficient (1 vs 100 queries)
+#   • White-box is 30.3× faster (76.1 ms vs 2.5 ms per sample)
+
+# **Perturbation Size**:
+#   • White-box uses smaller perturbations (0.1000 vs 0.1814 L∞)
+#   • White-box achieves higher ASR with 44.9% smaller perturbations
+
+# **Robustness**:
+#   • Model robustness vs white-box: 3.1%
+#   • Model robustness vs black-box: 20.8%
+
+# **Trade-off Summary**:
+# White-box attacks require full model access (gradients) but are significantly
+# more effective and efficient. Black-box attacks are more realistic for attacking
+# deployed systems where only query access is available.
+
+# ======================================================================
+# DETAILED WHITE-BOX REPORT
+# ======================================================================
+# === Robustness Evaluation Report ===
+
+# Dataset
+#   Total samples evaluated        : 96
+#   Clean-correct samples          : 96 / 96
+
+# Clean Performance
+#   Clean accuracy                 : 100.0%
+
+# Adversarial Performance
+#   Adversarial accuracy           : 3.12%
+
+# Attack Effectiveness
+#   Successful attacks             : 93 / 96
+#   Attack success rate (ASR)      : 96.88%
+#   Robustness score (1 - ASR)     : 3.12%
+
+# Perturbation Analysis (Norms)
+#   L_inf Maximum perturbation     : 0.1
+#   L_inf Mean perturbation        : 0.1
+#   L_2 Maximum perturbation       : 2.8
+#   L_2 Mean perturbation          : 2.8
+#   L_1 Maximum perturbation       : 78.4
+#   L_1 Mean perturbation          : 78.36
+
+# Query Statistics (if applicable)
+#   Mean queries (all)        : 1.0
+#   Mean queries (successful) : 1.0
+
+# Notes
+#   • Attack success is counted only when:
+#     - the clean prediction is correct
+#     - the adversarial prediction is incorrect
+# ===================================
+
+
+# ======================================================================
+# DETAILED BLACK-BOX REPORT
+# ======================================================================
+# === Robustness Evaluation Report ===
+
+# Dataset
+#   Total samples evaluated        : 96
+#   Clean-correct samples          : 96 / 96
+
+# Clean Performance
+#   Clean accuracy                 : 100.0%
+
+# Adversarial Performance
+#   Adversarial accuracy           : 20.83%
+
+# Attack Effectiveness
+#   Successful attacks             : 76 / 96
+#   Attack success rate (ASR)      : 79.17%
+#   Robustness score (1 - ASR)     : 20.83%
+
+# Perturbation Analysis (Norms)
+#   L_inf Maximum perturbation     : 0.2
+#   L_inf Mean perturbation        : 0.18
+#   L_2 Maximum perturbation       : 0.2
+#   L_2 Mean perturbation          : 0.18
+#   L_1 Maximum perturbation       : 0.2
+#   L_1 Mean perturbation          : 0.18
+
+# Query Statistics (if applicable)
+#   Mean queries (all)        : 3.16
+#   Mean queries (successful) : 3.26
+
+# Notes
+#   • Attack success is counted only when:
+#     - the clean prediction is correct
+#     - the adversarial prediction is incorrect
+# ===================================
+
+
+# ======================================================================
+# ✓ Comparison complete!
+# ======================================================================
+
 include("./common/ExperimentUtils.jl")
 using .ExperimentUtils
 
@@ -152,6 +281,7 @@ function run_comparison()
         fgsm,
         test_data,
         num_samples = length(test_data),
+        detailed_result = true,
     )
 
     # ==========================================================================
@@ -169,7 +299,8 @@ function run_comparison()
             pred_clean = flux_model(sample.data)
             clean_conf = pred_clean[sample.true_idx, 1]
 
-            x_adv = attack(brs, flux_model, sample, detailed_result = true)
+            result = attack(brs, flux_model, sample, detailed_result = true)
+            x_adv = result.x_adv
 
             pred_adv = flux_model(x_adv)
             adv_conf = pred_adv[sample.true_idx, 1]
@@ -193,6 +324,7 @@ function run_comparison()
         brs,
         test_data,
         num_samples = length(test_data),
+        detailed_result = true,
     )
 
     # ==========================================================================
@@ -251,7 +383,14 @@ function run_comparison()
         bb_report.linf_norm_max,
     )
     println("╠═════════════════════════════╬═══════════════╬═══════════════╣")
-    @printf("║ Queries per Sample          ║      1        ║    %3d        ║\n", brs.max_iter)
+    println("║ Queries                     ║  FGSM         ║  RandomSearch ║")
+    @printf(
+        "║ Success/All (mean)       ║   %3.1f/%3.1f      ║   %3.1f/%3.1f      ║\n",
+        wb_report.mean_queries_success,
+        wb_report.mean_queries_all,
+        bb_report.mean_queries_success,
+        bb_report.mean_queries_all,
+    )
     @printf(
         "║ Total Time (s)              ║   %6.2f      ║   %6.2f      ║\n",
         wb_time,
