@@ -17,7 +17,13 @@ You can install the package via the Julia package manager.
 In the Julia REPL, run:
 
 ```julia-repl
-julia> using Pkg; Pkg.add("url=https://github.com/shnaky/AdversarialAttacks.jl")
+julia> using Pkg; Pkg.add("AdversarialAttacks")
+```
+
+or in Pkg mode (press `]`):
+
+```julia-repl
+pkg> add AdversarialAttacks
 ```
 
 ## Examples
