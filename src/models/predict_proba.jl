@@ -11,6 +11,7 @@ MLJ machine version.
 # Note
 This function reshapes the input data to match the expected format for MLJ models and returns the predicted probabilities for each class.
 """
+
 function make_prediction_function(mach::Machine)
     return function (x_data)
         if x_data isa AbstractVector
@@ -43,6 +44,7 @@ Flux.jl model version.
 This function assumes that the model's output is already in the form of probabilities (e.g., via a softmax layer).
     If not, additional processing may be needed to convert raw outputs to probabilities.
 """
+
 function make_prediction_function(model::Chain)
     return function (x)
         output = model(x)
@@ -63,6 +65,7 @@ DecisionTree.jl classifier version.
 # Note
 This function reshapes the input data to match the expected format for DecisionTree.jl and returns the predicted probabilities for each class.
 """
+
 function make_prediction_function(model::DecisionTreeClassifier)
     return function (x_flat)
         x_row = reshape(Float64.(x_flat), 1, :)
