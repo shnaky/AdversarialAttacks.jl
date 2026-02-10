@@ -66,4 +66,34 @@
         probs_row = f(x_row)
         @test length(probs_row) == 3
     end
+
+    @testset "DecisionTreeClassifier branch" begin
+        # Binary classification training data
+        X_train = randn(50, 4)
+        y_train = categorical(rand([0, 1], 50))
+
+        tree_model = DecisionTreeClassifier()
+        dt_fit!(tree_model, X_train, y_train)
+
+        f = make_prediction_function(tree_model)
+
+        # Vector input → 1×4 reshape → 1×2 Matrix output
+        x_vec = randn(4)
+        probs_vec = f(x_vec)
+        @test probs_vec isa AbstractMatrix{Float64}
+        @test size(probs_vec) == (1, 2)
+        @test all(0 .≤ probs_vec .≤ 1)
+        @test isapprox(sum(probs_vec), 1; atol = 1.0e-6)
+
+        # Matrix input → vec(x_flat) → Float64.(...) → 1×4 → 1×2 Matrix
+        x_mat = randn(Float32, 2, 2)
+        probs_mat = f(x_mat)
+        @test probs_mat isa AbstractMatrix{Float64}
+        @test size(probs_mat) == (1, 2)
+
+        # To get vec for unified interface (like MLJ/Flux)
+        probs_vec_from_mat = vec(probs_mat)
+        @test probs_vec_from_mat isa AbstractVector{Float64}
+        @test length(probs_vec_from_mat) == 2
+    end
 end
