@@ -7,6 +7,7 @@ using MLJ: predict, levels, Machine, machine, table
 using Distributions: pdf
 using LinearAlgebra: norm
 using Random: seed!, MersenneTwister, default_rng, AbstractRNG, randperm
+using Statistics: mean
 
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")

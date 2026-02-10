@@ -26,6 +26,8 @@ including clean/adversarial accuracy, attack success rate, and robustness score.
 - `l2_norm_mean::Float64`: Mean L2 norm of perturbations across all samples
 - `l1_norm_max::Float64`: Maximum L1 norm of perturbations across all samples
 - `l1_norm_mean::Float64`: Mean L1 norm of perturbations across all samples
+- `mean_queries_all::Union{Float64, Missing}`: Mean number of queries across all samples (if applicable)
+- `mean_queries_success::Union{Float64, Missing}`: Mean number of queries for successful attacks (if applicable)
 
 # Note
 An attack succeeds when the clean prediction is correct but the adversarial prediction is incorrect.
@@ -47,6 +49,8 @@ struct RobustnessReport
     l2_norm_mean::Float64
     l1_norm_max::Float64
     l1_norm_mean::Float64
+    mean_queries_all::Union{Float64, Missing}
+    mean_queries_success::Union{Float64, Missing}
 end
 
 """
@@ -122,6 +126,10 @@ function Base.show(io::IO, report::RobustnessReport)
         round(report.l1_norm_mean, digits = 2)
     )
 
+    println(io, "\nQuery Statistics (if applicable)")
+    println(io, "  Mean queries (all)        : ", report.mean_queries_all === missing ? "N/A" : round(report.mean_queries_all, digits = 2))
+    println(io, "  Mean queries (successful) : ", report.mean_queries_success === missing ? "N/A" : round(report.mean_queries_success, digits = 2))
+
     println(io, "\nNotes")
     println(io, "  • Attack success is counted only when:")
     println(io, "    - the clean prediction is correct")
@@ -132,7 +140,7 @@ end
 
 """
     calculate_metrics(n_test, num_clean_correct, num_adv_correct,
-                      num_successful_attacks, l_norms)
+                      num_successful_attacks, l_norms, queries_all, queries_success)
 
 Compute accuracy, attack success, robustness, and perturbation norm statistics
 for adversarial evaluation.
@@ -143,12 +151,14 @@ for adversarial evaluation.
 - `num_adv_correct`: Number of correctly classified adversarial samples
 - `num_successful_attacks`: Number of successful adversarial attacks
 - `l_norms`: Dictionary containing perturbation norm arrays with keys `:linf`, `:l2`, and `:l1`
+- `queries_all`: Array of query counts for all samples
+- `queries_success`: Array of query counts for successful attacks
 
 # Returns
 - A `RobustnessReport` containing accuracy, robustness, and norm summary metrics
   (maximum and mean) for all three norm types.
 """
-function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
+function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms, queries_all = Int[], queries_success = Int[])
 
     clean_accuracy = num_clean_correct / n_test
     adv_accuracy = num_clean_correct > 0 ? num_adv_correct / num_clean_correct : 0.0
@@ -171,6 +181,9 @@ function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_succe
     l1_norm_max = !isempty(l1_norms) ? maximum(l1_norms) : 0.0
     l1_norm_mean = !isempty(l1_norms) ? sum(l1_norms) / length(l1_norms) : 0.0
 
+    mean_queries_all = length(queries_all) > 0 ? mean(queries_all) : missing
+    mean_queries_success = length(queries_success) > 0 ? mean(queries_success) : missing
+
     return RobustnessReport(
         n_test,
         num_clean_correct,
@@ -185,6 +198,8 @@ function calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_succe
         l2_norm_mean,
         l1_norm_max,
         l1_norm_mean,
+        mean_queries_all,
+        mean_queries_success
     )
 end
 
@@ -237,11 +252,12 @@ and calculates perturbation norms (L∞, L2, and L1).
 - `test_data`: Collection of test samples.
 - `num_samples::Int=100`: Number of samples to test. If more than available samples,
   uses all available samples.
+- `detailed_result::Bool=false`: Whether to return detailed attack results (including queries used) or just the adversarial example.
 
 # Returns
 
 - `RobustnessReport`: Report containing accuracy, attack success rate, robustness metrics,
-and perturbation statistics for L∞, L2, and L1 norms.
+and perturbation statistics for L∞, L2, and L1 norms, as well as query statistics if applicable.
 
 
 # Example
@@ -254,7 +270,8 @@ function evaluate_robustness(
         model,
         atk,
         test_data;
-        num_samples::Int = 100
+        num_samples::Int = 100,
+        detailed_result = false
     )
     if num_samples <= 0
         throw(ArgumentError("num_samples must be positive"))
@@ -274,6 +291,8 @@ function evaluate_robustness(
         :l2 => Float64[],
         :l1 => Float64[]
     )
+    queries_success = Int[]
+    queries_all = Int[]
 
     predict_fn = make_prediction_function(model)
 
@@ -290,7 +309,14 @@ function evaluate_robustness(
 
             if is_clean_correct
                 # adversarial output
-                adv_data = attack(atk, model, sample)
+                if detailed_result
+                    attack_result = attack(atk, model, sample; detailed_result = true)
+                    x_adv = attack_result.x_adv
+                    push!(queries_all, attack_result.queries_used)
+                else
+                    x_adv = attack(atk, model, sample)
+                end
+                adv_data = x_adv
                 adv_pred = predict_fn(adv_data)
                 adv_label = argmax(vec(adv_pred))
                 is_adv_correct = (adv_label == true_label)
@@ -304,6 +330,10 @@ function evaluate_robustness(
                 # successful attack condition (a flip happened in prediction)
                 if !is_adv_correct
                     num_successful_attacks += 1
+
+                    if detailed_result
+                        push!(queries_success, attack_result.queries_used)
+                    end
                 end
             end
         catch e
@@ -315,7 +345,7 @@ function evaluate_robustness(
         end
     end
 
-    report = calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms)
+    report = calculate_metrics(n_test, num_clean_correct, num_adv_correct, num_successful_attacks, l_norms, queries_all, queries_success)
     println("Evaluation complete!")
     return report
 end

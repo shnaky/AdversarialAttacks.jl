@@ -3,7 +3,7 @@ Abstract supertype for all Adversarial Attacks.
 
 Expected interface (to be implemented per concrete attack):
 - `name(::AbstractAttack)::String`
-- `attack(atk::AbstractAttack, model, sample; detailed_result)` returning an adversarial result
+- `attack(atk::AbstractAttack, model, sample; detailed_result, kwargs...)` returning an adversarial result
 """
 abstract type AbstractAttack end
 
@@ -42,7 +42,7 @@ Human-readable name for an attack.
 name(atk::AbstractAttack)::String = string(typeof(atk))
 
 """
-    attack(atk::AbstractAttack, model, sample; detailed_result)
+    attack(atk::AbstractAttack, model, sample; detailed_result, kwargs...) -> adversarial_result
 
 Generate an adversarial example by applying the attack to a sample.
 
@@ -51,8 +51,9 @@ Generate an adversarial example by applying the attack to a sample.
 - `model`: Target model to attack.
 - `sample`: Input sample to perturb (e.g., image, text). Usually a NamedTuple(data,label).
 - `detailed_result::Bool=false`: 
-  - `false` (default): Returns adversarial example only (backward compatible).
+  - `false` (default): Returns adversarial example only (backward compatible)
   - `true`: Returns `AttackResult` with metrics.
+- `kwargs...`: Additional attack-specific parameters
 
 # Returns
 - `detailed_result=false`: adversarial example only.
@@ -63,6 +64,6 @@ Generate an adversarial example by applying the attack to a sample.
   - `final_label`: Final prediction.
 
 """
-function attack(atk::AbstractAttack, model, sample; detailed_result::Bool = false)
-    throw(MethodError(attack, (atk, model, sample, detailed_result)))
+function attack(atk::AbstractAttack, model, sample; detailed_result::Bool = false, kwargs...)
+    throw(MethodError(attack, (atk, model, sample, detailed_result, kwargs...)))
 end
