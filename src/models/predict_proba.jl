@@ -14,11 +14,10 @@ This function reshapes the input data to match the expected format for MLJ model
 
 function make_prediction_function(mach::Machine)
     return function (x_data)
-        if x_data isa AbstractVector
-            x_row = reshape(x_data, 1, :)
-        else
-            x_row = reshape(vec(x_data), 1, :)
-        end
+        x_vec = x_data isa AbstractVector ? x_data : vec(x_data)
+
+        # x_row should be 1×N, do not use permutedims() which creates N x 1
+        x_row = reshape(x_vec, 1, :)
 
         X_tbl = table(x_row)
         pred_dist = predict(mach, X_tbl)[1]
@@ -45,10 +44,23 @@ This function assumes that the model's output is already in the form of probabil
     If not, additional processing may be needed to convert raw outputs to probabilities.
 """
 
+# used in evaluation function for Flux models
 function make_prediction_function(model::Chain)
     return function (x)
         output = model(x)
         return vec(output)
+    end
+end
+
+# used in attack function for Flux models
+function make_prediction_function(model::Chain, x_template)
+    x_shape = size(x_template)
+
+    return function (x_flat)
+        @assert length(x_flat) == prod(x_shape)
+        x_reshaped = reshape(x_flat, x_shape)
+        probs = model(x_reshaped)
+        return probs
     end
 end
 
