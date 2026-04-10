@@ -12,6 +12,7 @@ using Statistics: mean
 include("attacks/Attack.jl")
 include("attacks/BasicRandomSearch.jl")
 include("attacks/FGSM.jl")
+include("models/predict_proba.jl")
 include("Evaluation.jl")
 
 # Export attack types
