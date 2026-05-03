@@ -167,13 +167,7 @@ function attack(atk::BasicRandomSearch, model::Chain, sample; detailed_result = 
 
     true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
 
-    # Define a closure that matches the shared interface: x_flat → prob vector
-    predict_proba_fn = function (x_flat)
-        # reshape back to original shape before passing to model
-        x_reshaped = reshape(x_flat, size(x))
-        probs = model(x_reshaped)
-        return probs
-    end
+    predict_proba_fn = make_prediction_function(model, x)
 
     return _basic_random_search_core(
         x,
@@ -218,11 +212,7 @@ function attack(atk::BasicRandomSearch, model::DecisionTreeClassifier, sample; d
     # Convert one-hot label to integer if needed (1-based)
     true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
 
-    # Closure: x_flat → prob vector
-    predict_proba_fn = function (x_flat)
-        x_row = reshape(Float64.(x_flat), 1, :)
-        return predict_proba(model, x_row)
-    end
+    predict_proba_fn = make_prediction_function(model)
 
     return _basic_random_search_core(
         x,
@@ -266,13 +256,7 @@ function attack(atk::BasicRandomSearch, mach::Machine, sample; detailed_result =
     # Convert one-hot label to integer if needed (1-based)
     true_label = isa(y, OneHotVector) ? onecold(y) : Int(y)
 
-    predict_proba_fn = function (x_flat)
-        # Treat x_flat as a single-row table for MLJ
-        x_row = permutedims(x_flat)
-        X_tbl = table(x_row)
-        probs = predict(mach, X_tbl)[1]
-        return collect(pdf.(probs, levels(probs)))
-    end
+    predict_proba_fn = make_prediction_function(mach)
 
     return _basic_random_search_core(
         x,
